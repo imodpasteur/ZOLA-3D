@@ -7,8 +7,7 @@ Here we provide a CUDA-enabled 3D localization algorithm for ImageJ/Fiji distrib
 
 Nvidia CUDA 8 must be installed and included in the path. 
 Follow instructions on https://developer.nvidia.com/cuda-80-ga2-download-archive. 
-Please make sure `nvcc -v` is operational from the terminal.
-We haven't yet tested CUDA 9. Any feedback is very welcome. 
+Please make sure `nvcc --version` is operational from the terminal.
 
 ## Installation
 
