@@ -31,15 +31,18 @@ The easy way is to use Fiji update system.
 The full manual and test data can be found [HERE](https://www.dropbox.com/sh/5h4kz7ruuv3iw0b/AAD4JSNIT-L17mVr1EqMi2WRa?dl=0)
 
 1. For optimal performance your images should obey poisson noise statistics, equivalent of photon counting mode of EMCCD camera. If your camera does not support this mode of acquisition, photon conversion step is needed:
-a) Acquire 50 frames with static intensity distribution (beads or gradient illumination). 
-b) Select ~100x100 px region with highest intensity range (proximity of the beads, avoiding saturation). 
-c) Run `Zola -> Additional tools -> Photon conversion`. This will autimatically find offset and gain to get poison noise statistics out of raw counts. The optimal parameters of count conversion are recorded automatically and propagate throughout the ZOLA interface.
+(a) Acquire 50 frames with static intensity distribution (beads or gradient illumination). 
+(b) Select ~100x100 px region with highest intensity range (proximity of the beads, avoiding saturation). 
+(c) Run `Zola -> Additional tools -> Photon conversion`. This will autimatically find offset and gain to get poison noise statistics out of raw counts. The optimal parameters of count conversion are recorded automatically and propagate throughout the ZOLA interface.
 
 2. Calibrate your PSF from a stack of fluorescent beads using Zernike polynomials (ideal for cylyndrical lens or deformable mirror). 50-100 nm z step is optimal.
 Open your stack, select central position of one or few beads with `Point selector` and run `ZOLA -> Calibration: PSF modeling`
 
 3. Next, this calibrations is used for localization of single molecules in 3D. 
 Open your stack with single molecule blinking images, select region of interest and run `ZOLA -> Localization`
+
+![input](https://github.com/imodpasteur/ZOLA-3D/blob/master/images/frames20130%2B50.gif) ![output](https://github.com/imodpasteur/ZOLA-3D/blob/master/images/anim-slow.gif)
+
 
 ## Distinctive features:
 
