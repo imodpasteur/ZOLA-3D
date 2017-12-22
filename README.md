@@ -41,6 +41,8 @@ Open your stack, select central position of one or few beads with `Point selecto
 3. Next, this calibrations is used for localization of single molecules in 3D. 
 Open your stack with single molecule blinking images, select region of interest and run `ZOLA -> Localization`
 
+4. Localization table is saved in csv, Thunderstorm format. You can correct the drift in 3D and render 3D color-stack using ZOLA  or in any other software. 
+
 ![input](https://github.com/imodpasteur/ZOLA-3D/blob/master/images/frames20130%2B50.gif) ![output](https://github.com/imodpasteur/ZOLA-3D/blob/master/images/anim-slow.gif)
 
 
