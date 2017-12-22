@@ -6,7 +6,9 @@ Here we provide a CUDA-enabled 3D localization algorithm for ImageJ/Fiji distrib
 ## Requirements
 
 Nvidia CUDA 8 must be installed and included in the path. 
+
 Follow instructions on https://developer.nvidia.com/cuda-80-ga2-download-archive. 
+
 Please make sure `nvcc --version` is operational from the terminal.
 
 ## Installation
@@ -15,10 +17,11 @@ The easy way is to use Fiji update system.
 1. Launch Fiji
 2. Select `Help` -> `Update`
 3. Select `Manage update sites`
-4. Add http://sites.imagej.net/IMOD-ZOLA/
+4. Select `IMOD-ZOLA` from the list
 5. Close and Apply changes
 6. Restart Fiji
 7. ZOLA will appear in Plugins dropdown menu
+
 
 ## Usage
 
