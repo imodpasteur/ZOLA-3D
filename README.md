@@ -31,15 +31,16 @@ c) Run `Zola -> Additional tools -> Photon conversion`. This will autimatically 
 2. Calibrate your PSF from a stack of fluorescent beads using Zernike polynomials (ideal for cylyndrical lens or deformable mirror). 50-100 nm z step is optimal.
 Open your stack, select central position of one or few beads with `Point selector` and run `ZOLA -> Calibration: PSF modeling`
 
-Next, this calibrations is used for localization of single molecules in 3D. 
-Open your stack with single molecule blinking images, select region of interest.
+3. Next, this calibrations is used for localization of single molecules in 3D. 
+Open your stack with single molecule blinking images, select region of interest and run `ZOLA -> Localization`
 
 ## Distinctive features:
 
 * A very simple user interface implemented in Fiji.
 * We incorporate 3D predetection (instead of just finding a peak) into the algorithm, so the PSF can be spatially extended, such as tetrapod PSF.
-* We use integrated model of PSF encoded into pupil function. This makes PSF calibration extremely robust to the noise. As a result, only one or two beads are needed to calibrate PSF  
-* All calculations are done on GPU
+* We use integrated model of PSF encoded into pupil function. This makes PSF calibration extremely robust to the noise. As a result, only one or two beads are needed to calibrate PSF.
+* Index mismatch is included. Just select the correct immersion and mounting medium parameters.
+* All calculations are done on GPU.
 
 
 
