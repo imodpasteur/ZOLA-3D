@@ -40,7 +40,7 @@ Open your stack with single molecule blinking images, select region of interest 
 
 ## Distinctive features:
 
-* A very simple user interface implemented in Fiji.
+* User-fliendly interface implemented in Fiji.
 * We incorporate 3D predetection (instead of just finding a peak) into the algorithm, so the PSF can be spatially extended, such as tetrapod PSF.
 * We use integrated model of PSF encoded into pupil function. This makes PSF calibration extremely robust to the noise. As a result, only one or two beads are needed to calibrate PSF.
 * Index mismatch is included. Just select the correct immersion and mounting medium parameters.
