@@ -23,6 +23,8 @@ The easy way is to use Fiji update system.
 
 ## Usage
 
+The full manual and test data can be found [HERE](https://www.dropbox.com/sh/5h4kz7ruuv3iw0b/AAD4JSNIT-L17mVr1EqMi2WRa?dl=0)
+
 1. For optimal performance your images should obey poisson noise statistics, equivalent of photon counting mode of EMCCD camera. If your camera does not support this mode of acquisition, photon conversion step is needed:
 a) Acquire 50 frames with static intensity distribution (beads or gradient illumination). 
 b) Select ~100x100 px region with highest intensity range (proximity of the beads, avoiding saturation). 
@@ -43,5 +45,3 @@ Open your stack with single molecule blinking images, select region of interest 
 * All calculations are done on GPU.
 
 
-
-https://www.dropbox.com/sh/5h4kz7ruuv3iw0b/AAD4JSNIT-L17mVr1EqMi2WRa?dl=0
