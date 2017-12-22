@@ -11,6 +11,9 @@ Follow instructions on https://developer.nvidia.com/cuda-80-ga2-download-archive
 
 Please make sure `nvcc --version` is operational from the terminal.
 
+
+The plugin is tested on Ubuntu and Windows. MacOS libraries are provided but CUDA ubstallation can be tricky.
+
 ## Installation
 
 The easy way is to use Fiji update system. 
@@ -21,7 +24,7 @@ The easy way is to use Fiji update system.
 5. Close and Apply changes
 6. Restart Fiji
 7. ZOLA will appear in Plugins dropdown menu
-
+![Fiji update site](https://github.com/imodpasteur/ZOLA-3D/blob/master/images/fiji%20update.png)
 
 ## Usage
 
