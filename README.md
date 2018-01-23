@@ -38,8 +38,10 @@ The full manual and test data can be found [HERE](https://www.dropbox.com/sh/5h4
 
 2. Calibrate your PSF from a stack of fluorescent beads using Zernike polynomials (ideal for cylyndrical lens or deformable mirror). 50-100 nm z step is optimal.
 Open your stack, select central position of one or few beads with `Point selector` and run `ZOLA -> Calibration: PSF modeling`
+Choose 15-21 Zernike modes for astigmatic PSF, and 36-55 for Saddle-Point or Tetrapod PSF.
+Gaussian smoothing is an empirical parameter related to the blurring of the PSF on your particular microscope. The default value 0.7 corresponds to our case, might need to be adjusted in your case, but usually 0.5 to 1.0 across the literature. 
 
-3. Next, this calibrations is used for localization of single molecules in 3D. 
+3. Next, this calibration is used for localization of single molecules in 3D. 
 Open your stack with single molecule blinking images, select region of interest and run `ZOLA -> Localization`
 
 4. Localization table is saved in csv, Thunderstorm format. You can correct the drift in 3D and render 3D color-stack using ZOLA  or in any other software. 
@@ -49,7 +51,7 @@ Open your stack with single molecule blinking images, select region of interest 
 
 ## Distinctive features:
 
-* User-fliendly interface implemented in Fiji.
+* User-friendly interface implemented in Fiji.
 * We incorporate 3D predetection (instead of just finding a peak) into the algorithm, so the PSF can be spatially extended, such as tetrapod PSF.
 * We use integrated model of PSF encoded into pupil function. This makes PSF calibration extremely robust to the noise. As a result, only one or two beads are needed to calibrate PSF.
 * Index mismatch is included. Just select the correct immersion and mounting medium parameters.
