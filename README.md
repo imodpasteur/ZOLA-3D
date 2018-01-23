@@ -46,7 +46,10 @@ Open your stack with single molecule blinking images, select region of interest 
 
 4. Localization table is saved in csv, Thunderstorm format. You can correct the drift in 3D and render 3D color-stack using ZOLA  or in any other software. 
 
-![input](https://github.com/imodpasteur/ZOLA-3D/blob/master/images/frames20130%2B50.gif) ![output](https://github.com/imodpasteur/ZOLA-3D/blob/master/images/anim-slow.gif)
+| ![input](https://github.com/imodpasteur/ZOLA-3D/blob/master/images/frames20130%2B50.gif)        | ![output](https://github.com/imodpasteur/ZOLA-3D/blob/master/images/anim-slow.gif) | 
+| ------------- |:-------------:|
+| *raw image sequence with blinking tetrapod PSFs*| *3D scatter-plot reconstruction* |
+
 
 
 ## Distinctive features:
