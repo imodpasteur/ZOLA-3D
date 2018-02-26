@@ -31,5 +31,9 @@ Now our table is filtered.
 
 ![histogram dialog](https://github.com/imodpasteur/ZOLA-3D/blob/master/TEST_DATA/img/ZOLA_loc_hist_dialog.png)
 
+6. Next, run reslice (keyboard shortcut '/') form the left to see YZ stack. Mitochondrial organelles' hollow structure is readily apparent.
+
+![mito ZY projection](https://github.com/imodpasteur/ZOLA-3D/blob/master/TEST_DATA/img/ZOLA_loc_mito_reslice.gif)
+
 
 
