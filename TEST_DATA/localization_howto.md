@@ -5,7 +5,7 @@ We provide instructions to run localization on the test data in the package.
 
 Located in the TEST_DATA directory of the project.
 
-Mitochondria with corresponding calibration stack is imaged using tetrapod PSF.
+Mitochondrial protein TOM22 immunolabelled with Alexa 647 with corresponding bead calibration stack is imaged using tetrapod PSF.
 
 ## Calibration
 
