@@ -49,7 +49,7 @@ Example of 3D reconstruction of immunolabeled mitochondrial protein TOM22:
 
 | ![input](https://github.com/imodpasteur/ZOLA-3D/blob/master/images/frames20130%2B50.gif)        | ![output](https://github.com/imodpasteur/ZOLA-3D/blob/master/images/anim-slow.gif) | 
 | ------------- |:-------------:|
-| *raw image sequence with blinking tetrapod PSFs *| *3D scatter-plot reconstruction* |
+| *raw image sequence with blinking tetrapod PSFs*| *3D scatter-plot reconstruction* |
 
 
 
