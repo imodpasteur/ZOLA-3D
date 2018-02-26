@@ -1,0 +1,12 @@
+close();
+open("/home/andrey/atlas/Andrey/data/20170824-Wei-Mito-Tom22-best/s2-10beta-10Cot-20GL/cal-sp4-50nm_crop.tif");
+makePoint(127, 92);
+run(" Calibration: PSF modeling", "run_on_gpu camera_adu=1.0000 camera_gain=1.0000 camera_offset=0.0000 pixel_size=106 z_step=50 bead_moving=[far -> close to objective] numerical_aperture=1.200 immersion_refractive=1.330 wavelength=0.640 patch_size=36 zernike_coefficient=45 iteration=10 result_calibration_file=/home/andrey/atlas/Andrey/data/20170824-Wei-Mito-Tom22-best/s2-10beta-10Cot-20GL/ZOLA_calibration_PSF_crop.csv");
+run("Save");
+//run("Brightness/Contrast...");
+run("Enhance Contrast", "saturated=0.35");
+selectWindow("cal-sp4-50nm_1_MMStack_Pos0.ome.tif");
+close();
+//setTool("dropper");
+//setTool("hand");
+//setTool("multipoint");

@@ -1,0 +1,10 @@
+Reconstruction
+Calibration path:/home/andrey/atlas/Andrey/data/20170824-Wei-Mito-Tom22-best/s2-10beta-10Cot-20GL/ZOLA_calibration_PSF_crop.csv
+Localization path:/home/andrey/atlas/Andrey/ZOLA_test_data/ZOLA_localization_table_smaller_ROI_crop16.csv
+Reconstruction time:2.22295 min
+distance focus to coverslip:0.5
+Refractive index medium:1.33
+frame number:10000
+frame reconstructed:10000
+Reconstruction aborted:false
+

@@ -1,0 +1,10 @@
+Reconstruction
+Calibration path:Z:\Andrey\ZOLA_package_26feb2018\TEST_DATA\Mitochondria-tetrapod\calibration\ZOLA_calibration_PSF.csv
+Localization path:Z:\Andrey\ZOLA_package_26feb2018\TEST_DATA\Mitochondria-tetrapod\data\ZOLA_localization_table.csv
+Reconstruction time:4.207066666666667 min
+distance focus to coverslip:0.5
+Refractive index medium:1.33
+frame number:10000
+frame reconstructed:10000
+Reconstruction aborted:false
+
