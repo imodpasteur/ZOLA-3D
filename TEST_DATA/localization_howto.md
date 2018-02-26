@@ -35,5 +35,6 @@ Now our table is filtered.
 
 ![mito ZY projection](https://github.com/imodpasteur/ZOLA-3D/blob/master/TEST_DATA/img/ZOLA_loc_mito_reslice.gif)
 
+7. Don't forget to save updated localization table `ZOLA -> Import/Export -> Export table`
 
 
