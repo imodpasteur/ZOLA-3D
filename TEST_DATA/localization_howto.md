@@ -1,11 +1,11 @@
 # Running ZOLA PSF localization on test dataset
-We provide instructions to run localization on the test data in the package.
+We provide instructions on how to run 3D localizations on the test data from the ZOLA package.
 
 ## Test data
 
-Located in the TEST_DATA directory of the project.
+Single-molecule localilization data can be found in the TEST_DATA directory of the project.
 
-Mitochondria with corresponding calibration stack is imaged using tetrapod PSF.
+Mitochondrial protein TOM22 immunolabelled with Alexa 647 with corresponding bead calibration stack is imaged using tetrapod PSF.
 
 ## Calibration
 
@@ -16,7 +16,7 @@ Mitochondria with corresponding calibration stack is imaged using tetrapod PSF.
 
 3. You will soon see automatically updated color-coded histogram.
 
-![automatic histogram](https://github.com/imodpasteur/ZOLA-3D/blob/master/TEST_DATA/img/ZOLA_cal_bead_output.gif)
+![automatic histogram](https://github.com/imodpasteur/ZOLA-3D/blob/master/TEST_DATA/img/ZOLA_loc_mito_2D_hist20nm.png)
 
 4. Once localization is done (elapsed time ~4 minutes on our Tesla GPU), you can filter the localization table. 
 Select `ZOLA -> Filtering`.
