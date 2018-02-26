@@ -1,11 +1,11 @@
-# Running ZOLa on test dataset
-We provide instructions to run calibration and localization on the test data in the package.
+# Running ZOLA PSF calibration on test dataset
+We provide instructions to run calibration on the test data in the package.
 
 ## Test data
 
 Located in the TEST_DATA directory of the project.
 
-Mitochondria and microtubules are imaged using tetrapod PSF.
+Mitochondria with corresponding calibration stack is imaged using tetrapod PSF.
 
 ## Calibration
 
