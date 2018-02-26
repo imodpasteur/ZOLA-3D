@@ -16,7 +16,7 @@ Mitochondria with corresponding calibration stack is imaged using tetrapod PSF.
 
 3. You will soon see automatically updated color-coded histogram.
 
-![automatic histogram](https://github.com/imodpasteur/ZOLA-3D/blob/master/TEST_DATA/img/ZOLA_cal_bead_output.gif)
+![automatic histogram](https://github.com/imodpasteur/ZOLA-3D/blob/master/TEST_DATA/img/ZOLA_loc_mito_2D_hist20nm.png)
 
 4. Once localization is done (elapsed time ~4 minutes on our Tesla GPU), you can filter the localization table. 
 Select `ZOLA -> Filtering`.
