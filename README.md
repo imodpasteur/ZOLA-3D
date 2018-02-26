@@ -49,7 +49,9 @@ Open your stack with single molecule blinking images, select region of interest 
 
 | ![input](https://github.com/imodpasteur/ZOLA-3D/blob/master/images/frames20130%2B50.gif)        | ![output](https://github.com/imodpasteur/ZOLA-3D/blob/master/images/anim-slow.gif) | 
 | ------------- |:-------------:|
-| *raw image sequence with blinking tetrapod PSFs*| *3D scatter-plot reconstruction* |
+| *raw image sequence with blinking tetrapod PSFs*| *3D scatter-plot reconstruction (Visp rendering)* |
+
+For detailed instructions please follow step by step guide on how to run [PSF calibration](ZOLA-3D/TEST_DATA/calibration_howto.md) and [localization](ZOLA-3D/TEST_DATA/localization_howto.md)
 
 
 
