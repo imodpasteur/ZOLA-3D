@@ -1,9 +1,9 @@
 # Running ZOLA PSF localization on test dataset
-We provide instructions to run localization on the test data in the package.
+We provide instructions on how to run 3D localizations on the test data from the ZOLA package.
 
 ## Test data
 
-Located in the TEST_DATA directory of the project.
+Single-molecule localilization data can be found in the TEST_DATA directory of the project.
 
 Mitochondrial protein TOM22 immunolabelled with Alexa 647 with corresponding bead calibration stack is imaged using tetrapod PSF.
 
