@@ -32,7 +32,7 @@ In any case, only ZOLA*.jar is needed to be installed in the plugins folder for 
 
 ## Usage
 
-The full manual and test data can be found [HERE](https://www.dropbox.com/sh/5h4kz7ruuv3iw0b/AAD4JSNIT-L17mVr1EqMi2WRa?dl=0)
+The full manual and test data can be found [HERE](https://github.com/imodpasteur/ZOLA-3D/tree/master/TEST_DATA)
 
 1. For optimal performance, your images should be in photon counts, as usually the case with recent EMCCD cameras. images are not in photon counts, you can convert them as explained in [full manual](https://www.dropbox.com/sh/5h4kz7ruuv3iw0b/AAD4JSNIT-L17mVr1EqMi2WRa?dl=0) .
 
