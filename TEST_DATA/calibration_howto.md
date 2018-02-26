@@ -20,6 +20,6 @@ If you want to to open save file dialog, double click on the path below. Click O
 
 ![calibration dialog](https://github.com/imodpasteur/ZOLA-3D/blob/master/TEST_DATA/img/ZOLA_cal_dialog_screenshot.png)
 
-4. Check the resulting stack with data/model comparison.
+4. At the end of calibration process you will see the combined stack with data/model comparison.
 
 ![calibration output](https://github.com/imodpasteur/ZOLA-3D/blob/master/TEST_DATA/img/ZOLA_cal_bead_output.gif)
