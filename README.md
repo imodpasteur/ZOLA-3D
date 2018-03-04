@@ -38,7 +38,7 @@ The full manual and test data can be found [HERE](https://github.com/imodpasteur
 
 2. Calibrate your PSF from a z-stack of fluorescent beads using Zernike polynomials (this is ideal for PSFs shaped using a cylindrical lens or deformable mirror). We recommend using z-steps of 50 or 100 nm.
 Open your stack, select central position of one or few beads with the Fiji `Point selector tool` and run `ZOLA -> Calibration: PSF modeling`
-Choose 15-21 Zernike modes for astigmatic PSF, and 28-45 for Saddle-Point or Tetrapod PSF.
+Choose 28-45 Zernike modes.
 
 3. Now that the PSF is calibrated, you can use ZOLA for 3D single molecule localization based super-resolution microscopy. 
 Open your stack with single molecule blinking images, select region of interest and run `ZOLA -> Localization`
