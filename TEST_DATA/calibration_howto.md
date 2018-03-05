@@ -22,6 +22,8 @@ Mitochondria with corresponding calibration stack is imaged using tetrapod PSF.
 
 Pixel size and z steps should be adjusted, otherwise default values of fitting parameters should be fine.
 
+Choosing the crop size try to avoid multiple beads per crop.
+
 If you want to open save file dialog, double click on the path below. Click OK to start calibration.
 
 ![calibration dialog](https://github.com/imodpasteur/ZOLA-3D/blob/master/TEST_DATA/img/ZOLA_cal_dialog_screenshot.png)
