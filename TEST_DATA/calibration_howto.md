@@ -14,11 +14,11 @@ Mitochondria with corresponding calibration stack is imaged using tetrapod PSF.
 
 ![calibration bead selection](https://github.com/imodpasteur/ZOLA-3D/blob/master/TEST_DATA/img/ZOLA_cal_bead_screenshot.png)
 
-3. Setup the camera first. Select `plugins` -> `ZOLA` -> `Camera setup` -> `EMCCD`. Data was acquired in photon counts, so we don't need to enter camera sensitivity values.
+3. Setup the camera first. Select `Plugins` -> `ZOLA` -> `Camera setup` -> `EMCCD`. Data was acquired in photon counts, so we don't need to enter camera sensitivity values.
 
 ![EMCCD setup dialog](https://github.com/imodpasteur/ZOLA-3D/blob/master/TEST_DATA/img/ZOLA_camera_setup_EMCCD.png)
 
-4. Select `plugins` -> `ZOLA` -> `Calibration: PSF modeling` and enter optical and computational parameters.
+4. Select `Plugins` -> `ZOLA` -> `Calibration: PSF modeling` and enter optical and computational parameters.
 
 Pixel size and z steps should be adjusted, otherwise default values of fitting parameters should be fine.
 
