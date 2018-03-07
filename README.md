@@ -5,7 +5,7 @@ Here we provide a CUDA-enabled 3D localization plugin for ImageJ/Fiji software.
 ## Requirements
 
 
-To enable fast processing on GPU, Nvidia CUDA must be installed and included in the path. CUDA 8 is  compatible with our tools, but only with Windows and Linux OS.
+To enable fast processing on GPU, Nvidia CUDA must be installed and included in the path. CUDA 8 is  compatible with our tools.
 Check your version by executing `nvcc --version` in the terminal.
 
 Follow instructions on https://developer.nvidia.com/cuda-toolkit to install CUDA
