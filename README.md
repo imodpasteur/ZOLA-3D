@@ -2,6 +2,8 @@
 ZOLA-3D (Zernike Optimized Localization Approach) is a full software package to reconstruct 3D single molecule localization images for a wide range of point spread functions.
 Here we provide a CUDA-enabled 3D localization plugin for ImageJ/Fiji software. 
 
+Please, open the  `User manual - HOW TO USE ZOLA.pdf` file for an extended explanation of how to use ZOLA.
+
 ## Requirements
 
 
@@ -10,7 +12,9 @@ Check your version by executing `nvcc --version` in the terminal.
 
 Follow instructions on https://developer.nvidia.com/cuda-toolkit to install CUDA
 
-The plugin was tested on Ubuntu, Windows and Mac with Cuda 8. 
+The plugin was tested on Ubuntu, Windows and Mac with Cuda 8.
+
+
 
 ## Installation
 
@@ -28,7 +32,7 @@ The easiest way to install ZOLA-3D is to use the Fiji update system.
 
 If you prefer to use ImageJ instead, you can download plugin and corresponding libraries from here.
 
-In any case, only ZOLA*.jar is needed to be installed in the plugins folder for CPU computations. Hovewer, lib/* and jar/* folders containing jcuda bindings should be copied into Fiji/ImageJ folder in order to benefit from GPU acceleration. 
+In any case, only ZOLA_*.jar is needed to be installed in the plugins folder for CPU computations. Hovewer, lib/* and jar/* folders containing jcuda bindings should be copied into Fiji/ImageJ folder in order to benefit from GPU acceleration. 
 
 ## Usage
 
