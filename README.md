@@ -32,7 +32,7 @@ The easiest way to install ZOLA-3D is to use the Fiji update system.
 
 If you prefer to use ImageJ instead, you can download `ZOLA_-0.1.X-SNAPSHOT.jar` plugin and corresponding libraries from here.
 
-In any case, only `ZOLA_-0.1.X-SNAPSHOT.jar` is needed to be installed in the plugins folder for CPU computations. Hovewer, `lib/*` and `jar/*` folders containing jcuda bindings should be copied into Fiji/ImageJ folder in order to benefit from GPU acceleration. 
+If you want to benefit from GPU acceleration, `lib/*` and `jar/*` folders containing jcuda bindings should be copied into Fiji/ImageJ folder. 
 
 ## Usage
 
