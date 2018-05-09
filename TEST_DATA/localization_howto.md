@@ -3,7 +3,7 @@ We provide instructions on how to run 3D localizations on the test data from the
 
 ## Test data
 
-Single-molecule localization data can be found in the TEST_DATA directory of the project. On the data we provide, localization requires around 10 minutes.
+Single-molecule localization data can be found in the TEST_DATA directory of the project.
 
 Mitochondrial protein TOM22 immunolabelled with Alexa 647 with corresponding bead calibration stack is imaged using tetrapod PSF.
 
