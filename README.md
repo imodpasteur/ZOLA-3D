@@ -2,7 +2,7 @@
 ZOLA-3D (Zernike Optimized Localization Approach) is a full software package to reconstruct 3D single molecule localization images for a wide range of point spread functions.
 Here we provide a CUDA-enabled 3D localization plugin for ImageJ/Fiji software. 
 
-Please, open the  `User manual - HOW TO USE ZOLA.pdf` file for an extended explanation of how to use ZOLA.
+A brief introduction of ZOLA-3D is given here. Please, open the [User manual - HOW TO USE ZOLA.pdf](https://github.com/imodpasteur/ZOLA-3D/blob/master/User%20manual%20-%20HOW%20TO%20USE%20ZOLA.pdf) file for an extended explanation of how to use ZOLA.
 
 ## Requirements
 
@@ -18,7 +18,7 @@ The plugin was tested on Ubuntu, Windows and Mac with Cuda 8.
 
 ## Installation
 
-The easiest way to install ZOLA-3D is to use the Fiji update system.
+The easiest way to install ZOLA-3D is to use the Fiji update system. The installation requires 15 minutes. If you plan to benefit from GPU acceleration, plugin installation requires 15 minutes more.
 
 1. Launch Fiji
 2. Select `Help` -> `Update`
@@ -38,14 +38,14 @@ If you want to benefit from GPU acceleration, `lib/*` and `jar/*` folders contai
 
 The full manual and test data can be found [HERE](https://github.com/imodpasteur/ZOLA-3D/tree/master/TEST_DATA)
 
-1. For optimal performance, your images should be in photon counts, as usually the case with recent EMCCD cameras. images are not in photon counts, you can convert them as explained in [full manual](https://github.com/imodpasteur/ZOLA-3D/blob/master/User%20manual%20-%20HOW%20TO%20USE%20ZOLA.pdf) .
+1. For optimal performance, your images should be in photon counts, as usually the case with recent EMCCD cameras. images are not in photon counts, you can convert them as explained in [User manual - HOW TO USE ZOLA.pdf](https://github.com/imodpasteur/ZOLA-3D/blob/master/User%20manual%20-%20HOW%20TO%20USE%20ZOLA.pdf) .
 
 2. Calibrate your PSF from a z-stack of fluorescent beads using Zernike polynomials (this is ideal for PSFs shaped using a cylindrical lens or deformable mirror). We recommend using z-steps of 50 or 100 nm.
 Open your stack, select central position of one or few beads with the Fiji `Point selector tool` and run `ZOLA -> Calibration: PSF modeling`
 Choose 28-45 Zernike modes.
 
 3. Now that the PSF is calibrated, you can use ZOLA for 3D single molecule localization based super-resolution microscopy. 
-Open your stack with single molecule blinking images, select region of interest and run `ZOLA -> Localization`
+Open your stack with single molecule blinking images, select region of interest and run `ZOLA -> Localization`. 
 
 4. The single molecule Localization table is saved in csv, Thunderstorm format. You can correct the drift in 3D and render 3D color-stack using ZOLA->Drift correction->3D Drift correction  or any other software. 
 
