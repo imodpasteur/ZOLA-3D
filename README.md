@@ -38,7 +38,7 @@ If you want to benefit from GPU acceleration, `lib/*` and `jar/*` folders contai
 
 The full manual and test data can be found [HERE](https://github.com/imodpasteur/ZOLA-3D/tree/master/TEST_DATA)
 
-1. For optimal performance, your images should be in photon counts, as usually the case with recent EMCCD cameras. images are not in photon counts, you can convert them as explained in [full manual](https://www.dropbox.com/sh/5h4kz7ruuv3iw0b/AAD4JSNIT-L17mVr1EqMi2WRa?dl=0) .
+1. For optimal performance, your images should be in photon counts, as usually the case with recent EMCCD cameras. images are not in photon counts, you can convert them as explained in [full manual](https://github.com/imodpasteur/ZOLA-3D/blob/master/User%20manual%20-%20HOW%20TO%20USE%20ZOLA.pdf) .
 
 2. Calibrate your PSF from a z-stack of fluorescent beads using Zernike polynomials (this is ideal for PSFs shaped using a cylindrical lens or deformable mirror). We recommend using z-steps of 50 or 100 nm.
 Open your stack, select central position of one or few beads with the Fiji `Point selector tool` and run `ZOLA -> Calibration: PSF modeling`
