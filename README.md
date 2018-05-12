@@ -50,7 +50,7 @@ Open your stack with single molecule blinking images, select region of interest 
 4. The single molecule Localization table is saved in csv, Thunderstorm format. You can correct the drift in 3D and render 3D color-stack using ZOLA->Drift correction->3D Drift correction  or any other software. 
 
 ### Example of 3D reconstruction of immunolabeled mitochondrial protein TOM22:
-(Image reconstructed in 2h using Tesla K40 GPU)
+Image reconstructed in 2h using Tesla K40 GPU:
 
 | ![input](https://github.com/imodpasteur/ZOLA-3D/blob/master/images/frames20130%2B50.gif)        | ![output](https://github.com/imodpasteur/ZOLA-3D/blob/master/images/anim-slow.gif) | 
 | ------------- |:-------------:|
