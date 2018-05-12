@@ -18,7 +18,7 @@ The plugin was tested on Ubuntu, Windows and Mac with Cuda 8.
 
 ## Installation
 
-The easiest way to install ZOLA-3D is to use the Fiji update system. The installation requires 15 minutes. If you plan to benefit from GPU acceleration, plugin installation requires 15 minutes more.
+The easiest way to install ZOLA-3D is to use the Fiji update system. The installation requires roughly 15 minutes. If you plan to benefit from GPU acceleration, plugin installation requires 15 minutes more.
 
 1. Launch Fiji
 2. Select `Help` -> `Update`
