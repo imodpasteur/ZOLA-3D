@@ -51,6 +51,7 @@ Open your stack with single molecule blinking images, select region of interest 
 
 ### Example of 3D reconstruction of immunolabeled mitochondrial protein TOM22:
 (Image reconstructed in 2h using Tesla K40 GPU)
+
 | ![input](https://github.com/imodpasteur/ZOLA-3D/blob/master/images/frames20130%2B50.gif)        | ![output](https://github.com/imodpasteur/ZOLA-3D/blob/master/images/anim-slow.gif) | 
 | ------------- |:-------------:|
 | *raw image sequence with blinking tetrapod PSFs*| *3D scatter-plot reconstruction (Visp rendering)* |
