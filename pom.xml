@@ -1,0 +1,151 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<project xmlns="http://maven.apache.org/POM/4.0.0"
+	xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
+	xsi:schemaLocation="http://maven.apache.org/POM/4.0.0
+		http://maven.apache.org/xsd/maven-4.0.0.xsd">
+	<modelVersion>4.0.0</modelVersion>
+
+	<parent>
+		<groupId>org.scijava</groupId>
+		<artifactId>pom-scijava</artifactId>
+		<version>14.0.0</version>
+		<relativePath />
+	</parent>
+
+	<groupId>org.pasteur</groupId>
+	<artifactId>ZOLA_</artifactId>
+	<version>0.1.9-SNAPSHOT</version>
+
+	<name>ZOLA</name>
+	<description>An ImageJ plugin for 3D localization microscopy.</description>
+	<url>https://research.pasteur.fr/en/team/imaging-and-modeling/</url>
+	<inceptionYear>2017</inceptionYear>
+	<organization>
+		<name>Institut Pasteur</name>
+		<url>http://www.pasteur.fr/</url>
+	</organization>
+	<licenses>
+		<license>
+			<name>GPLV3</name>
+			<distribution>repo</distribution>
+		</license>
+	</licenses>
+
+	<developers>
+		<developer>
+			<id>bl</id>
+			<name>Benoit Lelandais</name>
+		</developer>
+	</developers>
+	<contributors>
+		<contributor>
+			<name>Andrey Aristov</name>
+			<properties><id>aa</id></properties>
+		</contributor>
+	</contributors>
+
+	<mailingLists>
+		<mailingList>
+			<name>ImageJ Forum</name>
+			<archive>http://forum.imagej.net/</archive>
+		</mailingList>
+	</mailingLists>
+
+	<scm>
+		<developerConnection></developerConnection>
+		<tag>HEAD</tag>
+	</scm>
+	<issueManagement>
+		<system>GitHub Issues</system>
+		<url></url>
+	</issueManagement>
+	<ciManagement>
+		<system>None</system>
+	</ciManagement>
+
+	<properties>
+		<package-name>org.pasteur.imagej</package-name>
+		<main-class>org.pasteur.imagej.ZOLA_</main-class>
+		<license.licenseName>GPLV3</license.licenseName>
+		<license.copyrightOwners>Institut Pasteur, Paris</license.copyrightOwners>
+	</properties>
+
+	<dependencies>
+		<dependency>
+			<groupId>net.imagej</groupId>
+			<artifactId>ij</artifactId>
+		</dependency>
+                <dependency>
+                    <groupId>org.jcuda</groupId>
+                    <artifactId>jcuda</artifactId>
+                    <version>0.8.0</version>
+                </dependency>
+                <dependency>
+                        <groupId>org.jcuda</groupId>
+                        <artifactId>jcublas</artifactId>
+                        <version>0.8.0</version>
+                </dependency>
+                <dependency>
+                        <groupId>org.jcuda</groupId>
+                        <artifactId>jcufft</artifactId>
+                        <version>0.8.0</version>
+                </dependency>
+                <dependency>
+                        <groupId>org.jcuda</groupId>
+                        <artifactId>jcusparse</artifactId>
+                        <version>0.8.0</version>
+                </dependency>
+                <dependency>
+                        <groupId>org.jcuda</groupId>
+                        <artifactId>jcusolver</artifactId>
+                        <version>0.8.0</version>
+                </dependency>
+                <dependency>
+                        <groupId>org.jcuda</groupId>
+                        <artifactId>jcurand</artifactId>
+                        <version>0.8.0</version>
+                </dependency>
+                <dependency>
+                        <groupId>org.jcuda</groupId>
+                        <artifactId>jnvgraph</artifactId>
+                        <version>0.8.0</version>
+                </dependency>
+                <dependency>
+                        <groupId>org.jcuda</groupId>
+                        <artifactId>jcudnn</artifactId>
+                        <version>0.8.0</version>
+                </dependency>
+	</dependencies>
+        
+        
+    <build>
+    <plugins>
+      <plugin>
+        <artifactId>maven-resources-plugin</artifactId>
+        <version>3.0.2</version>
+        <executions>
+          <execution>
+            <id>copy-resources</id>
+            <!-- here the phase you need -->
+            <phase>validate</phase>
+            <goals>
+              <goal>copy-resources</goal>
+            </goals>
+            <configuration>
+              <outputDirectory>${basedir}/target/classes/kernels</outputDirectory>
+              <resources>          
+                <resource>
+                  <directory>src/main/ressources/kernels</directory>
+                  <filtering>true</filtering>
+                </resource>
+              </resources>              
+            </configuration>            
+          </execution>
+        </executions>
+      </plugin>
+    </plugins>
+  </build>
+  
+  
+  
+</project>
