@@ -4,7 +4,7 @@ Here we provide a CUDA-enabled 3D localization plugin for ImageJ/Fiji software.
 
 A brief introduction of ZOLA-3D is given here. Please, open the [User manual - HOW TO USE ZOLA.pdf](https://github.com/imodpasteur/ZOLA-3D/blob/master/User%20manual%20-%20HOW%20TO%20USE%20ZOLA.pdf) file for an extended explanation of how to use ZOLA.
 
-Example of reconstructed images can be downloaded [HERE](https://github.com/imodpasteur/ZOLA-3D/releases/download/v0.1.9/DATA.zip).
+Example of reconstructed images can be downloaded [HERE](https://github.com/imodpasteur/ZOLA-3D/releases/download/v0.1.9/DATA.zip). Test data can be downloaded [HERE](https://github.com/imodpasteur/ZOLA-3D/releases/download/v0.1.9/TEST-DATA.zip).
 
 ## Licence
 
