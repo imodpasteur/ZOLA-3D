@@ -3,8 +3,9 @@
  * To change this template file, choose Tools | Templates
  * and open the template in the editor.
  */
-package org.pasteur.imagej.process;
+package org.pasteur.imagej.process.gpu;
 
+import org.pasteur.imagej.process.PhaseParameters;
 import org.pasteur.imagej.cuda.*;
 import org.pasteur.imagej.utils.ImageShow;
 import jcuda.*;
@@ -33,7 +34,7 @@ import static jcuda.jcublas.cublasPointerMode.CUBLAS_POINTER_MODE_DEVICE;
  *
  * @author benoit
  */
-public class PSFphaseJCudaFastDouble {
+public class PSF_double_ {
     
     
     cufftHandle plan;
@@ -145,19 +146,19 @@ public class PSFphaseJCudaFastDouble {
     double [][] res2D ;
     double [] res1D ;
     double [] res;
-    GaussianKernel gk;  
-    PhaseRetrievalParametersDouble param;
+    GaussianKernel_ gk;  
+    PhaseParameters param;
     
     int cudaResult;
     int sizeoutput1;
     int sizeoutput2;
-    public PSFphaseJCudaFastDouble(PhaseRetrievalParametersDouble param){
+    public PSF_double_(PhaseParameters param){
         sizeoutput1=param.sizeoutput;
         sizeoutput2=param.sizeoutput*2;
         if (sizeoutput2>param.size){
             sizeoutput2=param.size;
         }
-        gk = new GaussianKernel(sizeoutput2,param.sizeoutput,param.sigmaGaussianKernel,param.stream);
+        gk = new GaussianKernel_(sizeoutput2,param.sizeoutput,param.sigmaGaussianKernel,param.stream);
         
         this.param=param;
     
@@ -849,7 +850,7 @@ public class PSFphaseJCudaFastDouble {
         res = new double [sizeoutput2*sizeoutput2];
         gk.free();
         
-        gk = new GaussianKernel(sizeoutput2,sizeoutput,param.sigmaGaussianKernel,param.stream);
+        gk = new GaussianKernel_(sizeoutput2,sizeoutput,param.sigmaGaussianKernel,param.stream);
         //gk = new GaussianKernel(sizeoutput2,1,param.stream);
         
         matrix=new double[sizeoutput2*sizeoutput2];

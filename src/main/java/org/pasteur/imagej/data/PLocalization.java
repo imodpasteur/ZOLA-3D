@@ -17,7 +17,12 @@ import java.util.ArrayList;
 
 public class PLocalization{
     
+    int precision=1000;
+    
     public int frame= -1;
+    
+    public ArrayList<Integer> frameOcc=null;
+    
     //public int frameEnd=-1;//because a particle can be present on multiple frames
     public int id=-1;
     public double X=-1;
@@ -38,7 +43,7 @@ public class PLocalization{
     public double BG=-1;
     public int occurrence=1;
     
-    public ArrayList<String> otherVariableName=new ArrayList<String>();
+    public static ArrayList<String> otherVariableName;
     public double [] otherVariable=null;
     
     public boolean exists=false;
@@ -50,16 +55,29 @@ public class PLocalization{
     
     public PLocalization(int id,int frame,double x,double y, double z, double I,double BG,double score,double crlbX,double crlbY,double crlbZ){
         this.frame= frame;
-        this.X=Math.floor(100* (x))/100;
-        this.Y=Math.floor(100* (y))/100;
-        this.Z=Math.floor(100* (z))/100;
+        this.X=Math.floor(precision* (x))/precision;
+        this.Y=Math.floor(precision* (y))/precision;
+        this.Z=Math.floor(precision* (z))/precision;
         this.id=id;
-        this.I=Math.floor(100* (I))/100;
-        this.BG=Math.floor(100* (BG))/100;
-        this.score=Math.floor(100* (score))/100;
-        this.crlb_X=Math.floor(100* (crlbX))/100;
-        this.crlb_Y=Math.floor(100* (crlbY))/100;
-        this.crlb_Z=Math.floor(100* (crlbZ))/100;
+        this.I=Math.floor(precision* (I))/precision;
+        this.BG=Math.floor(precision* (BG))/precision;
+        this.score=Math.floor(precision* (score))/precision;
+        this.crlb_X=Math.floor(precision* (crlbX))/precision;
+        this.crlb_Y=Math.floor(precision* (crlbY))/precision;
+        this.crlb_Z=Math.floor(precision* (crlbZ))/precision;
+        exists=true;
+    }
+    
+    
+    public PLocalization(int id,int frame,double x,double y, double z, double I,double BG,double score){
+        this.frame= frame;
+        this.X=Math.floor(precision* (x))/precision;
+        this.Y=Math.floor(precision* (y))/precision;
+        this.Z=Math.floor(precision* (z))/precision;
+        this.id=id;
+        this.I=Math.floor(precision* (I))/precision;
+        this.BG=Math.floor(precision* (BG))/precision;
+        this.score=Math.floor(precision* (score))/precision;
         exists=true;
     }
     
@@ -68,29 +86,29 @@ public class PLocalization{
     
     public PLocalization(int frame,double x,double y, double z){
         this.frame= frame;
-        this.X=Math.floor(100* (x))/100;
-        this.Y=Math.floor(100* (y))/100;
-        this.Z=Math.floor(100* (z))/100;
+        this.X=Math.floor(precision* (x))/precision;
+        this.Y=Math.floor(precision* (y))/precision;
+        this.Z=Math.floor(precision* (z))/precision;
         exists=true;
     }
     
     
     public PLocalization(int id,int frame,double x,double y, double z, double I,double BG,double score,double crlbX,double crlbY,double crlbZ,double driftX,double driftY,double driftZ){
         this.frame= frame;
-        this.X=Math.floor(100* (x))/100;
-        this.Y=Math.floor(100* (y))/100;
-        this.Z=Math.floor(100* (z))/100;
+        this.X=Math.floor(precision* (x))/precision;
+        this.Y=Math.floor(precision* (y))/precision;
+        this.Z=Math.floor(precision* (z))/precision;
         this.id=id;
-        this.I=Math.floor(100* (I))/100;
-        this.BG=Math.floor(100* (BG))/100;
-        this.score=Math.floor(100* (score))/100;
-        this.crlb_X=Math.floor(100* (crlbX))/100;
-        this.crlb_Y=Math.floor(100* (crlbY))/100;
-        this.crlb_Z=Math.floor(100* (crlbZ))/100;
+        this.I=Math.floor(precision* (I))/precision;
+        this.BG=Math.floor(precision* (BG))/precision;
+        this.score=Math.floor(precision* (score))/precision;
+        this.crlb_X=Math.floor(precision* (crlbX))/precision;
+        this.crlb_Y=Math.floor(precision* (crlbY))/precision;
+        this.crlb_Z=Math.floor(precision* (crlbZ))/precision;
         
-        this.drift_X=Math.floor(100* (driftX))/100;
-        this.drift_Y=Math.floor(100* (driftY))/100;
-        this.drift_Z=Math.floor(100* (driftZ))/100;
+        this.drift_X=Math.floor(precision* (driftX))/precision;
+        this.drift_Y=Math.floor(precision* (driftY))/precision;
+        this.drift_Z=Math.floor(precision* (driftZ))/precision;
         exists=true;
     }
     
@@ -100,29 +118,31 @@ public class PLocalization{
     
     public PLocalization(int id,int frame,double x,double y, double z, double I,double BG,double score,double crlbX,double crlbY,double crlbZ,double driftX,double driftY,double driftZ,int occ){
         this.frame= frame;
-        this.X=Math.floor(100* (x))/100;
-        this.Y=Math.floor(100* (y))/100;
-        this.Z=Math.floor(100* (z))/100;
+        this.X=Math.floor(precision* (x))/precision;
+        this.Y=Math.floor(precision* (y))/precision;
+        this.Z=Math.floor(precision* (z))/precision;
         this.id=id;
-        this.I=Math.floor(100* (I))/100;
-        this.BG=Math.floor(100* (BG))/100;
-        this.score=Math.floor(100* (score))/100;
-        this.crlb_X=Math.floor(100* (crlbX))/100;
-        this.crlb_Y=Math.floor(100* (crlbY))/100;
-        this.crlb_Z=Math.floor(100* (crlbZ))/100;
+        this.I=Math.floor(precision* (I))/precision;
+        this.BG=Math.floor(precision* (BG))/precision;
+        this.score=Math.floor(precision* (score))/precision;
+        this.crlb_X=Math.floor(precision* (crlbX))/precision;
+        this.crlb_Y=Math.floor(precision* (crlbY))/precision;
+        this.crlb_Z=Math.floor(precision* (crlbZ))/precision;
         
-        this.drift_X=Math.floor(100* (driftX))/100;
-        this.drift_Y=Math.floor(100* (driftY))/100;
-        this.drift_Z=Math.floor(100* (driftZ))/100;
+        this.drift_X=Math.floor(precision* (driftX))/precision;
+        this.drift_Y=Math.floor(precision* (driftY))/precision;
+        this.drift_Z=Math.floor(precision* (driftZ))/precision;
         this.occurrence=occ;
         exists=true;
     }
     
     
     public void addListOfVariables(ArrayList<String> al){
-        for (int i=0;i<al.size();i++){
+        this.otherVariableName=al;
+        /*for (int i=0;i<al.size();i++){
             this.otherVariableName.add(al.get(i));
-        }
+            
+        }*/
         this.otherVariable=new double[al.size()];
     }
     
@@ -190,8 +210,10 @@ public class PLocalization{
     public String toString(){
         
         String s=""+id+getLabel_regex()+frame+getLabel_regex()+X+getLabel_regex()+Y+getLabel_regex()+Z+getLabel_regex()+I+getLabel_regex()+BG+getLabel_regex()+(score)+getLabel_regex()+(crlb_X)+getLabel_regex()+crlb_Y+getLabel_regex()+crlb_Z+getLabel_regex()+(drift_X)+getLabel_regex()+drift_Y+getLabel_regex()+drift_Z+getLabel_regex()+occurrence;
-        for (int i=0;i<this.otherVariableName.size();i++){
-            s+=getLabel_regex()+otherVariable[i];
+        if (otherVariableName!=null){
+            for (int i=0;i<this.otherVariableName.size();i++){
+                s+=getLabel_regex()+otherVariable[i];
+            }
         }
         return s;
         
@@ -203,31 +225,31 @@ public class PLocalization{
     
     
     public void setDrift_X(double drift_X){
-        this.drift_X=drift_X;
+        this.drift_X+=drift_X;
         this.X-=drift_X;
         
     }
     
     
     public void setDrift_Y(double drift_Y){
-        this.drift_Y=drift_Y;
+        this.drift_Y+=drift_Y;
         this.Y-=drift_Y;
     }
     
     
     public void setDrift_Z(double drift_Z){
-        this.drift_Z=drift_Z;
+        this.drift_Z+=drift_Z;
         this.Z-=drift_Z;
         
     }
     
     
     public void setDrift(double drift_X,double drift_Y,double drift_Z){
-        this.drift_X=drift_X;
+        this.drift_X+=drift_X;
         this.X-=drift_X;
-        this.drift_Y=drift_Y;
+        this.drift_Y+=drift_Y;
         this.Y-=drift_Y;
-        this.drift_Z=drift_Z;
+        this.drift_Z+=drift_Z;
         this.Z-=drift_Z;
     }
     
@@ -245,12 +267,14 @@ public class PLocalization{
     
     
     
-    public String toStringName(){
+    public static String toStringName(){
         //return "\"id\",\"frame\",\"x [nm]\",\"y [nm]\",\"z [nm]\",\"intensity [photon]\",\"background\",\"score\",\"crlbX\",\"crlbY\",\"crlbZ\",\"driftX\",\"driftY\",\"driftZ\"";
         
         String s=getLabel_id()+getLabel_regex()+getLabel_frame()+getLabel_regex()+getLabel_x()+" [nm]"+getLabel_regex()+getLabel_y()+" [nm]"+getLabel_regex()+getLabel_z()+" [nm]"+getLabel_regex()+getLabel_A()+getLabel_regex()+getLabel_B()+getLabel_regex()+getLabel_score()+getLabel_regex()+getLabel_crlbX()+getLabel_regex()+getLabel_crlbY()+getLabel_regex()+getLabel_crlbZ()+getLabel_regex()+getLabel_driftX()+getLabel_regex()+getLabel_driftY()+getLabel_regex()+getLabel_driftZ()+getLabel_regex()+getLabel_occurrence();
-        for (int i=0;i<this.otherVariableName.size();i++){
-            s+=getLabel_regex()+otherVariableName.get(i);
+        if (otherVariableName!=null){
+            for (int i=0;i<otherVariableName.size();i++){
+                s+=getLabel_regex()+otherVariableName.get(i);
+            }
         }
         return s;
         
@@ -258,7 +282,7 @@ public class PLocalization{
     
     
     
-    public String getLabel(int number){
+    public static String getLabel(int number){
         switch (number) {
             case 0:  return "id";
             case 1:  return "frame";
@@ -276,17 +300,22 @@ public class PLocalization{
             case 13: return "driftZ";
             case 14: return "occurrenceMerging";
         }
-        for (int i=0;i<this.otherVariableName.size();i++){
-            if ((number-15)==i){
-                return otherVariableName.get(i);
+        if (otherVariableName!=null){
+            for (int i=0;i<otherVariableName.size();i++){
+                if ((number-15)==i){
+                    return otherVariableName.get(i);
+                }
             }
         }
         return null;
     }
     
     
-    public int getNumberVariable(){
-        return 15+otherVariableName.size();
+    public static int getNumberVariable(){
+        if (otherVariableName!=null)
+            return 15+otherVariableName.size();
+        else
+            return 15;
     }
     
     public void setValueVariable(int variable,double value){
@@ -307,9 +336,16 @@ public class PLocalization{
             case 13: this.drift_Z=value;
             case 14: this.occurrence=(int)value;
         }
-        for (int i=0;i<this.otherVariableName.size();i++){
-            if ((variable-15)==i){
-                otherVariable[i]=value;
+        if (otherVariableName!=null){
+            for (int i=0;i<this.otherVariableName.size();i++){
+                if ((variable-15)==i){
+                    otherVariable[i]=value;
+                    if (otherVariableName.get(i).indexOf("uncertainty_xy")>=0){
+                        this.crlb_X=value;
+                        this.crlb_Y=value;
+
+                    }
+                }
             }
         }
     }
@@ -332,21 +368,31 @@ public class PLocalization{
             case 13: return this.drift_Z;
             case 14: return this.occurrence;
         }
-        for (int i=0;i<this.otherVariableName.size();i++){
-            if ((variable-15)==i){
-                return otherVariable[i];
+        if (otherVariableName!=null){
+            for (int i=0;i<this.otherVariableName.size();i++){
+                if ((variable-15)==i){
+                    return otherVariable[i];
+                }
             }
         }
         IJ.log("variable not found in PLocalization class");
         return -1;
     }
     
-    public int getNumberOtherVariable(){
-        return this.otherVariableName.size();
+    public static int getNumberOtherVariable(){
+        if (otherVariableName!=null)
+            return otherVariableName.size();
+        else
+            return 0;
     }
     
     public void setValueOtherVariable(int numberOtherVariable,double value){
+        
         otherVariable[numberOtherVariable]=value;
+        if (otherVariableName.get(numberOtherVariable).indexOf("uncertainty_xy")>=0){
+            this.crlb_X=value;
+            this.crlb_Y=value;
+        }
     }
     
     public double getValueOtherVariable(int numberOtherVariable){
@@ -360,83 +406,82 @@ public class PLocalization{
     }
     
     
-    public String getLabel_id(){
+    public static String getLabel_id(){
         return "id";
     }
     
-    public String getLabel_frame(){
+    public static String getLabel_frame(){
         return "frame";
     }
     
-    public String getLabel_x(){
+    public static String getLabel_x(){
         return "x";
     }
     
-    public String getLabel_y(){
+    public static String getLabel_y(){
         return "y";
     }
     
-    public String getLabel_z(){
+    public static String getLabel_z(){
         return "z";
     }
     
-    public String getLabel_A(){
+    public static String getLabel_A(){
         return "intensity";
     }
     
-    public String getLabel_B(){
+    public static String getLabel_B(){
         return "background";
     }
     
-    public String getLabel_score(){
+    public static String getLabel_score(){
         return "chi2";
     }
     
-    public String getLabel_crlbX(){
+    public static String getLabel_crlbX(){
         return "crlbX";
     }
     
-    public String getLabel_crlbY(){
+    public static String getLabel_crlbY(){
         return "crlbY";
     }
     
-    public String getLabel_crlbZ(){
+    public static String getLabel_crlbZ(){
         return "crlbZ";
     }
     
-    public String getLabel_driftX(){
+    public static String getLabel_driftX(){
         return "driftX";
     }
     
-    public String getLabel_driftY(){
+    public static String getLabel_driftY(){
         return "driftY";
     }
     
-    public String getLabel_driftZ(){
+    public static String getLabel_driftZ(){
         return "driftZ";
     }
     
     
-    public String getLabel_Xcam2(){
+    public static String getLabel_Xcam2(){
         return "X_cam2";
     }
     
-    public String getLabel_Ycam2(){
+    public static String getLabel_Ycam2(){
         return "Y_cam2";
     }
     
-    public String getLabel_Zcam2(){
+    public static String getLabel_Zcam2(){
         return "Z_cam2";
     }
     
-    public String getLabel_occurrence(){
+    public static String getLabel_occurrence(){
         return "occurrenceMerging";
     }
     
-    public String getLabel_regex(){
+    public static String getLabel_regex(){
         return ",";
     }
-    
     
     
     

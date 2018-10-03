@@ -46,7 +46,6 @@ public class ZOLA_ implements PlugInFilter {
 		//String pluginsDir = url.substring("file:".length(), url.length() - clazz.getName().length() - ".class".length());
 		String pluginsDir = url.substring("file:".length(), url.length() - clazz.getName().length() - ".class".length()- "/classes".length());
                 System.setProperty("plugins.dir", pluginsDir);
-
 		// start ImageJ
 		new ImageJ();
 

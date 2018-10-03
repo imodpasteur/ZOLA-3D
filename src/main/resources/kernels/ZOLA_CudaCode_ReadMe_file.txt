@@ -10,3 +10,5 @@ nvcc -gencode arch=compute_20,code=sm_20 --default-stream per-thread -ptx ZOLA_k
 
 nvcc -gencode arch=compute_30,code=sm_30 --default-stream per-thread -ptx ZOLA_kernels.cu -o ZOLA_kernels_30.ptx
 
+nvcc -gencode arch=compute_60,code=sm_60 --default-stream per-thread -ptx ZOLA_kernels.cu -o ZOLA_kernels_60.ptx
+

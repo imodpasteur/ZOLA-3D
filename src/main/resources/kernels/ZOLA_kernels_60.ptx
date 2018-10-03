@@ -7,7 +7,7 @@
 //
 
 .version 5.0
-.target sm_30
+.target sm_60
 .address_size 64
 
 	// .globl	vec_test1
@@ -48,7 +48,7 @@
 .global .align 4 .u32 barrier;
 .global .align 4 .u32 barrier2;
 .global .align 1 .b8 _ZN6thrust6system6detail10sequential3seqE[1];
-.shared .align 8 .b8 _ZN6thrust6system4cuda6detail5bulk_6detail71_GLOBAL__N__47_tmpxft_00011d4a_00000000_7_ZOLA_kernels_cpp1_ii_f6adc78b19s_on_chip_allocatorE[24];
+.shared .align 8 .b8 _ZN6thrust6system4cuda6detail5bulk_6detail71_GLOBAL__N__47_tmpxft_00011d5c_00000000_7_ZOLA_kernels_cpp1_ii_f6adc78b19s_on_chip_allocatorE[24];
 .global .align 1 .b8 _ZN6thrust6system4cuda6detail5bulk_4rootE[1];
 .global .align 1 .b8 _ZN6thrust12placeholders2_1E[1];
 .global .align 1 .b8 _ZN6thrust12placeholders2_2E[1];

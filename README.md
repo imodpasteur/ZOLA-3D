@@ -2,11 +2,9 @@
 ZOLA-3D (Zernike Optimized Localization Approach) is a full software package to reconstruct 3D single molecule localization images for a wide range of point spread functions.
 Here we provide a CUDA-enabled 3D localization plugin for ImageJ/Fiji software. 
 
-Publication: https://www.nature.com/articles/s41467-018-04709-4
-
 A brief introduction of ZOLA-3D is given here. Please, open the [User manual - HOW TO USE ZOLA.pdf](https://github.com/imodpasteur/ZOLA-3D/blob/master/User%20manual%20-%20HOW%20TO%20USE%20ZOLA.pdf) file for an extended explanation of how to use ZOLA.
 
-Example of reconstructed images can be downloaded [HERE](https://github.com/imodpasteur/ZOLA-3D/releases/download/v0.1.9/DATA.zip). Test data can be downloaded [HERE](https://github.com/imodpasteur/ZOLA-3D/releases/download/v0.1.9/TEST-DATA.zip).
+
 
 ## Licence
 
@@ -36,15 +34,15 @@ The easiest way to install ZOLA-3D is to use the Fiji update system. The install
 6. Click Apply changes
 7. Restart Fiji
 7. ZOLA should now appear in the Fiji->Plugins dropdown menu
-![Fiji update site](https://github.com/imodpasteur/ZOLA-3D/blob/master/img/fiji%20update.png)
+![Fiji update site](https://github.com/imodpasteur/ZOLA-3D/blob/master/images/fiji%20update.png)
 
-If you prefer to use ImageJ instead, you can download `ZOLA_-0.1.X-SNAPSHOT.jar` plugin in [Releases section](https://github.com/imodpasteur/ZOLA-3D/releases).
+If you prefer to use ImageJ instead, you can download `ZOLA_-0.1.X-SNAPSHOT.jar` plugin and corresponding libraries in [Releases section](https://github.com/imodpasteur/ZOLA-3D/releases).
 
 If you want to benefit from GPU acceleration, `lib/*` and `jar/*` folders containing jcuda bindings should be copied into Fiji/ImageJ folder. We provide these files in [Releases section](https://github.com/imodpasteur/ZOLA-3D/releases) for cuda 7.5, 8  and 9.
 
 ## Usage
 
-The full manual can be found [HERE](https://github.com/imodpasteur/ZOLA-3D/blob/master/User%20manual%20-%20HOW%20TO%20USE%20ZOLA.pdf) and test data can be downloaded [HERE](https://github.com/imodpasteur/ZOLA-3D/releases/download/v0.1.9/TEST-DATA.zip)
+The full manual is available can be found [HERE](https://github.com/imodpasteur/ZOLA-3D/blob/master/User%20manual%20-%20HOW%20TO%20USE%20ZOLA.pdf) and test data can be found [HERE](https://github.com/imodpasteur/ZOLA-3D/tree/master/TEST_DATA)
 
 1. For optimal performance, your images should be in photon counts, as usually the case with recent EMCCD cameras. images are not in photon counts, you can convert them as explained in [User manual - HOW TO USE ZOLA.pdf](https://github.com/imodpasteur/ZOLA-3D/blob/master/User%20manual%20-%20HOW%20TO%20USE%20ZOLA.pdf) .
 
@@ -60,11 +58,11 @@ Open your stack with single molecule blinking images, select region of interest 
 ### Example of 3D reconstruction of immunolabeled mitochondrial protein TOM22:
 Image reconstructed in 2h using Tesla K40 GPU:
 
-| ![input](https://github.com/imodpasteur/ZOLA-3D/blob/master/img/frames20130%2B50.gif)        | ![output](https://github.com/imodpasteur/ZOLA-3D/blob/master/img/anim-slow.gif) | 
+| ![input](https://github.com/imodpasteur/ZOLA-3D/blob/master/images/frames20130%2B50.gif)        | ![output](https://github.com/imodpasteur/ZOLA-3D/blob/master/images/anim-slow.gif) | 
 | ------------- |:-------------:|
 | *raw image sequence with blinking tetrapod PSFs*| *3D scatter-plot reconstruction (Visp rendering)* |
 
-For detailed instructions please follow step by step guide on how to run [PSF calibration](https://github.com/imodpasteur/ZOLA-3D/blob/master/calibration_howto.md) and [localization](https://github.com/imodpasteur/ZOLA-3D/blob/master/localization_howto.md)
+For detailed instructions please follow step by step guide on how to run [PSF calibration](https://github.com/imodpasteur/ZOLA-3D/blob/master/TEST_DATA/calibration_howto.md) and [localization](https://github.com/imodpasteur/ZOLA-3D/blob/master/TEST_DATA/localization_howto.md)
 
 
 
@@ -97,11 +95,10 @@ File -> Open Project -> select "zola_source_code" folder
 
 Then, do: 
 Run-> Build Project
-
 In zola_source_code/target folder, "ZOLA_-0.1.X-SNAPSHOT.jar" file is created. You can copy this file and paste it in your ImageJ/FIJI plugin folder to use the plugin.
 
 
-The GPU-Cuda source code is available in src/main/ressources/kernels/ folder. In this folder, check the "ZOLA_CudaCode_ReadMe_file" to compile the file (note that compilation using nvcc can be performed only with gcc-4.8 currently).
+The Cuda source code is also available in src/main/ressources/kernels/ folder. In this folder, check the "ZOLA_CudaCode_ReadMe_file" to compile the files (note that compilation using nvcc can be performed only with gcc-4.8 currently).
 
 
 

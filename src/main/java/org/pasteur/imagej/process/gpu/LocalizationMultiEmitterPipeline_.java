@@ -3,7 +3,7 @@
  * To change this template file, choose Tools | Templates
  * and open the template in the editor.
  */
-package org.pasteur.imagej.process;
+package org.pasteur.imagej.process.gpu;
 
 
 import org.pasteur.imagej.data.StackLocalization;
@@ -17,15 +17,11 @@ import ij.ImagePlus;
 import ij.ImageStack;
 import ij.gui.Roi;
 import ij.process.ImageProcessor;
-import ij.process.ColorProcessor;
 import java.io.FileWriter;
 import java.io.PrintWriter;
 import java.awt.Rectangle;
 import java.util.ArrayList;
-import java.util.Arrays;
-import java.util.Comparator;
 import jcuda.runtime.JCuda;
-import jcuda.runtime.cudaError;
 
 import java.util.concurrent.locks.ReentrantLock;
 
@@ -33,9 +29,13 @@ import java.util.concurrent.locks.ReentrantLock;
  *
  * @author benoit
  */
-public class LocalizationPipelineMany {
+public class LocalizationMultiEmitterPipeline_ {
      
     
+    double sigmaGaussian=500;//nm precision for point distribution
+    
+    
+    boolean show=false;
     
     
     String path_localization;
@@ -52,10 +52,8 @@ public class LocalizationPipelineMany {
     int totNumberImageProcessed=0;
     int totNumberImagePreDetected=0;
     ArrayList<Integer> imageInBuffer = new ArrayList<Integer>();
-    int nbThread=100;
     int nbPart=1;
     
-    PolynomialFit [] pf=null;
     int sizePatch=32;
     
     int xinit;
@@ -78,16 +76,21 @@ public class LocalizationPipelineMany {
     double [][] psfPredetection;
     
     double photonThreshold=500;
-    DataPhase [] dp;//liste because multiple camera possibly
+    DataPhase_ dp;//liste because multiple camera possibly
     
-    DataPhase [][] dpPart;
-    LocalizationMany [][] loc;
+    DataPhase_ [] dpPart;
+    LocalizationMultiEmitter_ [][] loc;
     
     int iterMaxLocalization=20;
     
     
-    double [][][] globalmask ;//entire stack
-    double [][][] globalmask2 ;//entire stack
+    double [][][] globalmask=null ;//entire stack
+    double [][][] globalmask2=null ;//entire stack
+    
+    int popsize=300;
+    int popsize4selection=20;//the best
+    int numberPSFperModel=5;
+    int parallelcomputing=2;
     
     
     double axialRange;
@@ -95,7 +98,6 @@ public class LocalizationPipelineMany {
     double maxZ;
     double stepZ;
     
-    int dpnumber;
     
     int idLoc=0;
     
@@ -105,21 +107,18 @@ public class LocalizationPipelineMany {
     double [][] scmosvargain;
     boolean isSCMOS;
     
-    public LocalizationPipelineMany(DataPhase dp,double axialRange,int photonThreshold,int nbPart,int nbThread,int sizePatch,String path_localization,double adu, double gain,double offset){
+    public LocalizationMultiEmitterPipeline_(DataPhase_ dp,double axialRange,int photonThreshold,int nbPart,int sizePatch,String path_localization,double adu, double gain,double offset,boolean show){
         
         isSCMOS=false;
         this.rescale_slope=adu/gain;
         this.rescale_intercept=-offset*adu/gain;
         
         
-        DataPhase [] ddp=new DataPhase[1];
-        ddp[0]=dp;
-        localizationPipelineMany(ddp,axialRange,photonThreshold,nbPart,nbThread,sizePatch,path_localization);
+        localizationMultiEmitterPipelineMany(dp,axialRange,photonThreshold,nbPart,sizePatch,path_localization,show);
         
     }
     
-    public LocalizationPipelineMany(DataPhase dp,double axialRange,int photonThreshold,int nbPart,int nbThread,int sizePatch,String path_localization,double [][] scmosvariance,double [][] scmosgain,double [][] scmosoffset,double [][] scmosvargain){
-        
+    public LocalizationMultiEmitterPipeline_(DataPhase_ dp,double axialRange,int photonThreshold,int nbPart,int sizePatch,String path_localization,double [][] scmosvariance,double [][] scmosgain,double [][] scmosoffset,double [][] scmosvargain,boolean show){
         
         isSCMOS=true;
         
@@ -128,9 +127,7 @@ public class LocalizationPipelineMany {
         this.scmosgain=scmosgain;
         this.scmosvargain=scmosvargain;
         
-        DataPhase [] ddp=new DataPhase[1];
-        ddp[0]=dp;
-        localizationPipelineMany(ddp,axialRange,photonThreshold,nbPart,nbThread,sizePatch,path_localization);
+        localizationMultiEmitterPipelineMany(dp,axialRange,photonThreshold,nbPart,sizePatch,path_localization,show);
         
     }
     
@@ -141,30 +138,20 @@ public class LocalizationPipelineMany {
     
     
     
-    void localizationPipelineMany(DataPhase [] dp,double axialRange,int photonThreshold,int nbPart,int nbThread,int sizePatch,String path_localization){
-        /*this.scmos=scmos;
-        if (scmos!=null){
-            isSCMOS=true;
-        }
-        else{
-            isSCMOS=false;
-        }
+    void localizationMultiEmitterPipelineMany(DataPhase_ dp,double axialRange,int photonThreshold,int nbPart,int sizePatch,String path_localization,boolean show){
         
-        this.rescale_slope=rescale_slope;
-        this.rescale_intercept=rescale_intercept;*/
         
+        this.show=show;
         this.photonThreshold=photonThreshold;
         this.sizePatch=sizePatch;
         this.axialRange=axialRange;
         this.nbPart=nbPart;
-        this.nbThread=nbThread;
         
-        this.stepZ=dp[0].param.xystep;//Same precision according to Z than for X and Y during detection
-        dpnumber=dp.length;
+        this.stepZ=dp.param.xystep;//Same precision according to Z than for X and Y during detection
+        
         this.dp=dp;
         
         
-        this.pf=new PolynomialFit[dpnumber];
         
         this.path_localization=path_localization;
         
@@ -190,34 +177,23 @@ public class LocalizationPipelineMany {
         
         IJ.showProgress(0);
         
-        if (dp.length>1){
-            IJ.log("error... dp[] should have length=1");
-        }
         
-        for (int i=0;i<dp.length;i++){
-            double posit=dp[i].param.Zfocus;
-            //if (dp[i].param.noil!=dp[i].param.nwat){removed because maybe the center is not well positioned when noil=nwat
-            
-            SearchPSFcenter spc = new SearchPSFcenter(dp[i],axialRange);
-            posit=spc.getPosition();
-            //}
-            dp[i].param.ZfocusCenter=posit;
-        }
+        
+        double posit=dp.param.Zfocus;
+        //if (dp[i].param.noil!=dp[i].param.nwat){removed because maybe the center is not well positioned when noil=nwat
+
+        SearchPSFcenter_ spc = new SearchPSFcenter_(dp,axialRange);
+        posit=spc.getPosition();
+        //}
+        dp.param.ZfocusCenter=posit;
         
         
         
         
-        this.minZ=dp[0].param.ZfocusCenter-axialRange/2.;
-        this.maxZ=dp[0].param.ZfocusCenter+axialRange/2.;
+        
+        this.minZ=dp.param.ZfocusCenter-axialRange/2.;
+        this.maxZ=dp.param.ZfocusCenter+axialRange/2.;
 //        IJ.write("\"id\",\"frame\",\"x [nm]\",\"y [nm]\",\"z [nm]\",\"intensity [photon]\",\"background\",\"likelihood\",\"residual\",\"crlbX\",\"crlbY\",\"crlbZ\",\"predetectionX\",\"predetectionY\",\"predetectionZ\"");
-        
-        
-        if (1!=dpnumber){
-            IJ.log("error : each image source has to be associated to a retrieved phase");
-            return null;
-        }
-        
-        
         
         
         
@@ -238,15 +214,6 @@ public class LocalizationPipelineMany {
         }
         
         
-        //Initialize threads parameter
-        for (int u=0;u<dp.length;u++){
-            //very important to manage the end of the program (number of frames computed in parallel decreases)
-            nbThread=Math.min((sliceNumber), nbThread);
-        }
-        
-        
-        nbPart=Math.min(sliceNumber/nbThread,nbPart);//manage wrong initialization compared to slice number
-        
         
         
         
@@ -256,6 +223,7 @@ public class LocalizationPipelineMany {
             nbImage=imp.getNFrames();
         }
         
+        parallelcomputing=Math.min(parallelcomputing, nbImage);
             
         width=imp.getWidth();
         height=imp.getHeight();
@@ -278,8 +246,7 @@ public class LocalizationPipelineMany {
             sizeImage++;
         }
         
-            
-         
+        
         
         
         
@@ -288,15 +255,14 @@ public class LocalizationPipelineMany {
         long [] memfree=new long[1];
         JCuda.cudaMemGetInfo(memfree, memtot);
         long memInit=memfree[0];
-        DataPhase [] dptmp=new DataPhase[dp.length];
-        for (int i=0;i<dp.length;i++){
-            dptmp[i]=new DataPhase(dp[i],1);
-            dptmp[i].setMany(this.nbThread,isSCMOS);
-        }
+        DataPhase_ dptmp=new DataPhase_();
+        dptmp=new DataPhase_(dp,1);
+        dptmp.setMany(popsize*parallelcomputing,numberPSFperModel,isSCMOS);
+        
         JCuda.cudaMemGetInfo(memfree, memtot);
         long memNeeded=(long)(1.5*(memInit-memfree[0]));//times 1.5 to not consume all memory
         
-        
+        IJ.log("memory Needed per stream : "+(memNeeded/6)+" MB");
         
         PreDetectionThread pdt = new PreDetectionThread(imp);
         
@@ -304,26 +270,22 @@ public class LocalizationPipelineMany {
         
         nbPart=Math.min(1+(int)(memfree[0]/memNeeded),nbPart);
         
-        dpPart = new DataPhase[nbPart][dp.length];
+        dpPart = new DataPhase_[nbPart];
         dpPart[0]=dptmp;
         for (int up=1;up<nbPart;up++){
-            for (int i=0;i<dp.length;i++){
-                dpPart[up][i]=new DataPhase(dp[i],up+1);
-                dpPart[up][i].setMany(this.nbThread,isSCMOS);
-                //IJ.log("dpart posit "+dpPart[up][i].param.ZfocusCenter);
-            }
+            dpPart[up]=new DataPhase_(dp,up+1);
+            dpPart[up].setMany(popsize*parallelcomputing,numberPSFperModel,isSCMOS);
+            //IJ.log("dpart posit "+dpPart[up][i].param.ZfocusCenter);
         }
         
         
         
-        int limit=Math.max(100, nbPart*nbThread+100);
-        pdt.setLimit(limit);
         
-        loc=new LocalizationMany[nbPart][nbThread];
+        loc=new LocalizationMultiEmitter_[nbPart][parallelcomputing];
         
         for (int up=0;up<nbPart;up++){
-            for (int u=0;u<nbThread;u++){
-                loc[up][u]=new LocalizationMany(1,dpPart[up],iterMaxLocalization,minZ-.3, maxZ+.3);
+            for (int u=0;u<parallelcomputing;u++){
+                loc[up][u]=new LocalizationMultiEmitter_(dpPart[up],iterMaxLocalization,minZ-.3, maxZ+.3,popsize,popsize4selection,numberPSFperModel);
             }
         }
         
@@ -373,9 +335,10 @@ public class LocalizationPipelineMany {
         
         nbGlobalMask=Math.min(nbGlobalMask, nbImage);
         
-        globalmask = new double [nbGlobalMask][width][height];
-        globalmask2 = new double [nbGlobalMask][width][height];
-        
+        if (show){
+            globalmask = new double [nbGlobalMask][width][height];
+            globalmask2 = new double [nbGlobalMask][width][height];
+        }
         
         
 
@@ -384,7 +347,7 @@ public class LocalizationPipelineMany {
 
 
 
-        LocalizationThread [][] lt= new LocalizationThread[nbPart][nbThread];
+        LocalizationThread [][] lt= new LocalizationThread[nbPart][parallelcomputing];
         for (int ip=0;ip<lt.length;ip++){
             for (int i=0;i<lt[0].length;i++){
                 lt[ip][i]=new LocalizationThread(ip,i);
@@ -394,7 +357,7 @@ public class LocalizationPipelineMany {
         
         //launch step by step
         for (int ip=0;ip<lt.length;ip++){
-            while(this.totNumberImagePreDetected<this.nbThread*(ip+1)){
+            while(this.totNumberImagePreDetected<parallelcomputing*(ip+1)){
                 try{Thread.sleep(1000);}catch(Exception e){}//wait 1 second
             }
             
@@ -447,19 +410,17 @@ public class LocalizationPipelineMany {
         
         IJ.log("elapsed time = "+((double)(timeEnd-timeBegin))/60000.+" min");
         IJ.log("localization number: "+this.idLoc);
-        
-        this.save(path_localization, "Reconstruction\nCalibration path:"+dp[0].param.pathcalib+"\nLocalization path:"+path_localization+"\nReconstruction time:"+(((double)(timeEnd-timeBegin))/60000.)+" min\ndistance focus to coverslip:"+dp[0].param.Zfocus+"\nRefractive index medium:"+dp[0].param.nwat+"\nframe number:"+sliceNumber+"\nframe reconstructed:"+totNumberImageProcessed+"\nReconstruction aborted:"+IJ.escapePressed()+"\nlocalization number: "+this.idLoc+"\n");
-        
+        if (path_localization.length()>3){
+            this.save(path_localization, "Reconstruction\nCalibration path:"+dp.param.pathcalib+"\nLocalization path:"+path_localization+"\nReconstruction time:"+(((double)(timeEnd-timeBegin))/60000.)+" min\ndistance focus to coverslip:"+dp.param.Zfocus+"\nRefractive index medium:"+dp.param.nwat+"\nframe number:"+sliceNumber+"\nframe reconstructed:"+totNumberImageProcessed+"\nReconstruction aborted:"+IJ.escapePressed()+"\nlocalization number: "+this.idLoc+"\npatch size: "+sizePatch+"\n");
+        }
         for (int up=0;up<nbPart;up++){
-            for (int i=0;i<dp.length;i++){
-                for (int u=0;u<100;u++){
-                    JCuda.cudaStreamSynchronize(MyCudaStream.getCudaStream_t(0));
-                    for (int upt=0;upt<nbPart;upt++){
-                        JCuda.cudaStreamSynchronize(MyCudaStream.getCudaStream_t(upt+1));
-                    }
+            for (int u=0;u<100;u++){
+                JCuda.cudaStreamSynchronize(MyCudaStream.getCudaStream_t(0));
+                for (int upt=0;upt<nbPart;upt++){
+                    JCuda.cudaStreamSynchronize(MyCudaStream.getCudaStream_t(upt+1));
                 }
-                dpPart[up][i].free();
             }
+            dpPart[up].free();
         }
         IJ.showStatus("localization finished");
         
@@ -526,7 +487,7 @@ public class LocalizationPipelineMany {
         public void plot(){
             try{
                 lockpr.lock();
-                impp=ZRendering.smartColorRendering(impp,stackloc, 20, 1,true);
+                impp=ZRendering.colorRendering(impp,stackloc, 20, 1,true);
             }
             finally{
                 lockpr.unlock();
@@ -613,13 +574,13 @@ public class LocalizationPipelineMany {
         
         int maxRead=1000;//variable to block the program if the number of opened images is too big and use too much memory
         
-        PredetectionGPU predGPU;
+        Predetection_ predGPU;
         PreDetectionThread(ImagePlus imp){
             
             this.imp=imp;
             
             //init with param of the first camera because predetection uses only one cam
-            predGPU=new PredetectionGPU(sizeImage,dp[0],minZ, maxZ, stepZ,thresholdCrossCorrelation);
+            predGPU=new Predetection_(sizeImage,dp,minZ, maxZ, stepZ,thresholdCrossCorrelation);
             psfPredetection=predGPU.getPSFNonNormalized();
             rangePredetection=predGPU.getRange();
             
@@ -791,8 +752,8 @@ public class LocalizationPipelineMany {
         
         
         boolean [][] mask ;
-        double [][] patch ;
-        double [][] patchscmos ;
+        double [] patch ;
+        double [] patchscmos ;
         
         int threadNumber;
         int partNumber;
@@ -803,9 +764,9 @@ public class LocalizationPipelineMany {
             
             mask = new boolean [width][height];
             
-            patch =new double [dp.length][sizePatch*sizePatch];
+            patch =new double [sizePatch*sizePatch];
             if (isSCMOS){
-                patchscmos=new double [dp.length][sizePatch*sizePatch];
+                patchscmos=new double [sizePatch*sizePatch];
             }
             this.psf=new double[sizePatch*sizePatch];
             
@@ -827,10 +788,9 @@ public class LocalizationPipelineMany {
                 
                 
                 if (IJ.escapePressed()){
-                    for (int u=0;u<dp.length;u++){
 
-                        dpPart[partNumber][u].modelMany.decrementNumberPSFToCompute();
-                    }
+                    dpPart[partNumber].modelMany.decrementNumberPSFToCompute(popsize);
+                    
                     stopReading=true;
                     break mainlooper;
                 }
@@ -890,8 +850,9 @@ public class LocalizationPipelineMany {
                     
                     positionPointer[0]=0;
                     int numb=0;
-                    loop:for (int n=0;n<vect.length;){
-                        
+                    loop:for (int n=0;n<1;){
+                    //loop:for (int n=0;n<vect.length;){
+                        IJ.log("WARNINGWARNINGWARNINGWARNINGWARNINGWARNINGWARNINGWARNINGWARNIN: pipeline: n=1");
                         if (IJ.escapePressed()){
                             break loop;
                         }
@@ -920,9 +881,9 @@ public class LocalizationPipelineMany {
                                             break loop1;
                                         }
                                         
-                                        patch[0][i*sizePatch+ii]=image[imageNumber][maxs[2]+j][maxs[3]+jj];
+                                        patch[i*sizePatch+ii]=image[imageNumber][maxs[2]+j][maxs[3]+jj];
                                         if (isSCMOS){
-                                            patchscmos[0][i*sizePatch+ii]=scmosvargain[maxs[2]+j][maxs[3]+jj];
+                                            patchscmos[i*sizePatch+ii]=scmosvargain[maxs[2]+j][maxs[3]+jj];
                                         }
                                         
                                     //}
@@ -951,10 +912,10 @@ public class LocalizationPipelineMany {
                             
                             
                             if (isSCMOS){
-                                AandB=getAandB(patch[0], psf,patchscmos[0], .1);//compute A and B using threshold 10 percent of max of psf for channel 0
+                                AandB=getAandB(patch, psf,patchscmos, .1);//compute A and B using threshold 10 percent of max of psf for channel 0
                             }
                             else{
-                                AandB=getAandB(patch[0], psf, .1);
+                                AandB=getAandB(patch, psf, .1);
                             }
                             
 
@@ -978,18 +939,7 @@ public class LocalizationPipelineMany {
                                 //if (AandB[0]>photonThreshold/2){
                                 if (true){
 
-                                /////////////////////////////
-//                                for (int i=0,j=-sizePatch/2;i<sizePatch;i++,j++){
-//                                    for (int ii=0,jj=-sizePatch/2;ii<sizePatch;ii++,jj++){
-//                                        //HERE ADD MODELcomparison
-//                                        if (imageNumber<nbGlobalMask){
-//                                            globalmask[imageNumber][maxs[2]+j][maxs[3]+jj]=psf[i*sizePatch+ii];
-//                                            globalmask2[imageNumber][maxs[2]+j][maxs[3]+jj]=patch[0][i*sizePatch+ii];
-//                                        }
-//                                    }
-//                                }
-                                //globalmask[imageNumber][maxs[2]+0][maxs[3]+0]=rangePredetection[maxs[1]];
-                                /////////////////////////////
+                                
 
                                     //cudaResult=JCuda.cudaStreamSynchronize(MyCudaStream.getCudaStream_t(stream));if (cudaResult != cudaError.cudaSuccess){IJ.log("ERROR synchro cuda locPipeline loc 0 "+cudaResult);}
                                     
@@ -1006,7 +956,40 @@ public class LocalizationPipelineMany {
                                     
                                     //loc[partNumber][threadNumber].init(AandB[0], AandB[1], -vect[maxsP][5], -vect[maxsP][6], rangePredetection[maxs[1]]+vect[maxsP][4]);
                                     //IJ.log("A/B "+AandB[0]+"  "+AandB[1]);
-                                    loc[partNumber][threadNumber].init(AandB[0], AandB[1], -vect[maxsP][5], -vect[maxsP][6], rangePredetection[maxs[1]]+vect[maxsP][4]);
+                                    
+                                    int nb=1000;
+                                    double [] aList=new double [nb];
+                                    double [] bList=new double [nb];
+                                    double [] xList=new double [nb];
+                                    double [] yList=new double [nb];
+                                    double [] zList=new double [nb];
+                                    
+                                    for (int nbt=0;nbt<nb;nbt++){
+                                        aList[nbt]=AandB[0]/numberPSFperModel;
+                                        bList[nbt]=AandB[1];
+                                        xList[nbt]=-vect[maxsP][5]+Math.random()*2-1;//randomly +-1µm
+                                        yList[nbt]=-vect[maxsP][6]+Math.random()*2-1;//randomly +-1µm
+                                        zList[nbt]=rangePredetection[maxs[1]]+vect[maxsP][4]+Math.random()*2-1;//randomly +-1µm
+                                        //xList[nbt]=-vect[maxsP][5];//randomly +-.5µm
+                                        //yList[nbt]=-vect[maxsP][6];//randomly +-.5µm
+                                        //zList[nbt]=rangePredetection[maxs[1]]+vect[maxsP][4];//randomly +-.5µm
+                                        
+                                    }
+                                    /*aList[0]=AandB[0]/numberPSFperModel;
+                                    bList[0]=AandB[1];
+                                    xList[0]=-vect[maxsP][5]-1;//randomly +-1µm
+                                    yList[0]=-vect[maxsP][6];//randomly +-1µm
+                                    zList[0]=rangePredetection[maxs[1]]+vect[maxsP][4];//randomly +-1µmaList[0]=AandB[0]/numberPSFperModel;
+                                    
+                                    
+                                    aList[1]=AandB[0]/numberPSFperModel;
+                                    bList[1]=AandB[1];
+                                    xList[1]=-vect[maxsP][5]+1;//randomly +-1µm
+                                    yList[1]=-vect[maxsP][6];//randomly +-1µm
+                                    zList[1]=rangePredetection[maxs[1]]+vect[maxsP][4];//randomly +-1µm*/
+                                    
+                                    //loc[partNumber][threadNumber].init(aList, bList, xList, yList, zList, .5, sigmaGaussian/1000);
+                                    loc[partNumber][threadNumber].init(aList, bList, xList, yList, zList, 0, .5);
                                     
                                     
                                     //moyOffset+=(-vect[maxsP][5]);
@@ -1027,10 +1010,9 @@ public class LocalizationPipelineMany {
                                         //loc[partNumber][threadNumber].init(AandB[0], AandB[1], 0, 0, zz);
                                         //ImageShow.imshow(loc[partNumber][threadNumber].mytest(),"mod "+zz+"   "+rangePredetection[maxs[1]]);
                                     //}
-                                    
-                                    
+                                    //IJ.log("run "+partNumber+"  "+threadNumber+" ");
                                     locate=loc[partNumber][threadNumber].localize();
-                                    
+                                    IJ.log("localization "+partNumber+"  "+threadNumber+"  ok");
                                     //else
                                     //    loc[partNumber][threadNumber].finishtest();
                                     
@@ -1044,7 +1026,7 @@ public class LocalizationPipelineMany {
                                         //dp[0].psf.imshow(sizePatch, model, "modelFound");
 
                                         double maxModelThreshold=0;
-                                        double background=loc[partNumber][threadNumber].getB()[0];
+                                        double background=loc[partNumber][threadNumber].getB(0)[0];
                                         for (int i=0,j=-sizePatch/2;i<sizePatch;i++,j++){
                                             for (int ii=0,jj=-sizePatch/2;ii<sizePatch;ii++,jj++){
                                                 if (maxModelThreshold<(model[i*sizePatch+ii]-background)){
@@ -1053,118 +1035,65 @@ public class LocalizationPipelineMany {
                                             }
                                         }
                                         maxModelThreshold*=.2;
-//                                        double std=validLocalization(patch[0],model,maxModelThreshold);
 
-                                        //IJ.log("photons "+loc[threadNumber].getA()[0][0]+" / Th:"+photonThreshold);
 
-                                        //IJ.log("photon : "+loc[partNumber][threadNumber].getA()[0][0]);
-                                        if (loc[partNumber][threadNumber].getA()[0][0]>photonThreshold){
-                                            
-                                                //only displacement < than 3 pixels from the init
-                                            if ((Math.abs(loc[partNumber][threadNumber].getX())<10*dpPart[partNumber][0].param.xystep)&&(Math.abs(loc[partNumber][threadNumber].getY())<10*dp[0].param.xystep)){
-                                                int px_pix=(int)(maxs[2]-(loc[partNumber][threadNumber].getX()/dpPart[partNumber][0].param.xystep));
-                                                int py_pix=(int)(maxs[3]-(loc[partNumber][threadNumber].getY()/dpPart[partNumber][0].param.xystep));
-                                                
-                                                
-                                                if ((px_pix>=0)&&(px_pix<mask.length)&&(py_pix>=0)&&(py_pix<mask[0].length)&&(mask[px_pix][py_pix]==false)){
-                                                    
-                                                    
-                                                    if ((loc[partNumber][threadNumber].getZ()>minZ)&&(loc[partNumber][threadNumber].getZ()<maxZ)){
-                                                        
-                                                        numb++;
-                                                        n++;
-                                                        
-                                                        //IJ.log("zz "+rangePredetection[maxs[1]]+"  "+loc[partNumber][threadNumber].getZ());
-                                                        double my_x=1000*(maxs[2]*dpPart[partNumber][0].param.xystep-loc[partNumber][threadNumber].getX());
-                                                        double my_y=1000*(maxs[3]*dpPart[partNumber][0].param.xystep-loc[partNumber][threadNumber].getY());
-                                                        double my_z=(1000*loc[partNumber][threadNumber].getZ());
-                                                        double my_A=loc[partNumber][threadNumber].getA()[0][0];
-                                                        double my_B=loc[partNumber][threadNumber].getB()[0];                                                        //double my_Score=(loc[partNumber][threadNumber].getGlobalLikelihood());
-                                                        //double my_Score=(loc[partNumber][threadNumber].getGlobalLikelihood());
-                                                        double my_Score= scoreCompute(patch[0],model,maxModelThreshold,background);
-                                                        double my_crlbx=(1000*loc[partNumber][threadNumber].getCRLBX());
-                                                        double my_crlby=(1000*loc[partNumber][threadNumber].getCRLBY());
-                                                        double my_crlbz=(1000*loc[partNumber][threadNumber].getCRLBZ());
 
-                                                        /*double spx=Math.floor(100* my_x)/100;
 
-                                                        double spy=Math.floor(100* my_y)/100;
+                                        numb++;
+                                        n++;
 
-                                                        double spz=Math.floor(100* my_z)/100;
+                                        //IJ.log("zz "+rangePredetection[maxs[1]]+"  "+loc[partNumber][threadNumber].getZ());
+                                        double [] my_x=loc[partNumber][threadNumber].getX();
+                                        double [] my_y=loc[partNumber][threadNumber].getY();
+                                        double [] my_z=loc[partNumber][threadNumber].getZ();
+                                        double [] my_A=loc[partNumber][threadNumber].getA(0);
+                                        double [] my_B=loc[partNumber][threadNumber].getB(0);                                                        //double my_Score=(loc[partNumber][threadNumber].getGlobalLikelihood());
+                                        //double my_Score=(loc[partNumber][threadNumber].getGlobalLikelihood());
+                                        double my_Score= scoreCompute(patch,model,maxModelThreshold,background);
+                                        
+                                        for (int numPSF=0;numPSF<numberPSFperModel;numPSF++){
+                                            double my_x2=1000*(maxs[2]*dpPart[partNumber].param.xystep-my_x[numPSF]);
+                                            double my_y2=1000*(maxs[3]*dpPart[partNumber].param.xystep-my_y[numPSF]);
+                                            double my_z2=1000*(my_z[numPSF]);
+                                            PLocalization p = new PLocalization(idLoc,imageNumber,my_x2,my_y2,my_z2,my_A[numPSF],my_B[numPSF],my_Score);
+                                            fl.loc.add(p); 
+                                        }
+                                        
 
-                                                        double spa=Math.floor(100* my_A)/100;
 
-                                                        double spb=Math.floor(100* my_B)/100;
 
-                                                        double spl=Math.floor(100* my_Score)/100;*/
+                                        //replacement in mask of the region corresponting to 20% of max PSF
+                                        try{
+                                        lock.lock();
+                                            idLoc++;
+                                        }
+                                        finally{
+                                            lock.unlock();
+                                        }
 
-    //                                                    double crlbX=0;
-    //
-    //                                                    double crlbY=0;
-    //
-    //                                                    double crlbZ=0;
-    //                                                    double crlbX=loc[partNumber][threadNumber].getCRLBX(0);
-    //        
-    //                                                    double crlbY=loc[partNumber][threadNumber].getCRLBY(0);
-    //        
-    //                                                    double crlbZ=loc[partNumber][threadNumber].getCRLBZ(0);
+                                        for (int i=0,j=-sizePatch/2;i<sizePatch;i++,j++){
+                                            for (int ii=0,jj=-sizePatch/2;ii<sizePatch;ii++,jj++){
+                                                //HERE ADD MODELcomparison
+                                                if ((model[i*sizePatch+ii]-background)>maxModelThreshold){
+                                                    mask[maxs[2]+j][maxs[3]+jj]=true;//has been treated
 
-//                                                        double crlbX=Math.floor(100* (1000*loc[partNumber][threadNumber].getCRLBX(0)))/100;
-//
-//                                                        double crlbY=Math.floor(100* (1000*loc[partNumber][threadNumber].getCRLBY(0)))/100;
-//
-//                                                        double crlbZ=Math.floor(100* (1000*loc[partNumber][threadNumber].getCRLBZ(0)))/100;
-//
-//                                                        double stdshow=Math.floor(100* (std))/100;
-//
-//                                                        double predetection = Math.floor(100*rangePredetection[maxs[1]])/100;
-//                                                        IJ.write((idLoc)+","+(imageNumber)+","+(spx)+","+(spy)+","+(spz)+","+(spa)+","+(spb)+","+(spl)+","+(stdshow)+","+crlbX+","+crlbY+","+crlbZ+","+maxs[2]+","+maxs[3]+","+predetection);
-
-                                                        PLocalization p = new PLocalization(idLoc,imageNumber,my_x,my_y,my_z,my_A,my_B,my_Score,my_crlbx,my_crlby,my_crlbz);
-                                                        fl.loc.add(p); 
-                                                        
-                                                        
-                                                         
-                                                        //replacement in mask of the region corresponting to 20% of max PSF
-                                                        try{
-                                                        lock.lock();
-                                                            idLoc++;
-                                                        }
-                                                        finally{
-                                                            lock.unlock();
-                                                        }
-
-                                                        for (int i=0,j=-sizePatch/2;i<sizePatch;i++,j++){
-                                                            for (int ii=0,jj=-sizePatch/2;ii<sizePatch;ii++,jj++){
-                                                                //HERE ADD MODELcomparison
-                                                                if ((model[i*sizePatch+ii]-background)>maxModelThreshold){
-                                                                    mask[maxs[2]+j][maxs[3]+jj]=true;//has been treated
-
-                                                                }
-                                                                if (imageNumber<nbGlobalMask){
-                                                                    globalmask[imageNumber][maxs[2]+j][maxs[3]+jj]=model[i*sizePatch+ii];
-                                                                    globalmask2[imageNumber][maxs[2]+j][maxs[3]+jj]=patch[0][i*sizePatch+ii];
-                                                                }
-                                                            }
-                                                        }
-                                                        if (imageNumber<nbGlobalMask){
-                                                            //globalmask[imageNumber][maxs[2]+0][maxs[3]+0]=AandB[0];
-                                                            globalmask[imageNumber][maxs[2]+0][maxs[3]+0]=my_Score;
-                                                            //globalmask[imageNumber][maxs[2]+0][maxs[3]+0]=rangePredetection[maxs[1]];
-                                                            //globalmask[imageNumber][maxs[2]+1][maxs[3]+0]=my_z;
-                                                        }
-                                                        partTreated=true;
+                                                }
+                                                if (show){
+                                                    if (imageNumber<nbGlobalMask){
+                                                        globalmask[imageNumber][maxs[2]+j][maxs[3]+jj]=model[i*sizePatch+ii];
+                                                        globalmask2[imageNumber][maxs[2]+j][maxs[3]+jj]=patch[i*sizePatch+ii];
                                                     }
                                                 }
-
-
-
                                             }
-                                            
                                         }
-                                        else{
-                                            //IJ.log("low photon");
-                                        }
+                                        //if (imageNumber<nbGlobalMask){
+                                            //globalmask[imageNumber][maxs[2]+0][maxs[3]+0]=AandB[0];
+                                            //globalmask[imageNumber][maxs[2]+0][maxs[3]+0]=my_Score;
+                                            //globalmask[imageNumber][maxs[2]+0][maxs[3]+0]=rangePredetection[maxs[1]];
+                                            //globalmask[imageNumber][maxs[2]+1][maxs[3]+0]=my_z;
+                                        //}
+                                        partTreated=true;
+                                        
 
                                     }
 
@@ -1180,7 +1109,7 @@ public class LocalizationPipelineMany {
                                 for (int i=0,j=-sizePatch/2;i<sizePatch;i++,j++){
                                     for (int ii=0,jj=-sizePatch/2;ii<sizePatch;ii++,jj++){
                                         //HERE ADD MODELcomparison
-                                        if ((patch[0][i*sizePatch+ii]>AandB[2]*.5)){
+                                        if ((patch[i*sizePatch+ii]>AandB[2]*.5)){
                                             mask[maxs[2]+j][maxs[3]+jj]=true;//has been treated
 
                                         }
@@ -1231,12 +1160,10 @@ public class LocalizationPipelineMany {
                         //IJ.log("to im process... "+totNumberImageProcessed+"  "+sliceNumber+"  "+(sliceNumber-totNumberImageProcessed)+"  id"+partNumber);
                         IJ.showProgress((double)totNumberImageProcessed/(double)(sliceNumber+1));
                         
-                        if((sliceNumber-totNumberImageProcessed)<nbThread*nbPart){
+                        if((sliceNumber-totNumberImageProcessed)<parallelcomputing*nbPart){
                             
-                            for (int u=0;u<dp.length;u++){
-                                
-                                dpPart[partNumber][u].modelMany.decrementNumberPSFToCompute();
-                            }
+                            dpPart[partNumber].modelMany.decrementNumberPSFToCompute(popsize);
+                            
                             stopReading=true;
                         }
                         
@@ -1245,11 +1172,14 @@ public class LocalizationPipelineMany {
                             computedGlobalMask++;
                             //IJ.log("comp "+computedGlobalMask);
                             if ( computedGlobalMask == (nbGlobalMask) ){
-                                //ImageShow.imshow(globalmask,"model_frame1-100");
-                                //ImageShow.imshow(globalmask2,"image_frame1-100");
+                                if (show){
+                                    ImageShow.imshow(globalmask,"model_frame");
+                                    ImageShow.imshow(globalmask2,"image_frame");
+                                    globalmask=null;
+                                    globalmask2=null;
+                                }
                                 pr.launch_();
-                                globalmask=null;
-                                globalmask2=null;
+                                
                             }
                         }
                         
@@ -1472,19 +1402,14 @@ public class LocalizationPipelineMany {
 
 
         
-        
-    
-    
-        void free(){
-            
-            
-            for (int u=0;u<dp.length;u++){
-                //dp[u].free();
-            }
-            //MyCudaStream.destroy();
-        }
-    
-    
+
+
+
+    void free(){
+
+    }
+
+
         
     public void save(String path,String content){
         

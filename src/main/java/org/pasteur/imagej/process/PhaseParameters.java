@@ -24,7 +24,7 @@ import jcuda.jcusparse.cusparseHandle;
  *
  * @author benoit
  */
-public class PhaseRetrievalParametersDouble {
+public class PhaseParameters {
     
     
     
@@ -66,10 +66,10 @@ public class PhaseRetrievalParametersDouble {
     public double Zfocus=0;
     public double ZfocusCenter=0;
     
+    public boolean zernikedPSF=true;
     
     
-    
-    public PhaseRetrievalParametersDouble(int size,int sizeoutput,int orderGaussianPupil,double xystep,double zstep,double wavelength,double noil,double na,double wz,double sigmaGaussianKernel){
+    public PhaseParameters(int size,int sizeoutput,int orderGaussianPupil,double xystep,double zstep,double wavelength,double noil,double na,double wz,double sigmaGaussianKernel){
         
         this.sigmaGaussianKernel=sigmaGaussianKernel;
         
@@ -175,7 +175,7 @@ public class PhaseRetrievalParametersDouble {
     
     
     
-    public PhaseRetrievalParametersDouble(PhaseRetrievalParametersDouble paramInit){
+    public PhaseParameters(PhaseParameters paramInit){
         this.pathcalib=paramInit.pathcalib;
         this.sigmaGaussianKernel=paramInit.sigmaGaussianKernel;
         this.centerX=paramInit.centerX;
@@ -236,7 +236,7 @@ public class PhaseRetrievalParametersDouble {
     
     
     
-    public PhaseRetrievalParametersDouble(int size, int sizeoutput,PhaseRetrievalParametersDouble paramInit){
+    public PhaseParameters(int size, int sizeoutput,PhaseParameters paramInit){
         this.pathcalib=paramInit.pathcalib;
         this.sigmaGaussianKernel=paramInit.sigmaGaussianKernel;
         this.size=size;

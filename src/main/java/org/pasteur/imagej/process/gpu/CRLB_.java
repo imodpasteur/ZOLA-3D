@@ -3,14 +3,14 @@
  * To change this template file, choose Tools | Templates
  * and open the template in the editor.
  */
-package org.pasteur.imagej.postprocess;
+package org.pasteur.imagej.process.gpu;
 
 
 import org.pasteur.imagej.utils.FileVectorLoader;
 import org.pasteur.imagej.utils.Matrixe;
 import org.pasteur.imagej.utils.ImageShow;
-import org.pasteur.imagej.process.DataPhase;
-import org.pasteur.imagej.process.SearchPSFcenter;
+import org.pasteur.imagej.process.gpu.DataPhase_;
+import org.pasteur.imagej.process.gpu.SearchPSFcenter_;
 import ij.IJ;
 import ij.gui.Plot;
 import java.awt.Color;
@@ -19,14 +19,14 @@ import java.awt.Color;
  *
  * @author benoit
  */
-public class CRLB {
+public class CRLB_ {
     
     double [][] matrixParameter;
     
     double axialRange; 
     double stepZ;
     
-    DataPhase dp;
+    DataPhase_ dp;
     
     
     double [] xCRLB;
@@ -39,7 +39,7 @@ public class CRLB {
     double maxValuePlotUm=-1;
     
     
-    public CRLB(DataPhase dp,double axialRange, double stepZ,double photonNumber, double background,double maxValuePlotUm){
+    public CRLB_(DataPhase_ dp,double axialRange, double stepZ,double photonNumber, double background,double maxValuePlotUm){
         this.dp=dp;
         this.axialRange=axialRange;
         this.stepZ=stepZ;
@@ -52,7 +52,7 @@ public class CRLB {
     
     
     
-    public CRLB(DataPhase dp,double axialRange, double stepZ,double photonNumber, double background){
+    public CRLB_(DataPhase_ dp,double axialRange, double stepZ,double photonNumber, double background){
         this.dp=dp;
         this.axialRange=axialRange;
         this.stepZ=stepZ;
@@ -64,7 +64,7 @@ public class CRLB {
     
     
     
-    public CRLB(DataPhase dp,String path,double axialRange){
+    public CRLB_(DataPhase_ dp,String path,double axialRange){
         
         this.axialRange=axialRange;
         this.dp=dp;
@@ -82,7 +82,7 @@ public class CRLB {
         
         dp.psf.resetKz();
         
-        SearchPSFcenter spsfc= new SearchPSFcenter(dp,axialRange);
+        SearchPSFcenter_ spsfc= new SearchPSFcenter_(dp,axialRange);
         double position=spsfc.getPosition();
         
         //IJ.log("position "+position);

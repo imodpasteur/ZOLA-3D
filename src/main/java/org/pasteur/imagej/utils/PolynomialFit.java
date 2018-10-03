@@ -149,87 +149,37 @@ public class PolynomialFit {
     
     
     
-    
-    public void runSlow(){
-        
-        
-        
-        for (int d=0;d<dimensionRef;d++){
-            long dt = System.currentTimeMillis();
-            double [][] XX=new double[size][size];
-
-            double [] YY=new double[size];
-            double dt1 = 0;
-            
-            double dt2 = 0;
-            
-            double dt3 = 0;
-            
-            for (int i=0;i<size;i++){
-                //compute XX
-                long dtt1 = System.currentTimeMillis();
-                int [] indiceLigne = this.indices[i];
-                double [] prodLigne=new double [nbdata];//compute product for each line
-                for (int xii=0;xii<nbdata;xii++){//for each data
-                    prodLigne[xii]=1;
-                    for (int xi=0;xi<dimensionFit;xi++){//for each dimension
-                        prodLigne[xii]*=Math.pow(X[xi][xii],indiceLigne[xi]);
-                    }
+    public void removeParameter(int id){
+        int nbMajore=(int)Math.pow(base,dimensionFit);
+        if (id<this.indices.length){
+            int [][] indicesNew= new int[this.indices.length-1][dimensionFit];
+            for (int i=0,k=0;i<this.indices.length;i++){
+                if (i==id){
+                    continue;
                 }
-                long dtt2 = System.currentTimeMillis();
-                for (int ai=0;ai<size;ai++){//compute product for each line/column
-                    int [] indiceColumn = this.indices[ai];
-                    XX[i][ai]=0;
-                    for (int xii=0;xii<nbdata;xii++){//for each data
-                        double prod=prodLigne[xii];
-                        for (int xi=0;xi<dimensionFit;xi++){//for each dimension
-                            prod*=Math.pow(X[xi][xii],indiceColumn[xi]);
+                for (int j=0;j<dimensionFit;j++){  
+                    indicesNew[k][j]=indices[i][j];
+                }
+                k++;
+            }
+            indices=indicesNew;
+            size=indicesNew.length;
+            for (int i=0;i<a.length;i++){
+                if (a[i]!=null){
+                    double [] newA=new double[a[i].length-1];
+                    for (int j=0,k=0;j<a[i].length;j++){
+                        if (j==id){
+                            continue;
                         }
-                        XX[i][ai]+=prod;
+                        newA[k++]=a[i][j];
                     }
+                    a[i]=newA;
                 }
-                long dtt3 = System.currentTimeMillis();
-                
-                
-                
-                
-                
-                
-                
-                
-                //compute YY
-                YY[i]=0;
-                for (int xii=0;xii<nbdata;xii++){//for each data
-                    double prod=1;
-                    double prod2=1;
-                    for (int xi=0;xi<dimensionFit;xi++){//for each dimension
-                        prod*=Math.pow(X[xi][xii],indiceLigne[xi]);
-                    }
-                    prod*=Y[d][xii];
-                    YY[i]+=prod;
-                }
-                //IJ.log("YY[i] "+YY[i]);
-                long dtt4 = System.currentTimeMillis();
-                dt1+=dtt2-dtt1;
-                dt2+=dtt3-dtt2;
-                dt3+=dtt4-dtt3;
-                //IJ.log("ddt "+dt1+"   "+dt2+"   "+dt3);
             }
-            
-            //IJ.log("time construct    " +(System.currentTimeMillis()-dt));
-            dt = System.currentTimeMillis();
-            if (XX.length>10){
-                IJ.log("inversion matrix size "+XX.length+" ...");
-            }
-            try{
-                GaussianElimination ge= new GaussianElimination();
-                a[d]=ge.lsolve(XX,YY);
-            }catch(Exception e){IJ.log("OOPS, matrix non inversible. Try using less or more data points");return;}
-            //IJ.log("time inv    " +(System.currentTimeMillis()-dt));
         }
         
-        
     }
+    
     
     
     

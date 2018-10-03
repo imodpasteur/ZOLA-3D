@@ -3,8 +3,9 @@
  * To change this template file, choose Tools | Templates
  * and open the template in the editor.
  */
-package org.pasteur.imagej.process;
+package org.pasteur.imagej.process.gpu;
 
+import org.pasteur.imagej.process.PhaseParameters;
 import org.pasteur.imagej.cuda.*;
 import org.pasteur.imagej.utils.ImageShow;
 import jcuda.*;
@@ -38,7 +39,7 @@ import static jcuda.jcublas.cublasPointerMode.CUBLAS_POINTER_MODE_DEVICE;
  *
  * @author benoit
  */
-public class PSFphaseJCudaFastFloatMany {
+public class PSFmany_float_ {
     
     
     float [] position;
@@ -169,7 +170,7 @@ public class PSFphaseJCudaFastFloatMany {
     float [][] res2D ;
     float [] res1D ;
     float [] res;
-    PhaseRetrievalParametersDouble param;
+    PhaseParameters param;
     
     int sizeoutput1;
     int sizeoutput2;
@@ -178,7 +179,7 @@ public class PSFphaseJCudaFastFloatMany {
     
     
     
-    public PSFphaseJCudaFastFloatMany(PhaseRetrievalParametersDouble param,int numberPSF){
+    public PSFmany_float_(PhaseParameters param,int numberPSF){
         sizeoutput1=param.sizeoutput;
         sizeoutput2=param.sizeoutput*2;
         if (sizeoutput2>param.size){
@@ -1570,7 +1571,6 @@ public class PSFphaseJCudaFastFloatMany {
      
      
     public void computePSF(double [] x, double [] y, double [] zoil, double [] z){
-        
         
         
         int cudaResult=JCuda.cudaStreamSynchronize(MyCudaStream.getCudaStream_t(param.stream));if (cudaResult != cudaError.cudaSuccess){IJ.log("ERROR synchro cuda gaussianKernel Set Image "+cudaResult+"  "+param.stream);}

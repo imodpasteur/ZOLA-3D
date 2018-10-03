@@ -7,7 +7,7 @@
 //
 
 .version 5.0
-.target sm_30
+.target sm_61
 .address_size 64
 
 	// .globl	vec_test1
@@ -48,7 +48,7 @@
 .global .align 4 .u32 barrier;
 .global .align 4 .u32 barrier2;
 .global .align 1 .b8 _ZN6thrust6system6detail10sequential3seqE[1];
-.shared .align 8 .b8 _ZN6thrust6system4cuda6detail5bulk_6detail71_GLOBAL__N__47_tmpxft_00011d4a_00000000_7_ZOLA_kernels_cpp1_ii_f6adc78b19s_on_chip_allocatorE[24];
+.shared .align 8 .b8 _ZN6thrust6system4cuda6detail5bulk_6detail71_GLOBAL__N__47_tmpxft_00016cb8_00000000_7_ZOLA_kernels_cpp1_ii_f6adc78b19s_on_chip_allocatorE[24];
 .global .align 1 .b8 _ZN6thrust6system4cuda6detail5bulk_4rootE[1];
 .global .align 1 .b8 _ZN6thrust12placeholders2_1E[1];
 .global .align 1 .b8 _ZN6thrust12placeholders2_2E[1];
@@ -63,8 +63,9 @@
 .global .align 1 .b8 _ZN6thrust3seqE[1];
 .global .align 1 .b8 $str[29] = {109, 97, 120, 32, 115, 105, 100, 101, 32, 114, 101, 115, 117, 108, 116, 32, 61, 32, 37, 102, 32, 32, 32, 32, 32, 37, 100, 10, 0};
 .global .align 1 .b8 $str1[16] = {107, 122, 32, 45, 62, 32, 37, 100, 32, 32, 37, 102, 32, 32, 10, 0};
-.global .align 1 .b8 $str2[56] = {116, 101, 109, 112, 111, 114, 97, 114, 121, 95, 98, 117, 102, 102, 101, 114, 58, 58, 97, 108, 108, 111, 99, 97, 116, 101, 58, 32, 103, 101, 116, 95, 116, 101, 109, 112, 111, 114, 97, 114, 121, 95, 98, 117, 102, 102, 101, 114, 32, 102, 97, 105, 108, 101, 100, 0};
-.global .align 1 .b8 $str3[4] = {37, 115, 10, 0};
+.global .align 1 .b8 $str2[59] = {105, 100, 58, 37, 100, 32, 32, 32, 32, 105, 100, 109, 111, 100, 101, 108, 58, 37, 100, 32, 32, 105, 100, 114, 101, 115, 104, 117, 102, 102, 108, 101, 58, 37, 100, 32, 32, 105, 100, 80, 83, 70, 58, 37, 100, 32, 32, 105, 100, 112, 111, 115, 105, 116, 58, 37, 100, 10, 0};
+.global .align 1 .b8 $str3[56] = {116, 101, 109, 112, 111, 114, 97, 114, 121, 95, 98, 117, 102, 102, 101, 114, 58, 58, 97, 108, 108, 111, 99, 97, 116, 101, 58, 32, 103, 101, 116, 95, 116, 101, 109, 112, 111, 114, 97, 114, 121, 95, 98, 117, 102, 102, 101, 114, 32, 102, 97, 105, 108, 101, 100, 0};
+.global .align 1 .b8 $str4[4] = {37, 115, 10, 0};
 .const .align 4 .b8 __cudart_i2opi_f[24] = {65, 144, 67, 60, 153, 149, 98, 219, 192, 221, 52, 245, 209, 87, 39, 252, 41, 21, 68, 78, 110, 131, 249, 162};
 .const .align 8 .b8 __cudart_i2opi_d[144] = {8, 93, 141, 31, 177, 95, 251, 107, 234, 146, 82, 138, 247, 57, 7, 61, 123, 241, 229, 235, 199, 186, 39, 117, 45, 234, 95, 158, 102, 63, 70, 79, 183, 9, 203, 39, 207, 126, 54, 109, 31, 109, 10, 90, 139, 17, 47, 239, 15, 152, 5, 222, 255, 151, 248, 31, 59, 40, 249, 189, 139, 95, 132, 156, 244, 57, 83, 131, 57, 214, 145, 57, 65, 126, 95, 180, 38, 112, 156, 233, 132, 68, 187, 46, 245, 53, 130, 232, 62, 167, 41, 177, 28, 235, 29, 254, 28, 146, 209, 9, 234, 46, 73, 6, 224, 210, 77, 66, 58, 110, 36, 183, 97, 197, 187, 222, 171, 99, 81, 254, 65, 144, 67, 60, 153, 149, 98, 219, 192, 221, 52, 245, 209, 87, 39, 252, 41, 21, 68, 78, 110, 131, 249, 162};
 .const .align 8 .b8 __cudart_sin_cos_coeffs[128] = {186, 94, 120, 249, 101, 219, 229, 61, 70, 210, 176, 44, 241, 229, 90, 190, 146, 227, 172, 105, 227, 29, 199, 62, 161, 98, 219, 25, 160, 1, 42, 191, 24, 8, 17, 17, 17, 17, 129, 63, 84, 85, 85, 85, 85, 85, 197, 191, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 100, 129, 253, 32, 131, 255, 168, 189, 40, 133, 239, 193, 167, 238, 33, 62, 217, 230, 6, 142, 79, 126, 146, 190, 233, 188, 221, 25, 160, 1, 250, 62, 71, 93, 193, 22, 108, 193, 86, 191, 81, 85, 85, 85, 85, 85, 165, 63, 0, 0, 0, 0, 0, 0, 224, 191, 0, 0, 0, 0, 0, 0, 240, 63};
@@ -153,10 +154,10 @@
 	
 	//{
 	}// Callseq End 1
-	mov.u64 	%rd138, $str2;
+	mov.u64 	%rd138, $str3;
 	cvta.global.u64 	%rd139, %rd138;
 	st.local.u64 	[%rd137], %rd139;
-	mov.u64 	%rd140, $str3;
+	mov.u64 	%rd140, $str4;
 	cvta.global.u64 	%rd141, %rd140;
 	// Callseq Start 2
 	{
@@ -909,10 +910,10 @@ BB3_3:
 	
 	//{
 	}// Callseq End 6
-	mov.u64 	%rd207, $str2;
+	mov.u64 	%rd207, $str3;
 	cvta.global.u64 	%rd208, %rd207;
 	st.local.u64 	[%rd206], %rd208;
-	mov.u64 	%rd209, $str3;
+	mov.u64 	%rd209, $str4;
 	cvta.global.u64 	%rd210, %rd209;
 	// Callseq Start 7
 	{
@@ -987,10 +988,10 @@ BB4_4:
 	
 	//{
 	}// Callseq End 9
-	mov.u64 	%rd216, $str2;
+	mov.u64 	%rd216, $str3;
 	cvta.global.u64 	%rd217, %rd216;
 	st.local.u64 	[%rd215], %rd217;
-	mov.u64 	%rd218, $str3;
+	mov.u64 	%rd218, $str4;
 	cvta.global.u64 	%rd219, %rd218;
 	// Callseq Start 10
 	{
@@ -17853,54 +17854,83 @@ BB116_11:
 	.param .u64 vec_addPhotonsAndBackgroundManyReshuffle_param_5
 )
 {
+	.local .align 8 .b8 	__local_depot117[24];
+	.reg .b64 	%SP;
+	.reg .b64 	%SPL;
 	.reg .pred 	%p<2>;
-	.reg .b32 	%r<23>;
+	.reg .b32 	%r<21>;
 	.reg .f64 	%fd<5>;
-	.reg .b64 	%rd<13>;
+	.reg .b64 	%rd<18>;
 
 
-	ld.param.u32 	%r2, [vec_addPhotonsAndBackgroundManyReshuffle_param_0];
-	ld.param.u32 	%r3, [vec_addPhotonsAndBackgroundManyReshuffle_param_1];
-	ld.param.u32 	%r4, [vec_addPhotonsAndBackgroundManyReshuffle_param_2];
+	mov.u64 	%rd17, __local_depot117;
+	cvta.local.u64 	%SP, %rd17;
+	ld.param.u32 	%r4, [vec_addPhotonsAndBackgroundManyReshuffle_param_0];
+	ld.param.u32 	%r5, [vec_addPhotonsAndBackgroundManyReshuffle_param_1];
+	ld.param.u32 	%r6, [vec_addPhotonsAndBackgroundManyReshuffle_param_2];
 	ld.param.u64 	%rd1, [vec_addPhotonsAndBackgroundManyReshuffle_param_3];
 	ld.param.u64 	%rd2, [vec_addPhotonsAndBackgroundManyReshuffle_param_4];
 	ld.param.u64 	%rd3, [vec_addPhotonsAndBackgroundManyReshuffle_param_5];
-	mov.u32 	%r5, %ntid.y;
-	mov.u32 	%r6, %ctaid.y;
-	mov.u32 	%r7, %tid.y;
-	mad.lo.s32 	%r8, %r5, %r6, %r7;
-	mov.u32 	%r9, %nctaid.x;
-	mov.u32 	%r10, %ctaid.x;
-	mad.lo.s32 	%r11, %r8, %r9, %r10;
-	mov.u32 	%r12, %ntid.x;
-	mov.u32 	%r13, %tid.x;
-	mad.lo.s32 	%r1, %r11, %r12, %r13;
-	setp.ge.s32	%p1, %r1, %r2;
+	mov.u32 	%r7, %ntid.y;
+	mov.u32 	%r8, %ctaid.y;
+	mov.u32 	%r9, %tid.y;
+	mad.lo.s32 	%r10, %r7, %r8, %r9;
+	mov.u32 	%r11, %nctaid.x;
+	mov.u32 	%r12, %ctaid.x;
+	mad.lo.s32 	%r13, %r10, %r11, %r12;
+	mov.u32 	%r14, %ntid.x;
+	mov.u32 	%r15, %tid.x;
+	mad.lo.s32 	%r1, %r13, %r14, %r15;
+	div.s32 	%r2, %r1, %r5;
+	div.s32 	%r16, %r2, %r6;
+	mul.lo.s32 	%r17, %r6, %r5;
+	rem.s32 	%r18, %r1, %r17;
+	mad.lo.s32 	%r3, %r17, %r16, %r18;
+	add.u64 	%rd4, %SP, 0;
+	cvta.to.local.u64 	%rd5, %rd4;
+	st.local.u32 	[%rd5], %r1;
+	st.local.u32 	[%rd5+4], %r16;
+	st.local.v2.u32 	[%rd5+8], {%r3, %r2};
+	st.local.u32 	[%rd5+16], %r18;
+	mov.u64 	%rd6, $str2;
+	cvta.global.u64 	%rd7, %rd6;
+	// Callseq Start 40
+	{
+	.reg .b32 temp_param_reg;
+	// <end>}
+	.param .b64 param0;
+	st.param.b64	[param0+0], %rd7;
+	.param .b64 param1;
+	st.param.b64	[param1+0], %rd4;
+	.param .b32 retval0;
+	call.uni (retval0), 
+	vprintf, 
+	(
+	param0, 
+	param1
+	);
+	ld.param.b32	%r19, [retval0+0];
+	
+	//{
+	}// Callseq End 40
+	setp.ge.s32	%p1, %r1, %r4;
 	@%p1 bra 	BB117_2;
 
-	cvta.to.global.u64 	%rd4, %rd3;
-	cvta.to.global.u64 	%rd5, %rd2;
-	div.s32 	%r14, %r1, %r3;
-	div.s32 	%r15, %r14, %r4;
-	rem.s32 	%r16, %r14, %r4;
-	mul.lo.s32 	%r17, %r4, %r3;
-	div.s32 	%r18, %r2, %r17;
-	mad.lo.s32 	%r19, %r18, %r16, %r15;
-	rem.s32 	%r20, %r1, %r3;
-	mad.lo.s32 	%r21, %r19, %r3, %r20;
-	mul.wide.s32 	%rd6, %r1, 8;
-	add.s64 	%rd7, %rd5, %rd6;
-	shl.b32 	%r22, %r14, 1;
-	mul.wide.s32 	%rd8, %r22, 8;
-	add.s64 	%rd9, %rd4, %rd8;
-	ld.global.f64 	%fd1, [%rd9];
-	ld.global.f64 	%fd2, [%rd7];
-	ld.global.f64 	%fd3, [%rd9+8];
+	cvta.to.global.u64 	%rd8, %rd3;
+	cvta.to.global.u64 	%rd9, %rd2;
+	mul.wide.s32 	%rd10, %r1, 8;
+	add.s64 	%rd11, %rd9, %rd10;
+	shl.b32 	%r20, %r2, 1;
+	mul.wide.s32 	%rd12, %r20, 8;
+	add.s64 	%rd13, %rd8, %rd12;
+	ld.global.f64 	%fd1, [%rd13];
+	ld.global.f64 	%fd2, [%rd11];
+	ld.global.f64 	%fd3, [%rd13+8];
 	fma.rn.f64 	%fd4, %fd2, %fd1, %fd3;
-	cvta.to.global.u64 	%rd10, %rd1;
-	mul.wide.s32 	%rd11, %r21, 8;
-	add.s64 	%rd12, %rd10, %rd11;
-	st.global.f64 	[%rd12], %fd4;
+	cvta.to.global.u64 	%rd14, %rd1;
+	mul.wide.s32 	%rd15, %r3, 8;
+	add.s64 	%rd16, %rd14, %rd15;
+	st.global.f64 	[%rd16], %fd4;
 
 BB117_2:
 	ret;
@@ -17918,45 +17948,37 @@ BB117_2:
 )
 {
 	.reg .pred 	%p<2>;
-	.reg .b32 	%r<23>;
+	.reg .b32 	%r<15>;
 	.reg .f64 	%fd<7>;
-	.reg .b64 	%rd<16>;
+	.reg .b64 	%rd<15>;
 
 
-	ld.param.u32 	%r2, [vec_addPhotonsAndBackgroundManyReshuffle_scmos_param_0];
-	ld.param.u32 	%r3, [vec_addPhotonsAndBackgroundManyReshuffle_scmos_param_1];
-	ld.param.u32 	%r4, [vec_addPhotonsAndBackgroundManyReshuffle_scmos_param_2];
+	ld.param.u32 	%r3, [vec_addPhotonsAndBackgroundManyReshuffle_scmos_param_0];
+	ld.param.u32 	%r2, [vec_addPhotonsAndBackgroundManyReshuffle_scmos_param_1];
 	ld.param.u64 	%rd1, [vec_addPhotonsAndBackgroundManyReshuffle_scmos_param_3];
 	ld.param.u64 	%rd2, [vec_addPhotonsAndBackgroundManyReshuffle_scmos_param_4];
 	ld.param.u64 	%rd3, [vec_addPhotonsAndBackgroundManyReshuffle_scmos_param_5];
 	ld.param.u64 	%rd4, [vec_addPhotonsAndBackgroundManyReshuffle_scmos_param_6];
-	mov.u32 	%r5, %ntid.y;
-	mov.u32 	%r6, %ctaid.y;
-	mov.u32 	%r7, %tid.y;
-	mad.lo.s32 	%r8, %r5, %r6, %r7;
-	mov.u32 	%r9, %nctaid.x;
-	mov.u32 	%r10, %ctaid.x;
-	mad.lo.s32 	%r11, %r8, %r9, %r10;
-	mov.u32 	%r12, %ntid.x;
-	mov.u32 	%r13, %tid.x;
-	mad.lo.s32 	%r1, %r11, %r12, %r13;
-	setp.ge.s32	%p1, %r1, %r2;
+	mov.u32 	%r4, %ntid.y;
+	mov.u32 	%r5, %ctaid.y;
+	mov.u32 	%r6, %tid.y;
+	mad.lo.s32 	%r7, %r4, %r5, %r6;
+	mov.u32 	%r8, %nctaid.x;
+	mov.u32 	%r9, %ctaid.x;
+	mad.lo.s32 	%r10, %r7, %r8, %r9;
+	mov.u32 	%r11, %ntid.x;
+	mov.u32 	%r12, %tid.x;
+	mad.lo.s32 	%r1, %r10, %r11, %r12;
+	setp.ge.s32	%p1, %r1, %r3;
 	@%p1 bra 	BB118_2;
 
 	cvta.to.global.u64 	%rd5, %rd3;
+	div.s32 	%r13, %r1, %r2;
 	cvta.to.global.u64 	%rd6, %rd2;
-	div.s32 	%r14, %r1, %r3;
-	div.s32 	%r15, %r14, %r4;
-	rem.s32 	%r16, %r14, %r4;
-	mul.lo.s32 	%r17, %r4, %r3;
-	div.s32 	%r18, %r2, %r17;
-	mad.lo.s32 	%r19, %r18, %r16, %r15;
-	rem.s32 	%r20, %r1, %r3;
-	mad.lo.s32 	%r21, %r19, %r3, %r20;
 	mul.wide.s32 	%rd7, %r1, 8;
 	add.s64 	%rd8, %rd6, %rd7;
-	shl.b32 	%r22, %r14, 1;
-	mul.wide.s32 	%rd9, %r22, 8;
+	shl.b32 	%r14, %r13, 1;
+	mul.wide.s32 	%rd9, %r14, 8;
 	add.s64 	%rd10, %rd5, %rd9;
 	ld.global.f64 	%fd1, [%rd10];
 	ld.global.f64 	%fd2, [%rd8];
@@ -17967,9 +17989,8 @@ BB117_2:
 	ld.global.f64 	%fd5, [%rd12];
 	add.f64 	%fd6, %fd4, %fd5;
 	cvta.to.global.u64 	%rd13, %rd1;
-	mul.wide.s32 	%rd14, %r21, 8;
-	add.s64 	%rd15, %rd13, %rd14;
-	st.global.f64 	[%rd15], %fd6;
+	add.s64 	%rd14, %rd13, %rd7;
+	st.global.f64 	[%rd14], %fd6;
 
 BB118_2:
 	ret;

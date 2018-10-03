@@ -3,9 +3,10 @@
  * To change this template file, choose Tools | Templates
  * and open the template in the editor.
  */
-package org.pasteur.imagej.process;
+package org.pasteur.imagej.process.gpu;
 
 
+import org.pasteur.imagej.process.gpu.DataPhase_;
 import org.pasteur.imagej.utils.ImageShow;
 import org.pasteur.imagej.utils.PolynomialFit;
 import org.pasteur.imagej.utils.Matrixe;
@@ -31,7 +32,7 @@ import static jcuda.runtime.cudaMemcpyKind.cudaMemcpyDeviceToDevice;
  * One LocalizationMany per thread
  * LocalizationMany could potentially deal with multi cam and multi frame
  */
-public class LocalizationMany {
+public class Localization_old {
     
     
     double [][][][] fisherMatrix;
@@ -75,7 +76,7 @@ public class LocalizationMany {
     
     double epsilon=.0001; // distance in micrometer (stop criterion)
     
-    DataPhase [] dparam;
+    DataPhase_ [] dparam;
     int nbParam;//number of phase (1 per camera)
     int size;//third dimension of image : multiframes
     int width;//width of image
@@ -99,7 +100,7 @@ public class LocalizationMany {
     //in case of multiframe fitting, the likelihood is just the sum of likelihoods according to each image...
     
     
-    public LocalizationMany(int size,DataPhase dparam,int iterMax,double minZ, double maxZ){
+    public Localization_old(int size,DataPhase_ dparam,int iterMax,double minZ, double maxZ){
         
         
         id = new int [1];
@@ -108,7 +109,7 @@ public class LocalizationMany {
         this.maxZ=maxZ;
         nbParam=1;
         this.iterMax=iterMax;
-        this.dparam = new DataPhase[1];
+        this.dparam = new DataPhase_[1];
         this.dparam[0] = dparam;
         this.width=dparam.param.sizeoutput;
         this.height=dparam.param.sizeoutput;
@@ -133,7 +134,7 @@ public class LocalizationMany {
     
     
     // for multiple cam
-    public LocalizationMany(int size,DataPhase [] dparam, int iterMax,double minZ, double maxZ){
+    public Localization_old(int size,DataPhase_ [] dparam, int iterMax,double minZ, double maxZ){
         
         this.minZ=minZ;
         this.maxZ=maxZ;

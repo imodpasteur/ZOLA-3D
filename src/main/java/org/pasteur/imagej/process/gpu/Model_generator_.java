@@ -3,7 +3,8 @@
  * To change this template file, choose Tools | Templates
  * and open the template in the editor.
  */
-package org.pasteur.imagej.process;
+package org.pasteur.imagej.process.gpu;
+import org.pasteur.imagej.process.gpu.DataPhase_;
 import ij.IJ;
 import ij.ImagePlus;
 import ij.ImageStack;
@@ -17,14 +18,14 @@ import ij.io.FileSaver;
  *
  * @author benoit
  */
-public  class Model_generator {
+public  class Model_generator_ {
     int imageSize;
     int model_number;
     
-    DataPhase dp;
+    DataPhase_ dp;
     
     
-    public Model_generator(DataPhase dp,int imageSize){
+    public Model_generator_(DataPhase_ dp,int imageSize){
         
         this.dp=dp;
         model_number=dp.param.PSF_number;

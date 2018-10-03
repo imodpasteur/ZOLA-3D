@@ -10,7 +10,7 @@ package org.pasteur.imagej.process.cpu;
  * @author benoit
  */
 import org.pasteur.imagej.utils.ImageShow;
-import org.pasteur.imagej.process.PhaseRetrievalParametersDouble;
+import org.pasteur.imagej.process.PhaseParameters;
 import org.pasteur.imagej.utils.Zernike;
 import ij.IJ;
 
@@ -38,7 +38,7 @@ public class ZernikePhase {
     //double [][] A;
     double [] tmp;
     public int nbDataPerImage;
-    PhaseRetrievalParametersDouble param;
+    PhaseParameters param;
     int m;
     public int numCoef;
     int incr;
@@ -47,7 +47,7 @@ public class ZernikePhase {
     public int [] complexity;//complexity of zernike polynomial
     boolean multiTrainingWithParabola=false;
     
-    public ZernikePhase(PhaseRetrievalParametersDouble param,int zernikePolyNumber,int method){
+    public ZernikePhase(PhaseParameters param,int zernikePolyNumber,int method){
         this.multiTrainingWithParabola=false;
         this.param=param;
         Zernike z = new Zernike(param.size_cpu,param.sizeRadiusRingPixel_cpu,zernikePolyNumber);
@@ -132,7 +132,7 @@ public class ZernikePhase {
     
     
     
-    public ZernikePhase(PhaseRetrievalParametersDouble param,int [] coef){
+    public ZernikePhase(PhaseParameters param,int [] coef){
         this.multiTrainingWithParabola=false;
         int maxiCoef=0;
         for (int i=0;i<coef.length;i++){
@@ -205,6 +205,23 @@ public class ZernikePhase {
         
         
     }
+    
+    
+    
+    
+    public void computeCombinationPlusOtherPhase(double [] otherPhase){
+        computeAll=nbMax+1;
+        this.computeCombination();
+        for (int i=0;i<weightedZernikePhase.length;i++){
+            weightedZernikePhase[i]+=otherPhase[i];
+        }
+        computeAll=nbMax+1;
+    }
+    
+    
+    
+    
+    
     
     public void setA(int posit,double value){
         

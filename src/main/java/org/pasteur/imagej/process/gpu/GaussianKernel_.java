@@ -3,7 +3,7 @@
  * To change this template file, choose Tools | Templates
  * and open the template in the editor.
  */
-package org.pasteur.imagej.process;
+package org.pasteur.imagej.process.gpu;
 
 
 import org.pasteur.imagej.cuda.*;
@@ -36,7 +36,7 @@ import jcuda.runtime.cudaMemcpyKind;
  *
  * @author benoit
  */
-public class GaussianKernel {
+public class GaussianKernel_ {
     cublasHandle  handlecublas;
     cusparseHandle handlecusparse;
 
@@ -109,7 +109,7 @@ public class GaussianKernel {
     
     
     
-    public GaussianKernel(int sizeImage,int sizeImageOutput, double sigmaInPixels,int streamNumber){
+    public GaussianKernel_(int sizeImage,int sizeImageOutput, double sigmaInPixels,int streamNumber){
         this.sizeImage=sizeImage;
         this.sizeImageOutput=sizeImageOutput;
         matrix=new double[sizeImage*sizeImage];

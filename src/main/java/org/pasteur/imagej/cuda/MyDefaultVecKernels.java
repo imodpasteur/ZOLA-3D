@@ -122,9 +122,12 @@ final class MyDefaultVecKernels implements MyVecKernels
             int ccMajor = getComputeCapabilityMajor();
             System.out.println("compatibility "+ccMajor);
             String ccString = "20";
-            if (ccMajor > 2)
+            if (ccMajor >=3)
             {
                 ccString = "30";
+            }
+            if (ccMajor>=6){
+                ccString = "60";
             }
             //String ptxFileName = "/kernels/JCudaVec_kernels_" + kernelNameType + "_" + modelString + "_cc" + ccString + ".ptx";
 

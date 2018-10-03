@@ -3,9 +3,10 @@
  * To change this template file, choose Tools | Templates
  * and open the template in the editor.
  */
-package org.pasteur.imagej.process;
+package org.pasteur.imagej.process.gpu;
 
 
+import org.pasteur.imagej.process.PhaseParameters;
 import org.pasteur.imagej.cuda.*;
 import org.pasteur.imagej.utils.ImageShow;
 import org.pasteur.imagej.utils.Zernike;
@@ -58,7 +59,7 @@ import jcuda.runtime.cudaMemcpyKind;
  *
  * @author benoit
  */
-public class ZernikePhaseJCudaFastDouble{
+public class ZernikePhase_{
      
     cublasHandle  handlecublas;
     cusparseHandle handlecusparse;
@@ -94,7 +95,7 @@ public class ZernikePhaseJCudaFastDouble{
     //double [][] A;
     double [] tmp;
     public int nbDataPerImage;
-    PhaseRetrievalParametersDouble param;
+    PhaseParameters param;
     int m;
     public int numCoef;
     int incr;
@@ -109,7 +110,7 @@ public class ZernikePhaseJCudaFastDouble{
     
     
     
-    public ZernikePhaseJCudaFastDouble(PhaseRetrievalParametersDouble param,int zernikePolyNumber,int method){
+    public ZernikePhase_(PhaseParameters param,int zernikePolyNumber,int method){
         this.multiTrainingWithParabola=false;
         this.param=param;
         Zernike z = new Zernike(param.size,param.sizeRadiusRingPixel,zernikePolyNumber);
@@ -209,7 +210,7 @@ public class ZernikePhaseJCudaFastDouble{
     
     
     
-    public ZernikePhaseJCudaFastDouble(PhaseRetrievalParametersDouble param,int [] coef){
+    public ZernikePhase_(PhaseParameters param,int [] coef){
         this.multiTrainingWithParabola=false;
         int maxiCoef=0;
         for (int i=0;i<coef.length;i++){
@@ -598,6 +599,21 @@ public class ZernikePhaseJCudaFastDouble{
     
     
     
+    public Pointer computeCombinationPlusOtherPhase(Pointer otherPhase){
+        //IJ.log("truc "+MyCudaStream.numberStream);
+        cudaResult=JCuda.cudaStreamSynchronize(MyCudaStream.getCudaStream_t(param.stream));if (cudaResult != cudaError.cudaSuccess){IJ.log("ERROR synchro cuda Zerknike 2 phase "+cudaResult+"   "+param.stream);}
+        cudaResult=jcuda.jcublas.JCublas2.cublasDgemv(handlecublas,CUBLAS_OP_N,m,numCoef,device_alpha,device_zernike,m,device_a,incr,device_beta,device_combination,incr);
+        if (cudaResult != cudaError.cudaSuccess){IJ.log("ERROR synchro cuda Zerknike 1 phase "+cudaResult+"   "+param.stream);}
+        
+        cudaResult=JCuda.cudaStreamSynchronize(MyCudaStream.getCudaStream_t(param.stream));if (cudaResult != cudaError.cudaSuccess){IJ.log("ERROR synchro cuda Zerknike 2 phase "+cudaResult+"   "+param.stream);}
+        MyVecDouble.add(custream, this.nbDataPerImage, device_combination, device_combination, otherPhase);
+        cudaResult=JCuda.cudaStreamSynchronize(MyCudaStream.getCudaStream_t(param.stream));if (cudaResult != cudaError.cudaSuccess){IJ.log("ERROR synchro cuda Zerknike 2 phase "+cudaResult+"   "+param.stream);}
+        
+        return device_combination;
+    }
+    
+    
+    
     
     
 ////////////    public Pointer [] computeCombination(){
@@ -681,6 +697,32 @@ public class ZernikePhaseJCudaFastDouble{
         
         return device_combination;
     }
+    
+    
+    //used for derivative according to posit
+    public Pointer computeCombinationPlusOtherPhase(Pointer otherPhase, int posit,double shift){
+        cudaResult=JCuda.cudaStreamSynchronize(MyCudaStream.getCudaStream_t(param.stream));if (cudaResult != cudaError.cudaSuccess){IJ.log("ERROR synchro cuda zernike  "+cudaResult);}
+        
+        cudaMemcpyAsync( host_tmp,device_a.withByteOffset(posit*Sizeof.DOUBLE),1*Sizeof.DOUBLE,cudaMemcpyDeviceToHost, MyCudaStream.getCudaStream_t(param.stream));
+        int cudaResult=JCuda.cudaStreamSynchronize(MyCudaStream.getCudaStream_t(param.stream));if (cudaResult != cudaError.cudaSuccess){IJ.log("ERROR synchro cuda zernike  "+cudaResult);}
+        
+        tmp[0]+=shift;
+        cudaResult=JCuda.cudaStreamSynchronize(MyCudaStream.getCudaStream_t(param.stream));if (cudaResult != cudaError.cudaSuccess){IJ.log("ERROR synchro cuda Zerknike 2 phase "+cudaResult+"   "+param.stream);}
+        //IJ.log("tmp "+tmp[0]+"  "+posit);
+        cudaMemcpyAsync( device_a.withByteOffset(posit*Sizeof.DOUBLE),host_tmp,1*Sizeof.DOUBLE,cudaMemcpyHostToDevice, MyCudaStream.getCudaStream_t(param.stream));
+        cudaResult=JCuda.cudaStreamSynchronize(MyCudaStream.getCudaStream_t(param.stream));if (cudaResult != cudaError.cudaSuccess){IJ.log("ERROR synchro cuda zernike  "+cudaResult);}
+        
+        jcuda.jcublas.JCublas2.cublasDgemv(handlecublas,CUBLAS_OP_N,m,numCoef,device_alpha,device_zernike,m,device_a,incr,device_beta,device_combination,incr);
+        cudaResult=JCuda.cudaStreamSynchronize(MyCudaStream.getCudaStream_t(param.stream));if (cudaResult != cudaError.cudaSuccess){IJ.log("ERROR synchro cuda zernike  "+cudaResult);}
+        tmp[0]-=shift;
+        cudaResult=JCuda.cudaStreamSynchronize(MyCudaStream.getCudaStream_t(param.stream));if (cudaResult != cudaError.cudaSuccess){IJ.log("ERROR synchro cuda Zerknike 2 phase "+cudaResult+"   "+param.stream);}
+        MyVecDouble.add(custream, this.nbDataPerImage, device_combination, device_combination, otherPhase);
+        cudaMemcpyAsync( device_a.withByteOffset(posit*Sizeof.DOUBLE),host_tmp,1*Sizeof.DOUBLE,cudaMemcpyHostToDevice, MyCudaStream.getCudaStream_t(param.stream));
+        cudaResult=JCuda.cudaStreamSynchronize(MyCudaStream.getCudaStream_t(param.stream));if (cudaResult != cudaError.cudaSuccess){IJ.log("ERROR synchro cuda zernike  "+cudaResult);}
+        
+        return device_combination;
+    }
+    
     
     
     

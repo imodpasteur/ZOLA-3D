@@ -3,8 +3,9 @@
  * To change this template file, choose Tools | Templates
  * and open the template in the editor.
  */
-package org.pasteur.imagej.process;
+package org.pasteur.imagej.process.gpu;
 
+import org.pasteur.imagej.process.gpu.DataPhase_;
 import org.pasteur.imagej.cuda.*;
 import org.pasteur.imagej.utils.ImageShow;
 import ij.IJ;
@@ -30,7 +31,7 @@ import static jcuda.runtime.cudaMemcpyKind.cudaMemcpyDeviceToHost;
  *
  * @author benoit
  */
-public class PredetectionGPU {
+public class Predetection_ {
     
     int cudaResult;
     cufftHandle plan;
@@ -83,7 +84,7 @@ public class PredetectionGPU {
     int sizeFullImage;
     int totalSize;
     int totalSizeUnpadded;
-    DataPhase dparam;
+    DataPhase_ dparam;
     
     public double [] range;
     
@@ -98,7 +99,7 @@ public class PredetectionGPU {
     
     double zstep;
     double xystep;
-    public PredetectionGPU(int sizeFullImage, DataPhase dparam,double mini, double maxi, double step,double thresholdCrossCorrelation){
+    public Predetection_(int sizeFullImage, DataPhase_ dparam,double mini, double maxi, double step,double thresholdCrossCorrelation){
 
         double initStep=step;
         

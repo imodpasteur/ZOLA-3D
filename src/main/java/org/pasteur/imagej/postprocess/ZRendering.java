@@ -436,7 +436,7 @@ public class ZRendering {
         
     
         
-    public static ImagePlus smartColorRendering(ImagePlus imp,StackLocalization sl,double pixelsizeNM,int shift,boolean printLUT)  {
+    /*public static ImagePlus smartColorRendering(ImagePlus imp,StackLocalization sl,double pixelsizeNM,int shift,boolean printLUT)  {
         
         
         try{
@@ -645,7 +645,7 @@ public class ZRendering {
             //???? should not be any problem... just in case
         }
         return imp;
-    }
+    }*/
     
     
     
@@ -701,6 +701,8 @@ public class ZRendering {
         return colorRendering(imp,sl,pixelsizeNM,minX,maxX,minY,maxY,minZ,maxZ,shift,Double.POSITIVE_INFINITY,Double.POSITIVE_INFINITY,Double.POSITIVE_INFINITY,Double.POSITIVE_INFINITY,printLUT);
         
     }
+    
+    
     
     
     public static ImagePlus colorRendering(ImagePlus imp,StackLocalization sl,double pixelsizeNM,double minX, double maxX, double minY, double maxY,double minZ,double maxZ,int shift,boolean printLUT) {
@@ -923,6 +925,328 @@ public class ZRendering {
     
     
     
+    public static ImagePlus timeRendering2D(StackLocalization sl,double pixelsizeNM,int frameSplit) {
+        double binColor=256;
+        double minX=Double.POSITIVE_INFINITY;
+        double maxX=Double.NEGATIVE_INFINITY;
+        
+        double minY=Double.POSITIVE_INFINITY;
+        double maxY=Double.NEGATIVE_INFINITY;
+        
+        double minZ=Double.POSITIVE_INFINITY;
+        double maxZ=Double.NEGATIVE_INFINITY;
+        double x;
+        double y;
+        double z;
+        
+        //maybe use Arrays.sort to be fast
+        for (int i=0;i<sl.fl.size();i++){
+            for (int j=0;j<sl.fl.get(i).loc.size();j++){
+                if (sl.fl.get(i).loc.get(j).exists){
+                    x=sl.fl.get(i).loc.get(j).X;
+                    y=sl.fl.get(i).loc.get(j).Y;
+                    z=sl.fl.get(i).loc.get(j).Z;
+                    if (x<minX){
+                        minX=x;
+                    }
+                    if (y<minY){
+                        minY=y;
+                    }
+                    if (x>maxX){
+                        maxX=x;
+                    }
+                    if (y>maxY){
+                        maxY=y;
+                    }
+                    if (z<minZ){
+                        minZ=z;
+                    }
+                    if (z>maxZ){
+                        maxZ=z;
+                    }
+                }
+            }
+        }
+        
+        
+        return timeRendering2D(sl,pixelsizeNM,minX,maxX,minY,maxY,minZ,maxZ,frameSplit);
+        
+    }
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    public static ImagePlus timeRendering2D(StackLocalization sl,double pixelsizeNM,double minX, double maxX, double minY, double maxY,double minZ, double maxZ,int frameSplit) {
+        if (maxZ-minZ<pixelsizeNM){
+            maxZ=minZ+pixelsizeNM;
+        }
+        if (maxY-minY<pixelsizeNM){
+            maxY=minY+pixelsizeNM;
+        }
+        if (maxX-minX<pixelsizeNM){
+            maxX=minX+pixelsizeNM;
+        }
+        ZRendering.makeLUT();
+        double binColor=256;
+        
+        
+        int maxF=Integer.MIN_VALUE;
+        int minF=Integer.MAX_VALUE;
+        for (int i=0;i<sl.fl.size();i++){
+            int f=sl.fl.get(i).numFrame;
+            if (f<minF){
+                minF=f;
+            }
+            if (f>maxF){
+                maxF=f;
+            }
+        }
+        int frameNumb=maxF-minF+1;
+        if ((frameSplit<1)||(frameSplit>frameNumb)){
+            frameSplit=frameNumb;
+        }
+        int bin=frameNumb/frameSplit;
+        
+        
+        
+        
+        double saturation=2;
+        
+        
+        
+        
+        
+        
+        
+        
+        double x;
+        double y;
+        double z;
+        
+        
+        
+        int width=(int)Math.ceil((maxX-minX)/pixelsizeNM);
+        int height=(int)Math.ceil((maxY-minY)/pixelsizeNM);
+        
+        
+        
+        width=Math.max(width, 1);
+        height=Math.max(height, 1);
+        
+        
+        
+        
+        
+        
+        
+        IJ.log("slice number "+bin);
+        
+        int [][][][] mat = new int[bin][width][height][];
+        int [][][] count = new int[bin][width][height];
+        
+        for (int b=0;b<bin;b++){
+            for (int i=0;i<width;i++){
+                for (int ii=0;ii<height;ii++){
+                    count[b][i][ii]=0;
+                    mat[b][i][ii]=null;
+                }
+            }
+        }
+        
+        
+        for (int i=0;i<sl.fl.size();i++){
+            int f=sl.fl.get(i).numFrame;
+            for (int j=0;j<sl.fl.get(i).loc.size();j++){
+                if (sl.fl.get(i).loc.get(j).exists){
+                    
+
+                    int b=(f-minF)/frameSplit;
+                    
+                    x=sl.fl.get(i).loc.get(j).X;
+                    y=sl.fl.get(i).loc.get(j).Y;
+                    int xxx=Math.min(Math.max((int)((x-minX)/pixelsizeNM),0),width-1);
+                    int yyy=Math.min(Math.max((int)((y-minY)/pixelsizeNM),0),height-1);
+                    
+                    if ((b>=0)&&(b<bin)&&(xxx>=0)&&(yyy>=0)&&(xxx<width)&&(yyy<height)){
+                        count[b][xxx][yyy]++;
+                    }
+                }
+            }
+        }
+        
+        
+        for (int i=0;i<sl.fl.size();i++){
+            int f=sl.fl.get(i).numFrame;
+            for (int j=0;j<sl.fl.get(i).loc.size();j++){
+                if (sl.fl.get(i).loc.get(j).exists){
+
+
+                    int b=(f-minF)/frameSplit;
+                    x=sl.fl.get(i).loc.get(j).X;
+                    y=sl.fl.get(i).loc.get(j).Y;
+                    int xxx=Math.min(Math.max((int)((x-minX)/pixelsizeNM),0),width-1);
+                    int yyy=Math.min(Math.max((int)((y-minY)/pixelsizeNM),0),height-1);
+                    
+                    if ((b>=0)&&(b<bin)&&(xxx>=0)&&(yyy>=0)&&(xxx<width)&&(yyy<height)){
+                        if (mat[b][xxx][yyy]==null){
+                            mat[b][xxx][yyy]=new int[count[b][xxx][yyy]];
+                            count[b][xxx][yyy]=0;//recount for id position
+                        }
+                        mat[b][xxx][yyy][count[b][xxx][yyy]]=f;
+                        count[b][xxx][yyy]++;
+                    }
+                }
+            }
+        }
+        
+        
+        
+        
+        
+        IJ.log("NOTE:");
+        
+        
+        IJ.log("The color defines the frame: purple->blue->cian->green->yellow->red->pink in range: [0-"+frameSplit+"]");
+        IJ.log("The color corresponds to the mean of frame position in each pixel");
+        IJ.log("The saturation corresponds to the stdev of frame position in each pixel:");
+        IJ.log("The higher the stdev, the whiter it is ; range(std):[0-"+(frameSplit/(2*saturation))+"]");
+        
+        
+        
+        
+        
+        
+        
+        
+        ImageStack ims = new ImageStack(width,height);
+        
+        for (int b=0;b<bin;b++){
+            ColorProcessor ip = new ColorProcessor(width,height);
+            //FloatProcessor ip = new FloatProcessor(imageWidthM,imageHeightM);
+            for (int i=0;i<width;i++){
+                for (int ii=0;ii<height;ii++){
+                    if (mat[b][i][ii]!=null){
+                        //double mx=0;
+                        //double my=0;
+                        double std=0;
+                        double ma=0;
+                        for (int k=0;k<mat[b][i][ii].length;k++){
+                            double angle=2.*Math.PI-2.*Math.PI*((double)(((mat[b][i][ii][k]-minF)%frameSplit)))/((double)frameSplit);//2*Pi-x : to reverse color range: from blue to red
+                            ma+=angle;
+                            
+                            
+                            //mx+=Math.cos(angle);
+                            //my+=Math.sin(angle);
+                        }
+                        //mx/=(double)mat[b][i][ii].length;
+                        //my/=(double)mat[b][i][ii].length;
+                        ma/=(double)mat[b][i][ii].length;
+                        for (int k=0;k<mat[b][i][ii].length;k++){
+                            double angle=2.*Math.PI-2*Math.PI*((double)((mat[b][i][ii][k]-minF)%frameSplit))/((double)frameSplit);
+                            std+=(angle-ma)*(angle-ma);
+                        }
+                        std/=(double)mat[b][i][ii].length;
+                        std=Math.sqrt(std)/Math.PI;
+                        
+                        //double anglenew=Math.PI+Math.atan2(my, mx);
+                        
+                        //double sat=Math.sqrt(mx*mx+my*my);
+                        //if ((anglenew<Math.PI/4.)&&(mat[b][i][ii].length>1)){//45 degres -> max saturation
+                        //    sat=0;
+                        //}
+                        double H =-45.+((315.)*ma/(Math.PI*2.)); //convert in degree 315->max color=red     +45 degres: min color blue
+                        if (H<0){
+                            H+=360;
+                        }
+                        //double H =360. *ma/(Math.PI*2.); //convert in degree 315->max color=red     +45 degres: min color blue
+                        double S = (1-(std*saturation));
+                        S=Math.max(S, 0);
+                        //double S = 1;
+                        double V =1;
+                        int [] RGB=getRGB(H,S,V);
+                        ip.putPixel(i, ii,RGB);
+                        
+                        //ip.putPixelValue(i, ii,l);
+                        
+                    }
+                    
+                    
+                    
+                }
+            }
+            
+            //draw calibration bar
+            
+            int thesizeX=Math.min(width, height)/40;
+            int thesizeY=Math.min(width, height)/10;
+            
+            int sizex=5;
+            int sizey=20;
+            
+            if (thesizeX>sizex){
+                sizex=thesizeX;
+            }
+            if (thesizeY>sizey){
+                sizey=thesizeY;
+            }
+            
+            int decalPosit=sizex;
+            int x2=width-decalPosit;
+            int x1=x2-sizex;
+            int y1=decalPosit;
+            int y2=y1+sizey;
+
+
+            if ((y2<height)&&(x1>=0)){
+                for (int i=y1,ii=sizey;i<y2;i++,ii--){
+                    double angle=1-((double)ii)/(double)sizey;
+                    double H =-45.+((315.)*angle); //convert in degree 315->max color=red     +45 degres: min color blue
+                    if (H<0){
+                        H+=360;
+                    }
+                    
+                    for (int j=x1,jj=0;j<x2;j++,jj++){
+                        double S = 1-(double)jj/(double)sizex;
+                        //double S = 1;
+                        double V =1;
+                        int [] RGB = getRGB(H,S,V);
+                        ip.putPixel(j, i,RGB);
+                        
+                    }
+                }
+
+            }
+            else{
+                IJ.log("no calibration bar: image too small");
+            }
+            ims.addSlice("frame_"+(int)(b*frameSplit)+"->"+(int)((b+1)*frameSplit),ip);
+        }
+        
+        ImagePlus impp = new ImagePlus("colorStackFrame",ims);
+        
+        impp.show();
+        return impp;
+    }
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
     
     
     public static ImagePlus hist2D(StackLocalization sl,double pixelsizeNM,int shift) {
@@ -1134,19 +1458,27 @@ public class ZRendering {
         
         
     public static ImagePlus hist3D(StackLocalization sl,double pixelsizeNM,double minX, double maxX, double minY, double maxY,double minZ, double maxZ,int shift)  {
-        if (maxZ-minZ<pixelsizeNM){
-            maxZ=minZ+pixelsizeNM;
+        return hist3D(sl,pixelsizeNM,pixelsizeNM,minX,maxX,minY,maxY,minZ,maxZ,shift);
+    }
+    
+    
+    
+    
+        
+    public static ImagePlus hist3D(StackLocalization sl,double pixelsizeXYNM,double pixelsizeZNM,double minX, double maxX, double minY, double maxY,double minZ, double maxZ,int shift)  {
+        if (maxZ-minZ<pixelsizeZNM){
+            maxZ=minZ+pixelsizeZNM;
         }
-        if (maxY-minY<pixelsizeNM){
-            maxY=minY+pixelsizeNM;
+        if (maxY-minY<pixelsizeXYNM){
+            maxY=minY+pixelsizeXYNM;
         }
-        if (maxX-minX<pixelsizeNM){
-            maxX=minX+pixelsizeNM;
+        if (maxX-minX<pixelsizeXYNM){
+            maxX=minX+pixelsizeXYNM;
         }
         double binColor=255;
-        int width=(int)Math.ceil((maxX-minX)/pixelsizeNM);
-        int height=(int)Math.ceil((maxY-minY)/pixelsizeNM);
-        int depth=(int)Math.ceil((maxZ-minZ)/pixelsizeNM);
+        int width=(int)Math.ceil((maxX-minX)/pixelsizeXYNM);
+        int height=(int)Math.ceil((maxY-minY)/pixelsizeXYNM);
+        int depth=(int)Math.ceil((maxZ-minZ)/pixelsizeZNM);
         
         width+=shift*2;
         height+=shift*2;
@@ -1223,9 +1555,9 @@ public class ZRendering {
                     x=sl.fl.get(i).loc.get(j).X;
                     y=sl.fl.get(i).loc.get(j).Y;
                     z=sl.fl.get(i).loc.get(j).Z;
-                    xx=(int)((x-minX)/pixelsizeNM)+shift;
-                    yy=(int)((y-minY)/pixelsizeNM)+shift;
-                    zz=(int)((z-minZ)/pixelsizeNM)+shift;
+                    xx=(int)((x-minX)/pixelsizeXYNM)+shift;
+                    yy=(int)((y-minY)/pixelsizeXYNM)+shift;
+                    zz=(int)((z-minZ)/pixelsizeZNM)+shift;
                     //IJ.log("z "+z);
                     if ((xx-shift>=0)&&(yy-shift>=0)&&(xx+shift<width)&&(yy+shift<height)){
                         for (int a=-shift,aa=0;a<=shift;a++,aa++){
@@ -1244,11 +1576,14 @@ public class ZRendering {
             }
         }
         for (int t=0;t<depth;t++){
-            ims.addSlice("z="+(((double)t)*pixelsizeNM), ip[t]);
+            ims.addSlice("z="+(((double)t)*pixelsizeZNM), ip[t]);
         }
-        ImagePlus imp = new ImagePlus(""+ZRendering.nameHistPlot+" "+pixelsizeNM+"nm per px",ims);
+        ImagePlus imp = new ImagePlus(""+ZRendering.nameHistPlot+" "+pixelsizeXYNM+"nm per px",ims);
         imp.show();
-        IJ.run("Set Scale...", "distance=1 known="+pixelsizeNM+" unit=nm");
+        IJ.run("Set Scale...", "distance=1 known="+pixelsizeXYNM+" unit=nm");
+        if (pixelsizeXYNM!=pixelsizeZNM){
+            IJ.log("WARNING:  X/Y pixel size="+pixelsizeXYNM+"  //  Z pixel size="+pixelsizeZNM);
+        }
         return imp;
         
     }

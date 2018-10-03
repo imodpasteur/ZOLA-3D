@@ -3,10 +3,11 @@
  * To change this template file, choose Tools | Templates
  * and open the template in the editor.
  */
-package org.pasteur.imagej.process;
+package org.pasteur.imagej.process.gpu;
 
 
 
+import org.pasteur.imagej.process.gpu.DataPhase_;
 import org.pasteur.imagej.utils.ImageShow;
 import org.pasteur.imagej.utils.Matrixe;
 import ij.IJ;
@@ -17,16 +18,16 @@ import java.awt.Color;
  *
  * @author benoit
  */
-public class SearchPSFcenter {
-    DataPhase dp;
+public class SearchPSFcenter_ {
+    DataPhase_ dp;
     double axialRange;
     double zfocus;
     double photonNumber=3000;
     double background=50;
     double epsilon=0.00001;//0.01nm
-    public SearchPSFcenter(DataPhase dp,double axialRange){
+    public SearchPSFcenter_(DataPhase_ dp,double axialRange){
         this.axialRange=axialRange;
-        this.dp=new DataPhase(dp.param.size,dp.param.size,dp);//need same size as size FFT (large size) to compute min CRLB
+        this.dp=new DataPhase_(dp.param.size,dp.param.size,dp);//need same size as size FFT (large size) to compute min CRLB
         
        
         

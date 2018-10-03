@@ -11,7 +11,7 @@ package org.pasteur.imagej.process.cpu;
  */
 
 
-import org.pasteur.imagej.process.PhaseRetrievalParametersDouble;
+import org.pasteur.imagej.process.PhaseParameters;
 import org.pasteur.imagej.utils.FastFourierTransform;
 import ij.IJ;
 
@@ -88,12 +88,12 @@ public class PSFPhase {
     double [][] res2D ;
     double [] res1D ;
     double [] res;
-    PhaseRetrievalParametersDouble param;
+    PhaseParameters param;
     
     int cudaResult;
     int sizeoutput1;
     int sizeoutput2;
-    public PSFPhase(PhaseRetrievalParametersDouble param){
+    public PSFPhase(PhaseParameters param){
         sizeoutput1=param.sizeoutput;
         sizeoutput2=param.sizeoutput*2;
         if (sizeoutput2>param.size_cpu){

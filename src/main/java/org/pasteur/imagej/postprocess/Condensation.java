@@ -361,20 +361,25 @@ public class Condensation {
     
     
     
-    public double [] fitExponential1(){
-        int posit=0;
-        loop:for (int i=0;i<hist.length-1;i++){
-            if (hist[i]<1){
+    public double [] fitExponential1(int start){
+        int posit=hist.length;
+        loop:for (int i=start;i<hist.length-1;i++){
+            if ((hist[i]<hist[start]*.01)||(hist[i]<1)){
                 posit=i;
                 break loop;
             }
         }
-        int len=posit;
+        posit=Math.min(3, posit);
+        posit=Math.min(hist.length-1, posit);
+        if (posit<3){
+            IJ.log("WARNING: not enough points for fitting");
+        }
+        int len=posit-start;
         double [] x= new double [len];
         double [] y= new double [len];
         for (int i=0;i<len;i++){
-            x[i]=histaxis[i];
-            y[i]=hist[i];
+            x[i]=histaxis[i+start];
+            y[i]=hist[i+start];
         }
         CurveFitter cf = new CurveFitter(x,y);
         
@@ -410,7 +415,6 @@ public class Condensation {
         v[1]=(-1/b);
         return v;
     }
-    
     
     
     

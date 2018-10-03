@@ -3,7 +3,8 @@
  * To change this template file, choose Tools | Templates
  * and open the template in the editor.
  */
-package org.pasteur.imagej.process;
+package org.pasteur.imagej.process.gpu;
+import org.pasteur.imagej.process.PhaseParameters;
 import org.pasteur.imagej.cuda.*;
 
 import ij.IJ;
@@ -52,7 +53,7 @@ import jcuda.runtime.cudaMemcpyKind;
  *
  * @author benoit
  */
-public class Model3DJCudaFastDouble {
+public class Model3D_ {
     
     
     
@@ -98,8 +99,8 @@ public class Model3DJCudaFastDouble {
     int sizepow;
     int size;
     int nbImage;
-    PhaseRetrievalParametersDouble param;
-    public Model3DJCudaFastDouble(PhaseRetrievalParametersDouble param, double [][][] inputImage, double [][] scmos){
+    PhaseParameters param;
+    public Model3D_(PhaseParameters param, double [][][] inputImage, double [][] scmos){
         this.param=param;
         
         if ((inputImage[0].length!=inputImage[0][0].length)){

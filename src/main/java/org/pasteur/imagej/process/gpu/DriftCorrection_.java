@@ -3,7 +3,7 @@
  * To change this template file, choose Tools | Templates
  * and open the template in the editor.
  */
-package org.pasteur.imagej.postprocess;
+package org.pasteur.imagej.process.gpu;
 
 /*
  * To change this license header, choose License Headers in Project Properties.
@@ -55,7 +55,7 @@ import jcuda.runtime.JCuda;
  *
  * @author benoit
  */
-public class DriftCorrection {
+public class DriftCorrection_ {
     
     
     
@@ -124,7 +124,7 @@ public class DriftCorrection {
     double initDriftZ=0;
     
     //WARNING : [x][y][z] instead of [z][x][y]
-    public DriftCorrection(StackLocalization stackloc,double pixelsizeNM,int bin, double subImageSizeUm,String path){
+    public DriftCorrection_(StackLocalization stackloc,double pixelsizeNM,int bin, double subImageSizeUm,String path){
         
         
         if (path.length()>1){

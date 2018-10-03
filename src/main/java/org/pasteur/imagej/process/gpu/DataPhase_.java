@@ -3,12 +3,12 @@
  * To change this template file, choose Tools | Templates
  * and open the template in the editor.
  */
-package org.pasteur.imagej.process;
+package org.pasteur.imagej.process.gpu;
 
 
-
-import org.pasteur.imagej.utils.FileVectorLoader;
-import org.pasteur.imagej.utils.ImageShow;
+import  org.pasteur.imagej.process.*;
+import org.pasteur.imagej.process.PhaseParameters;
+import org.pasteur.imagej.utils.*;
 import ij.IJ;
 import java.io.BufferedReader;
 import java.io.FileInputStream;
@@ -19,30 +19,40 @@ import java.io.PrintWriter;
 import jcuda.runtime.JCuda;
 import jcuda.runtime.cudaError;
 
+
+
+import java.io.FileWriter;
+import java.io.FileNotFoundException;
+import java.io.FileReader;
+import java.io.IOException;
+import java.util.ArrayList;
+import java.util.Iterator;
+
+
 /**
  *
  * @author benoit
  */
-public class DataPhase {
+public class DataPhase_ {
     
     
-    public PhaseRetrievalParametersDouble param=null;
-    public PSFphaseJCudaFastDouble psf=null;
+    public PhaseParameters param=null;
+    public PSF_double_ psf=null;
     
-    public PSFphaseJCudaFastFloatMany psf_fMany=null;
+    public PSFmany_float_ psf_fMany=null;
     
     
-    public PSFphaseJCudaFastFloatMany psf_f_crlbMany=null;
+    public PSFmany_float_ psf_f_crlbMany=null;
     
     
     //public PSFphaseJCudaFastDoubleMany psfMany=null;
-    public PSFphaseJCudaFastDoubleModelMany modelMany=null;
+    public Modelmany_double_ modelMany=null;
     
     
     //public ZernikePhaseJCudaFastDouble kzZer;
     
-    public ZernikePhaseJCudaFastDouble phaseZer=null;
-    
+    public ZernikePhase_ phaseZer=null;
+    public GenericPhase_ phaseNonZer=null;
     
     
     public boolean loading;
@@ -51,19 +61,19 @@ public class DataPhase {
     //public GaussianPupil pupilGauss;
     
     
-    public DataPhase(int sizeFFT,int sizeoutput,int orderGaussianPupil,double xystep,double zstep,double wavelength,double noil,double na,double sigmaGaussianKernel,int zernikeCoefNumber){
+    public DataPhase_(int sizeFFT,int sizeoutput,int orderGaussianPupil,double xystep,double zstep,double wavelength,double noil,double na,double sigmaGaussianKernel,int zernikeCoefNumber){
         
         
         
-        param=new PhaseRetrievalParametersDouble(sizeFFT,sizeoutput,orderGaussianPupil,xystep,zstep,wavelength,noil,na,1,sigmaGaussianKernel);
+        param=new PhaseParameters(sizeFFT,sizeoutput,orderGaussianPupil,xystep,zstep,wavelength,noil,na,1,sigmaGaussianKernel);
         
         
         //IJ.log("sigmaGaussianKernel "+sigmaGaussianKernel+"  "+param.sigmaGaussianKernel);
         
         
-        psf=new PSFphaseJCudaFastDouble(param);
+        psf=new PSF_double_(param);
         
-        phaseZer = new ZernikePhaseJCudaFastDouble(param,zernikeCoefNumber,0);
+        phaseZer = new ZernikePhase_(param,zernikeCoefNumber,0);
         
         
         //pupilGauss = new GaussianPupil(param);
@@ -79,35 +89,32 @@ public class DataPhase {
         
     }
     
-    public DataPhase(int sizeFFT,int sizeoutput,int orderGaussianPupil,double xystep,double zstep,double wavelength,double noil,double na,double sigmaGaussianKernel,int zernikeCoefNumber,int zernikeCoefNumberPupil){
-        
-        param=new PhaseRetrievalParametersDouble(sizeFFT,sizeoutput,orderGaussianPupil,xystep,zstep,wavelength,noil,na,1,sigmaGaussianKernel);
-        
-        psf=new PSFphaseJCudaFastDouble(param);
-        
-        phaseZer = new ZernikePhaseJCudaFastDouble(param,zernikeCoefNumber,0);
+    
+    
+    
+    public DataPhase_(int sizeFFT,int sizeoutput,int orderGaussianPupil,double xystep,double zstep,double wavelength,double noil,double na,double sigmaGaussianKernel){
         
         
         
-        
-        //pupilGauss = new GaussianPupil(param);
-        
-        psf.updatePhase(phaseZer.computeCombination());
-        //psf.updatePupil(pupilGauss.getPupil());
-        
-//        pupilZer = new ZernikePhaseJCudaFastDouble(param,zernikeCoefNumberPupil,1);
-//        double value=1./(double)Math.sqrt(pupilZer.nbDataPerImage);
-//        pupilZer.setA(0,0, value);
+        param=new PhaseParameters(sizeFFT,sizeoutput,orderGaussianPupil,xystep,zstep,wavelength,noil,na,1,sigmaGaussianKernel);
         
         
-        //int [] coefZ = new int [4];
-        //coefZ[0]=0;coefZ[1]=1;coefZ[2]=2;coefZ[3]=4;
-        //kzZer = new ZernikePhaseJCudaFastDouble(param,coefZ);
+        //IJ.log("sigmaGaussianKernel "+sigmaGaussianKernel+"  "+param.sigmaGaussianKernel);
+        
+        
+        psf=new PSF_double_(param);
+        
+        phaseZer = new ZernikePhase_(param,3,0);//for piston(replaced by defocus) and tilt (useful for bead registration)
+        
+        phaseNonZer = new GenericPhase_(param);
+        
+        
         
     }
     
     
-    public DataPhase(int sizeFFT){
+    
+    public DataPhase_(int sizeFFT){
         
         String path=FileVectorLoader.chooseLoadingPath("Please select the calibration file (retrieved phase)");
         loading=this.load(sizeFFT,path);
@@ -117,7 +124,7 @@ public class DataPhase {
     
     
     
-    public DataPhase(int sizeFFT,String path){
+    public DataPhase_(int sizeFFT,String path){
         if (path!=null){
             loading=load(sizeFFT,path);
         }
@@ -125,7 +132,7 @@ public class DataPhase {
     }
     
     
-    public DataPhase(){
+    public DataPhase_(){
         
         
     }
@@ -133,14 +140,26 @@ public class DataPhase {
     
     
     //clone dparam but sizeFFT change
-    public DataPhase(int sizeFFT,int sizeoutput,DataPhase dphase){
+    public DataPhase_(int sizeFFT,int sizeoutput,DataPhase_ dphase){
+        if (dphase.param.zernikedPSF){
+            param=new PhaseParameters(sizeFFT,sizeoutput,dphase.param);
+        }
+        else{
+            param=new PhaseParameters(dphase.param.size,sizeoutput,dphase.param);
+        }
         
-        param=new PhaseRetrievalParametersDouble(sizeFFT,sizeoutput,dphase.param);
+        psf=new PSF_double_(param);
         
-        psf=new PSFphaseJCudaFastDouble(param);
-        
-        phaseZer = new ZernikePhaseJCudaFastDouble(param,dphase.phaseZer.coef);
-        phaseZer.setApointer(dphase.phaseZer.getApointer());
+        if (dphase.param.zernikedPSF){
+            phaseZer = new ZernikePhase_(param,dphase.phaseZer.coef);
+            phaseZer.setApointer(dphase.phaseZer.getApointer());
+            psf.updatePhase(phaseZer.computeCombination());
+        }
+        else{
+            phaseNonZer  = new GenericPhase_(param);
+            phaseNonZer.setValuesPhase(dphase.phaseNonZer.phase);
+            psf.updatePhase(phaseNonZer.getPointerPhase());
+        }
         
         
         //pupilGauss = new GaussianPupil(param);
@@ -154,27 +173,38 @@ public class DataPhase {
         
         
         
-        psf.updatePhase(phaseZer.computeCombination());
+        
         //psf.updatePupil(pupilGauss.getPupil());
        // psf.updateKz(kzZer.computeCombination());
     }
     
     
     //clone dparam
-    public DataPhase(DataPhase dphase,int stream){
+    public DataPhase_(DataPhase_ dphase,int stream){
         
         
         
-        //param=new PhaseRetrievalParametersDouble(dphase.param.size,dphase.param.sizeoutput,dphase.param.xystep,dphase.param.zstep,dphase.param.wavelength,dphase.param.noil,dphase.param.na);
+        //param=new PhaseParameters(dphase.param.size,dphase.param.sizeoutput,dphase.param.xystep,dphase.param.zstep,dphase.param.wavelength,dphase.param.noil,dphase.param.na);
         
         
-        param=new PhaseRetrievalParametersDouble(dphase.param);
+        param=new PhaseParameters(dphase.param);
         this.param.stream=stream;
         
-        psf=new PSFphaseJCudaFastDouble(param);
+        psf=new PSF_double_(param);
         
-        phaseZer = new ZernikePhaseJCudaFastDouble(param,dphase.phaseZer.coef);
-        phaseZer.setApointer(dphase.phaseZer.getApointer());
+//        phaseZer = new ZernikePhaseJCudaFastDouble(param,dphase.phaseZer.coef);
+//        phaseZer.setApointer(dphase.phaseZer.getApointer());
+        
+        if (dphase.param.zernikedPSF){
+            phaseZer = new ZernikePhase_(param,dphase.phaseZer.coef);
+            phaseZer.setApointer(dphase.phaseZer.getApointer());
+            psf.updatePhase(phaseZer.computeCombination());
+        }
+        else{
+            phaseNonZer  = new GenericPhase_(param);
+            phaseNonZer.setValuesPhase(dphase.phaseNonZer.phase);
+            psf.updatePhase(phaseNonZer.getPointerPhase());
+        }
         
         //pupilGauss = new GaussianPupil(param);
         
@@ -187,26 +217,26 @@ public class DataPhase {
         
         
         
-        psf.updatePhase(phaseZer.computeCombination());
+        
         //psf.updatePupil(pupilGauss.getPupil());
 //        psf.updatePupil(pupilZer.computeCombination());
         //psf.updateKz(kzZer.computeCombination());
     }
     
     
-    public DataPhase(PhaseRetrievalParametersDouble p,int zerNumber){
+    public DataPhase_(PhaseParameters p,int zerNumber){
         
         
         
-        param=new PhaseRetrievalParametersDouble(p);
+        param=new PhaseParameters(p);
         
         
         //IJ.log("sigmaGaussianKernel "+sigmaGaussianKernel+"  "+param.sigmaGaussianKernel);
         
         
-        psf=new PSFphaseJCudaFastDouble(p);
+        psf=new PSF_double_(p);
         
-        phaseZer = new ZernikePhaseJCudaFastDouble(param,zerNumber,0);
+        phaseZer = new ZernikePhase_(param,zerNumber,0);
         
         
         
@@ -214,43 +244,52 @@ public class DataPhase {
     }
     
     
-    
-    public void setMany(int numberPSF){
-        setMany(numberPSF,false);
+    //useful for single emitter fitting where numberPSF=numberModel
+    public void setMany(int numberModel){
+        setMany(numberModel,false);
     }
-    public void setMany(int numberPSF,boolean scmosCamera){
+    public void setMany(int numberModel,boolean scmosCamera){
         //psfMany=new PSFphaseJCudaFastDoubleMany(param,numberPSF);
         //psfMany.updatePhase(phaseZer.computeCombination());
-        param.PSF_number=numberPSF;
-        psf_fMany=new PSFphaseJCudaFastFloatMany(param,numberPSF);
+        
+        psf_fMany=new PSFmany_float_(param,numberModel);
         psf_fMany.updatePhase(phaseZer.computeCombination());
         
         
-        psf_f_crlbMany=new PSFphaseJCudaFastFloatMany(param,11);//for CRLB computation: 5*5 matrix -> 11 elem to compute derivatives
+        psf_f_crlbMany=new PSFmany_float_(param,11);//for CRLB computation: 5*5 matrix -> 11 elem to compute derivatives
         psf_f_crlbMany.updatePhase(phaseZer.computeCombination());
         
         
         
-        modelMany=new PSFphaseJCudaFastDoubleModelMany(psf_fMany,psf_f_crlbMany,param,numberPSF,scmosCamera);
+        modelMany=new Modelmany_double_(psf_fMany,psf_f_crlbMany,param,numberModel,scmosCamera);
         
     }
     
-    public void setManytmp(int numberPSF){
+    
+    
+    
+    //useful for multi emitter fitting where numberPSF>numberModel
+    public void setMany(int numberModel,int numberPSFperModel){
+        setMany(numberModel,numberPSFperModel,false);
+    }
+    public void setMany(int numberModel,int numberPSFperModel,boolean scmosCamera){
         //psfMany=new PSFphaseJCudaFastDoubleMany(param,numberPSF);
         //psfMany.updatePhase(phaseZer.computeCombination());
         
-        psf_fMany=new PSFphaseJCudaFastFloatMany(param,100);
+        psf_fMany=new PSFmany_float_(param,numberPSFperModel*numberModel);
         psf_fMany.updatePhase(phaseZer.computeCombination());
         
         
-        /*psf_f_crlbMany=new PSFphaseJCudaFastFloatMany(param,11);//for CRLB computation: 5*5 matrix -> 11 elem to compute derivatives
+        psf_f_crlbMany=new PSFmany_float_(param,11);//for CRLB computation: 5*5 matrix -> 11 elem to compute derivatives
         psf_f_crlbMany.updatePhase(phaseZer.computeCombination());
         
         
         
-        modelMany=new PSFphaseJCudaFastDoubleModelMany(psf_fMany,psf_f_crlbMany,param,numberPSF);*/
+        modelMany=new Modelmany_double_(psf_fMany,psf_f_crlbMany,param,numberModel,numberPSFperModel,scmosCamera);
         
     }
+    
+    
     
     public void setStream(int stream){
         this.param.stream=stream;
@@ -302,12 +341,16 @@ public class DataPhase {
         }
         
         
+        
+        
         if (this.psf_f_crlbMany!=null){
             this.psf_f_crlbMany.free();
             psf_f_crlbMany=null;
         }
-        
-        this.phaseZer.free();
+        if (phaseZer!=null)
+            this.phaseZer.free();
+        if (phaseNonZer!=null)
+            this.phaseNonZer.free();
         //this.pupilGauss.free();
         //this.pupilZer.free();
         
@@ -322,14 +365,34 @@ public class DataPhase {
     }
     
     
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
     public boolean load(int sizeFFT,String path){
         
-        int nn=(path.lastIndexOf("."));
-        if (nn>path.length()-5){
-            path=path.substring(0,nn);
-        }
         
+        if (path.endsWith(".csv")){
+            loadCSV(sizeFFT,path);
+        }
+        else if (path.endsWith(".json")){
+            loadJSON(sizeFFT,path);
+        }
+        else{
+            IJ.log("ERROR: file extension unknown");
+            return false;
+        }
+        return true;
+    }
        
+    public boolean loadCSV(int sizeFFT,String path){
+        
         
         double na=0;
         double noil=0;
@@ -344,7 +407,7 @@ public class DataPhase {
         
         int nbLine=0;
         try{
-            InputStream ips=new FileInputStream(path+".csv"); 
+            InputStream ips=new FileInputStream(path); 
             InputStreamReader ipsr=new InputStreamReader(ips);
             BufferedReader br=new BufferedReader(ipsr);
             
@@ -379,7 +442,7 @@ public class DataPhase {
             size=Integer.parseInt(lin[1]);
             
 
-            
+            //IJ.log("lin "+lin[1]);
             ligne=br.readLine();
             lin=ligne.split(regex);
             xystep=Double.parseDouble(lin[1]);
@@ -411,18 +474,18 @@ public class DataPhase {
             ligne=br.readLine();
             lin=ligne.split(regex);
             //IJ.log("lin "+lin[0]+"  "+lin[1]);
+            
             if (lin[0].startsWith("sigma")){
                 double sigmaGaussianKernel=Double.parseDouble(lin[1]);
                 
-                param = new PhaseRetrievalParametersDouble(sizeFFT,sizeFFT,order,xystep,zstep,wavelength,noil,na,1,sigmaGaussianKernel);
+                param = new PhaseParameters(sizeFFT,sizeFFT,order,xystep,zstep,wavelength,noil,na,1,sigmaGaussianKernel);
                 ligne=br.readLine();
             }
             else{
-                param = new PhaseRetrievalParametersDouble(sizeFFT,sizeFFT,order,xystep,zstep,wavelength,noil,na,1,1);
+                param = new PhaseParameters(sizeFFT,sizeFFT,order,xystep,zstep,wavelength,noil,na,1,1);
             }
-            
             //IJ.log("sigGauss "+param.sigmaGaussianKernel);
-            param.pathcalib=path+".csv";
+            param.pathcalib=path;
             
             ligne=br.readLine();
 
@@ -442,7 +505,7 @@ public class DataPhase {
 
             ligne=br.readLine();
             lin=ligne.split(regex);
-            param.updateweightZ(Double.parseDouble(lin[1]));
+            //param.updateweightZ(Double.parseDouble(lin[1]));
             
             ligne=br.readLine();
             lin=ligne.split(regex);
@@ -453,7 +516,8 @@ public class DataPhase {
                 
             }
             
-            this.phaseZer=new ZernikePhaseJCudaFastDouble(param,coefa);
+            this.phaseZer=new ZernikePhase_(param,coefa);
+            
             
             double [] a = new double [nbCoefa];
             //for (int or=0;or<dimph;or++){
@@ -469,86 +533,19 @@ public class DataPhase {
             
             
             
-//            ligne=br.readLine();
-//            lin=ligne.split(regex);
-//            int nbCoefb=lin.length-1;
-//            int [] coefb = new int [nbCoefb] ;
-//            for (int i=1;i<lin.length;i++){
-//                coefb[i-1]=Integer.parseInt(lin[i]);
-//            }
-//            
-//            this.pupilZer=new ZernikePhaseJCudaFastDouble(param,coefb);
-//            double [][] b = new double [order][nbCoefb];
-//            for (int or=0;or<order;or++){
-//                ligne=br.readLine();
-//                lin=ligne.split(regex);
-//
-//                for (int i=1;i<lin.length;i++){
-//                    b[or][i-1]=Double.parseDouble(lin[i]);
-//                }
-//                pupilZer.setA(b);
-//            }
-            
-            
-//            double [] varX = new double [order+1];
-//            ligne=br.readLine();
-//            lin=ligne.split(regex);
-//            for (int or=1;or<lin.length;or++){
-//                IJ.log(""+lin[or]);
-//                varX[or-1]=Double.parseDouble(lin[or]);
-//            }
-//            
-//            
-//            
-//            ligne=br.readLine();
-//            lin=ligne.split(regex);
-//            IJ.log(""+lin[1]);
-//            double powerFlatTop=Double.parseDouble(lin[1]);
-//            
-//            IJ.log("varX "+varX[0]);
-//            IJ.log("powerFlatTop "+powerFlatTop);
-//           /this.pupilGauss=new GaussianPupil(param,varX,powerFlatTop);
-            
-            //ligne=br.readLine();
-            //lin=ligne.split(regex);
-            //int nbCoefp=lin.length-1;
-            //int [] coefp = new int [nbCoefp] ;
-            //for (int i=1;i<lin.length;i++){
-            //    coefp[i-1]=Integer.parseInt(lin[i]);
-            //}
-            //
-            //ligne=br.readLine();
-            //lin=ligne.split(regex);
-            //this.kzZer=new ZernikePhaseJCudaFastDouble(param,coefp);
-            //double [] p = new double [nbCoefp];
-            //for (int i=1;i<lin.length;i++){
-            //    p[i-1]=Double.parseDouble(lin[i]);
-            //    
-            //}
-            //kzZer.setA(p);
             
             
             
-            psf=new PSFphaseJCudaFastDouble(param);
+            psf=new PSF_double_(param);
             
             psf.updatePhase(phaseZer.computeCombination());
             
             
             
             
-            //IJ.log("get pup...");
-            
-            //psf.updatePupil(pupilGauss.getPupil());
-            //IJ.log("get pup ok");
-            //ImageShow.imshow(psf.getPhase(),"phase");
-            
-            //ImageShow.imshow(psf.getPupil(),"pupil");
-            //psf.updatePupil(pupilZer.computeCombination());
-            //psf.updateKz(kzZer.computeCombination());
-            
             br.close();
-            //ImageShow.imshow(psf.getPhase(),"ph");
-            //ImageShow.imshow(psf.getPupil(),"pup");
+            
+            
             IJ.log("Calibration file loaded");
             return true;
         }		
@@ -560,25 +557,46 @@ public class DataPhase {
         
     }
     
-    public void save(String path){
+    
+    
+    
+    
+    
+    
+    public boolean save(String path){
+        
+        
+        if (path.endsWith(".csv")){
+            saveCSV(path);
+        }
+        else if (path.endsWith(".json")){
+            saveJSON(path);
+        }
+        else{
+            IJ.log("ERROR: file extension unknown");
+            return false;
+        }
+        return true;
+    }
+    
+    
+    
+    public void saveCSV(String path){
         if (path!=null){
-            int nn=(path.lastIndexOf("."));
-            if (nn>path.length()-5){
-                path=path.substring(0,nn);
-            }
+            
 
             try {
 
 
                 PrintWriter sortie;
-
-                //IJ.log("path : "+path+".csv");
-                    sortie = new PrintWriter(new FileWriter(path+".csv", false));
+                
+                IJ.log("path : "+path);
+                    sortie = new PrintWriter(new FileWriter(path, false));
                     sortie.println("Parameters");
                     sortie.println("phaseNumber,"+1);
                     sortie.println("zstep,"+param.zstep);
                     sortie.println("dimPhase,"+0);
-                    sortie.println("orderPupil,"+param.orderGaussianPupil);
+                    sortie.println("orderPupil,"+0);
                     sortie.println("size,"+param.size);
                     sortie.println("sizePix,"+param.xystep);
                     sortie.println("NA,"+param.na);
@@ -590,7 +608,11 @@ public class DataPhase {
                     sortie.println("position,"+0);
                     sortie.println("A,"+param.A);
                     sortie.println("B,"+param.B);
-                    sortie.println("Wz,"+param.getweightZ());
+                    sortie.println("Wz,"+1);
+                    
+                    //param = new PhaseParameters(param.size,param.size,order,xystep,zstep,wavelength,noil,na,1,sigmaGaussianKernel);
+                
+                    
                     String sca="ZernikeCoef";
                     
 //                    String scb="ZernikeCoef";
@@ -666,12 +688,188 @@ public class DataPhase {
             } catch (Exception e) {
                     e.printStackTrace();
             }
-
-
-
-
+            
+            
+            
+            
             //psf.save(path);
         }
     }
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    public boolean loadJSON(int sizeFFT,String path){
+        
+        //JSONParser parser = new JSONParser();
+
+        //try{
+            double na=0;
+            double noil=0;
+            double wavelength=0;
+            int size=0;
+            double xystep=0;
+            double zstep=0;
+            int order=0;
+            int dimph=1;
+            double sigmaGaussianKernel=0;
+            boolean zernikedPSF;
+            //Object obj = parser.parse(new FileReader(path));
+
+
+            JSONformat json= new JSONformat();
+
+            json.load(path);
+            
+            //JSONObject jsonObject = (JSONObject) obj;
+
+            zernikedPSF = Boolean.parseBoolean(json.get("zernikedPSF").toString());
+
+            zstep = Double.parseDouble(json.get("zstep").toString());
+
+
+            size = Integer.parseInt(json.get("sizeFFT").toString());
+
+
+            xystep = Double.parseDouble(json.get("sizePix").toString());
+
+
+            na = Double.parseDouble(json.get("NA").toString());
+
+
+            noil = Double.parseDouble(json.get("index").toString());
+
+
+            wavelength = Double.parseDouble(json.get("wavelength").toString());
+
+
+            sigmaGaussianKernel = Double.parseDouble(json.get("sigmaGaussianKernel").toString());
+
+
+
+            if (zernikedPSF){
+                param = new PhaseParameters(sizeFFT,sizeFFT,order,xystep,zstep,wavelength,noil,na,1,sigmaGaussianKernel);
+            }
+            else{
+                param = new PhaseParameters(size,size,order,xystep,zstep,wavelength,noil,na,1,sigmaGaussianKernel);
+            }
+            param.zernikedPSF=zernikedPSF;
+
+            psf=new PSF_double_(param);
+
+            if (zernikedPSF){
+                // loop array
+                //JSONArray msg = (JSONArray) jsonObject.get("zernike");
+
+                String [] msg = json.getVect("zernike");
+
+                int nbCoefa=msg.length;
+                int [] coefa = new int [nbCoefa] ;
+                double [] a = new double [nbCoefa];
+                for (int i=0;i<msg.length;i++){
+                    coefa[i]=i;
+                    a[i]=Double.parseDouble((msg[i]));
+                    //IJ.log("load "+i+"  "+a[i]);
+                }
+
+                this.phaseZer=new ZernikePhase_(param,coefa);
+
+                phaseZer.setA(a);
+
+                psf.updatePhase(phaseZer.computeCombination());
+            }
+            else{
+
+                String [] msg = json.getVect("pixelPhaseValue");
+                //JSONArray msg = (JSONArray) jsonObject.get("pixelPhaseValue");
+
+
+                IJ.log("len "+msg.length+"  "+msg[0]+"  "+msg[msg.length-1]);
+                int nbCoefa=msg.length;
+                double [] a = new double [nbCoefa];
+                for (int i=0;i<msg.length;i++){
+                    a[i]=Double.parseDouble((msg[i]));
+                    //IJ.log("load "+i+"  "+a[i]);
+                }
+
+                this.phaseNonZer=new GenericPhase_(param);
+                phaseNonZer.setValuesPhase(a);
+
+                psf.updatePhase(phaseNonZer.getPointerPhase());
+            }
+        /*}
+        catch(Exception e){
+            IJ.log("exception loading "+e);
+        }*/
+        
+        
+        return true;
+    }
+    
+    
+    
+    
+    public void saveJSON(String path){
+        if (path!=null){
+            
+            
+            
+            //JSONObject obj = new JSONObject();
+            
+            JSONformat obj = new JSONformat();
+            
+            obj.put("zstep",param.zstep);
+            //obj.put("orderPupil",param.orderGaussianPupil);
+            obj.put("sizeFFT",param.size);
+            obj.put("sizePix",param.xystep);
+            obj.put("NA",param.na);
+            obj.put("index",param.noil);
+            obj.put("wavelength",param.wavelength);
+            obj.put("sigmaGaussianKernel",param.sigmaGaussianKernel);
+            obj.put("zernikedPSF",param.zernikedPSF);
+            
+            if (param.zernikedPSF){
+                //JSONArray zernikelist = new JSONArray();
+                double [] zer = new double [phaseZer.numCoef];
+                for (int i=0;i<phaseZer.numCoef;i++){
+                    //zernikelist.add(phaseZer.getA(i));
+                    zer[i]=phaseZer.getA(i);
+                    //IJ.log("save "+i+"  "+phaseZer.getA(i));
+
+                }
+                obj.put("zernike", zer);
+            }
+            else{
+                //JSONArray list = new JSONArray();
+                double [] list = new double [phaseNonZer.phase.length];
+                for (int i=0;i<phaseNonZer.phase.length;i++){
+                    //list.add(phaseNonZer.phase[i]);
+                    list[i]=phaseNonZer.phase[i];
+
+                }
+                obj.put("pixelPhaseValue", list);
+            }
+            
+            
+            obj.save(path);
+            
+            
+            
+            
+        }
+    }
+    
+    
+    
+    
     
 }

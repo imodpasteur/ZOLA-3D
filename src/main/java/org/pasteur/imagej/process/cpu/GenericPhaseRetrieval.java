@@ -4,15 +4,10 @@
  * and open the template in the editor.
  */
 package org.pasteur.imagej.process.cpu;
+import org.pasteur.imagej.utils.*;
+import org.pasteur.imagej.process.*;
 
-/**
- *
- * @author benoit
- */
-import org.pasteur.imagej.utils.PolynomialFit;
-import org.pasteur.imagej.utils.ImageShow;
-import org.pasteur.imagej.process.InitBackgroundAndPhotonNumberMany;
-import org.pasteur.imagej.process.PhaseRetrievalParametersDouble;
+
 import ij.IJ;
 import java.awt.Color;
 import ij.gui.Plot;
@@ -22,7 +17,7 @@ import ij.gui.Plot;
  *
  * @author benoit
  */
-public class PhaseRetrieval {
+public class GenericPhaseRetrieval {
     
     int cpt=0;
     int idStack=0;
@@ -33,7 +28,7 @@ public class PhaseRetrieval {
     double [][][][] image;
     int methodLikelihood=0;
     int center;
-    InitBackgroundAndPhotonNumberMany paramImage;
+    InitBackgroundAndPhotonNumber paramImage;
     DataPhase dparam;
     //public Model3DJCudaFastDouble [] model3D;
     
@@ -75,7 +70,7 @@ public class PhaseRetrieval {
     
     double maxDrift=10;//max drift between each frame (nm)
     
-    public PhaseRetrieval(int sizeFFT,double xystep,double zstep,double wavelength,double noil,double na,int zernikeCoefNumber,InitBackgroundAndPhotonNumberMany paramImage,String path_calibration,double sigma,int axialside){
+    public GenericPhaseRetrieval(int sizeFFT,double xystep,double zstep,double wavelength,double noil,double na,InitBackgroundAndPhotonNumber paramImage,String path_calibration,double sigma,int axialside){
         this.sigma=sigma;
         this.image=paramImage.image;
         
@@ -85,8 +80,8 @@ public class PhaseRetrieval {
         
         nbProcess=nbSlice;
         
-        dparam = new DataPhase(sizeFFT,image[0][0].length,0,xystep,zstep,wavelength,noil,na,1.0,zernikeCoefNumber);
-        
+        dparam = new DataPhase(sizeFFT,image[0][0].length,0,xystep,zstep,wavelength,noil,na,1.0);
+        dparam.param.zernikedPSF=false;
         dparam.param.Zfocus=0;
         dparam.phaseZer.setMatAtPosit(dparam.psf.getKxPointer(),0);
         dparam.phaseZer.setMatAtPosit(dparam.psf.getKyPointer(),1);
@@ -185,7 +180,7 @@ public class PhaseRetrieval {
         
         //IJ.log("zstep "+dparam.param.zstep);
         
-        this.phase_retrieve_zernike(nbIter);
+        this.phase_retrieve(nbIter);
         
         if (path_calibration.length()>2){
             dparam.save(path_calibration);
@@ -202,7 +197,13 @@ public class PhaseRetrieval {
     
     
     
-    private void phase_retrieve_zernike(int iterations){
+    
+    
+    
+    
+    
+    
+    private void phase_retrieve(int iterations){
         
         
         
@@ -267,7 +268,7 @@ public class PhaseRetrieval {
                 
                 
                 
-                this.updatePhaseZernike(nbstack);
+                this.updatePhaseNonZernike(nbstack);
                 
                 
                 //this.updateDrift(nbstack);
@@ -437,7 +438,7 @@ public class PhaseRetrieval {
         //computeMeanAndVar(this.image,mod);
         ///////////////////////////////////////////////////////////////////////////
         
-        ImageShow.imshow(imageconcat,modconcat,"input-model image "+title);
+        ImageShow.imshow(imageconcat,modconcat,"input/model image "+title);
         IJ.setMinAndMax(themin, themax);
         
         
@@ -445,10 +446,12 @@ public class PhaseRetrieval {
     
     
     
+    
     double initialization(int iterations){
         
         IJ.log("initialization started");
         
+        IJ.log("This program does not work...");
         
         double [][][][] stack;
         
@@ -475,171 +478,116 @@ public class PhaseRetrieval {
         
         IJ.log("initialization 1/6");
         
-        likelihood=init(likelihood,1, 3,6, -3, 3,1);
-        likelihood=init(likelihood,1, 6,10, -1, 1,1);
+        this.updatePhaseNonZernike(1,8,2);
+        for (int u=0;u<10;u++){
+            this.updateRegistrationStacks(1);
+        }
+        for (int u=0;u<20;u++){
+            int angleSplit=4+(int)(Math.random()*3);
+            int distSplit=2+(int)(Math.random()*3);
+            this.updatePhaseNonZernike(1,angleSplit,distSplit);
+            this.updateRegistrationStacks(1);
+            
+        }
+        
+        
+        
         IJ.log("initialization 2/6");
-        likelihood=init(likelihood,1, 10,15, -1, 1,1);
-        likelihood=init(likelihood,1, 15,21, -1, 1,1);
+        showPhase();
+        this.showImageAndModel();
+        
+        for (int u=0;u<20;u++){
+            int angleSplit=4+(int)(Math.random()*12);
+            int distSplit=2+(int)(Math.random()*12);
+            this.updatePhaseNonZernike(1,angleSplit,distSplit);
+            this.updateRegistrationStacks(1);
+        }
+        
+        
         
         IJ.log("initialization 3/6");
+        showPhase();
+        this.showImageAndModel();
         
-        
-        //ImageShow.imshow(model3D[0].getModel(),"model");
-        
-        loop1_1:for (int t=0;t<Math.min(3,iterations/2+1);t++){
-            
-            
-            //IJ.log("pass 1 ; remaining iterations: "+(iterations-t));
-            //IJ.showProgress(.05*(1.-(double)(iterations-t)/iterations));
-            
-            
-            //this.updatePhaseZernike(1,6);
-            
+        for (int u=0;u<20;u++){
+            int angleSplit=4+(int)(Math.random()*15);
+            int distSplit=2+(int)(Math.random()*15);
+            this.updatePhaseNonZernike(1,angleSplit,distSplit);
             this.updateRegistrationStacks(1);
-            
-            double lik=0;
-            for (int i=0;i<1;i++){
-                lik+=this.computePSFLik(i);
-            }
-            
-            if (Math.abs(likelihood-lik)<epsilon){
-                break loop1_1;
-            }
-            
-            likelihood=lik;
-            
-            //IJ.log("likelihood "+likelihood);
-            
         }
         
+        showPhase();
+        this.showImageAndModel();
         
+        this.updatePhotonBpoly(1,2);
+        this.updatePhotonAeach(1);
         
-        
-        loop1_2:for (int t=0;t<Math.min(3,iterations/2+1);t++){
-            
-            
-            //IJ.log("pass 1 ; remaining iterations: "+(iterations-t));
-            //IJ.showProgress(.1*(1.-(double)(iterations-t)/iterations)+.05);
-            
-            
-            this.updatePhaseZernike(1,10);
-            this.updatePhotonBpoly(nbstack,0);
-            
-            this.updateRegistrationStacks(1);
-            
-            double lik=0;
-            for (int i=0;i<1;i++){
-                lik+=this.computePSFLik(i);
-            }
-            
-            if (Math.abs(likelihood-lik)<epsilon){
-                break loop1_2;
-            }
-            
-            likelihood=lik;
-            
-            //IJ.log("likelihood "+likelihood);
-            
-        }
         
         IJ.log("initialization 4/6");
         
-        //this.computeModel3D(0);
-        //sresd=model3D[0].getModel();
-        //ImageShow.imshow(sresd,"PSF_model_pass1");
-        
-        
-        loop1_3:for (int t=0;t<Math.min(3,iterations/2+1);t++){
-            
-            
-            //IJ.log("pass 1 ; remaining iterations: "+(iterations-t));
-            //IJ.showProgress(.15*(1.-(double)(iterations-t)/iterations)+.15);
-            
-            
-            this.updatePhaseZernike(1,15);
-            this.updatePhotonBpoly(nbstack,1);
-            this.updatePhotonA(nbstack);
-            
+        for (int u=0;u<15;u++){
+            int angleSplit=4+(int)(Math.random()*20);
+            int distSplit=2+(int)(Math.random()*20);
+            this.updatePhaseNonZernike(1,angleSplit,distSplit);
             this.updateRegistrationStacks(1);
-            
-            double lik=0;
-            for (int i=0;i<1;i++){
-                lik+=this.computePSFLik(i);
-            }
-            
-            if (Math.abs(likelihood-lik)<epsilon){
-                break loop1_3;
-            }
-            
-            likelihood=lik;
-            
-            //IJ.log("likelihood "+likelihood);
-            
         }
+        
+        this.updatePhotonBpoly(1,2);
+        this.updatePhotonAeach(1);
+        
         
         IJ.log("initialization 5/6");
+        showPhase();
+        this.showImageAndModel();
         
-        //this.computeModel3D(0);
-        //sresd=model3D[0].getModel();
-        //ImageShow.imshow(sresd,"PSF_model_pass2");
-        
-        for (int t=0;t<iterations/2;t++){
-            this.updateRegistrationStacks(nbstack);
+        for (int u=0;u<10;u++){
+            int angleSplit=10+(int)(Math.random()*25);
+            int distSplit=8+(int)(Math.random()*14);
+            this.updatePhaseNonZernike(1,angleSplit,distSplit);
+            this.updateRegistrationStacks(1);
         }
         
         
+        this.updatePhotonBpoly(1,2);
+        this.updatePhotonAeach(1);
         
-        loop1_4:for (int t=0;t<Math.min(6,iterations/2+1);t++){
-            
-            
-            //IJ.log("pass 1 ; remaining iterations: "+(iterations-t));
-            
-            
-            this.updatePhaseZernike(1,15);
-            
-            this.updatePhotonBpoly(nbstack,2);
-            
-            
-            this.updatePhotonAeach(nbstack);
-            
-            
-            this.updateRegistrationStacks(nbstack);
-            
-            //this.updateSigmaGaussianKernel(nbstack);
-            
-            //pbg[0].log();
-            //ImageShow.imshow(background,"bckg");
-
-            
-            double lik=0;
-            for (int i=0;i<1;i++){
-                lik+=this.computePSFLik(i);
-            }
-            
-            if (Math.abs(likelihood-lik)<epsilon){
-                break loop1_4;
-            }
-            
-            likelihood=lik;
-            
-            //IJ.log("likelihood "+likelihood);
-            
-        }
+        
+        
+        showPhase();
+        this.showImageAndModel();
+        
         
         IJ.log("initialization 6/6");
         
-        //this.computeModel3D(0);
-        //sresd=model3D[0].getModel();
-        //ImageShow.imshow(sresd,"PSF_model_pass3");
-        
-        likelihood=0;
-        for (int i=0;i<nbstack;i++){
-            likelihood+=this.computePSFLik(i);
+        for (int u=0;u<5;u++){
+            int angleSplit=4+(int)(Math.random()*58);
+            int distSplit=20+(int)(Math.random()*12);
+            this.updatePhaseNonZernike(1,angleSplit,distSplit);
         }
+        
+        showPhase();
+        this.showImageAndModel();
+        
+        this.updatePhotonBpoly(nbstack,2);
+        this.updatePhotonAeach(nbstack);
+        this.updateRegistrationStacks(nbstack);
+        
+        
+        
+        
+        
+        
+        double lik=0;
+        for (int i=0;i<nbstack;i++){
+            lik+=this.computePSFLik(i);
+        }
+        
+        
+        showPhase();
+        
         
         return likelihood;
     }
-    
     
     
     
@@ -955,6 +903,11 @@ public class PhaseRetrieval {
     
     
     
+    
+    
+    
+    
+    
     private void updateSigmaGaussianKernel(int stackNumber){
         
         
@@ -1046,45 +999,36 @@ public class PhaseRetrieval {
     
     
     
-    private void updatePhaseZernike(int stackNumber){
-        updatePhaseZernike(stackNumber,-1);
-    }
-    
-    
-    private void updatePhaseZernike(int stackNumber,int coefNumber){
+    //compute each pixel of the phase
+    private void updatePhaseNonZernike(int stackNumber){
         
-        if (coefNumber<3){
-            coefNumber=dparam.phaseZer.numCoef;
-        }
         
-        if (coefNumber>dparam.phaseZer.numCoef){
-            coefNumber=dparam.phaseZer.numCoef;
-        }
-        
-        double h=.01;
+        double h=.001;
         
         
         double lastLikelihood=-1;
         
        
-        for (int p=3;p<coefNumber;p++){
+        for (int p=0;p<dparam.param.sizeDisk;p++){
             
             if (true){
-            
-                double saveA=dparam.phaseZer.getA(p);
+                
+                double save=dparam.phaseNonZer.getValuePixel(p);
+                
                 
                 double lik1=0;
                 for (int z=0;z<stackNumber;z++){
                     
+                    for (int pp=0;pp<3;pp++){
+                        dparam.phaseZer.setA(pp, this.registrationStack[pp][z]);
+                    }
                     
-                    dparam.phaseZer.setA(p, saveA-h);
-                    dparam.phaseZer.computeCombination();
+                    
+                    dparam.phaseNonZer.setValuePixel(p, save-h);
+                    
+                    dparam.phaseZer.computeCombinationPlusOtherPhase(dparam.phaseNonZer.getPhasePointer());
                     dparam.psf_many.updatePhasePointer(dparam.phaseZer.getPhasePointer());
-                    
-                    
-                    
                     lik1+=computePSFLik(z);
-                    
                     
                     
                 }
@@ -1097,30 +1041,28 @@ public class PhaseRetrieval {
                 
                 double lik2=0;
                 for (int z=0;z<stackNumber;z++){
-                    
-                    dparam.phaseZer.setA(p, saveA);
-                    dparam.phaseZer.computeCombination();
+                    for (int pp=0;pp<3;pp++){
+                        dparam.phaseZer.setA(pp, this.registrationStack[pp][z]);
+                    }
+                    dparam.phaseNonZer.setValuePixel(p, save);
+                    dparam.phaseZer.computeCombinationPlusOtherPhase(dparam.phaseNonZer.getPhasePointer());
                     dparam.psf_many.updatePhasePointer(dparam.phaseZer.getPhasePointer());
-                    
-                    
-                    
                     lik2+=computePSFLik(z);
-                    
                 }
                 
                 
                 
                 double lik3=0;
                 for (int z=0;z<stackNumber;z++){
-                    
-                    dparam.phaseZer.setA(p, saveA+h);
-                    dparam.phaseZer.computeCombination();
+                    for (int pp=0;pp<3;pp++){
+                        dparam.phaseZer.setA(pp, this.registrationStack[pp][z]);
+                    }
+                    dparam.phaseNonZer.setValuePixel(p, save+h);
+                    dparam.phaseZer.computeCombinationPlusOtherPhase(dparam.phaseNonZer.getPhasePointer());
                     dparam.psf_many.updatePhasePointer(dparam.phaseZer.getPhasePointer());
-                    
-                    
-                    
                     lik3+=computePSFLik(z);
                 }
+                
                 
                 
                 double grad=0;
@@ -1128,24 +1070,29 @@ public class PhaseRetrieval {
                     grad=((lik3-lik1)/(2*h));
                 }
                 else{
-                    grad=((lik3-lik1)/(2*h))/(Math.abs((lik3+lik1-2*lik2)/(h*h)));
+                    grad=((lik3-lik1)/(2*h))/Math.abs((lik3+lik1-2*lik2)/(h*h));
                 }
                 
-                //IJ.log("lik  "+lik1+"  "+lik2+"  "+lik3+"  "+grad);
+                if (grad>Math.PI/10.){
+                    grad=Math.PI/10.;
+                }
+                if (grad<-Math.PI/10.){
+                    grad=-Math.PI/10.;
+                }
                 
                 boolean found=false;
-                loop:for (double gamma=100;gamma>.02;gamma/=10){
+                loop:for (double gamma=1;gamma>.02;gamma/=10){
                     
                     double lik=0;
                     for (int z=0;z<stackNumber;z++){
+                        for (int pp=0;pp<3;pp++){
+                            dparam.phaseZer.setA(pp, this.registrationStack[pp][z]);
+                        }
                         
-                        dparam.phaseZer.setA(p, saveA-gamma*grad);
-                        dparam.phaseZer.computeCombination();
+                        dparam.phaseNonZer.setValuePixel(p, save-gamma*grad);
+                        dparam.phaseZer.computeCombinationPlusOtherPhase(dparam.phaseNonZer.getPhasePointer());
                         dparam.psf_many.updatePhasePointer(dparam.phaseZer.getPhasePointer());
-
-
                         lik+=computePSFLik(z);
-                        
                     }
                     
                     
@@ -1155,13 +1102,15 @@ public class PhaseRetrieval {
                         break loop;
                     }
                     else{
-                        dparam.phaseZer.setA(p, saveA);
+                        dparam.phaseNonZer.setValuePixel(p, save);
+                        
                     }
                 }
                 if (!found){
-                    dparam.phaseZer.computeCombination();
+                    dparam.phaseZer.computeCombinationPlusOtherPhase(dparam.phaseNonZer.getPhasePointer());
                     dparam.psf_many.updatePhasePointer(dparam.phaseZer.getPhasePointer());
                     
+                            
                     
                 }
             }
@@ -1172,6 +1121,143 @@ public class PhaseRetrieval {
     
     
     
+    
+    
+    
+    
+    //compute small portions of the phase
+    private void updatePhaseNonZernike(int stackNumber,int angleSplit,int distSplit){
+        
+        int splitNumber=angleSplit*distSplit;
+        
+        if ((dparam.phaseNonZer.angleNumber!=angleSplit)||(dparam.phaseNonZer.distNumber!=distSplit)){
+            dparam.phaseNonZer.createSplits(angleSplit, distSplit);
+        }
+        
+        
+        double h=.001;
+        
+        
+        double lastLikelihood=-1;
+        
+       
+        for (int p=0;p<splitNumber;p++){
+            
+            double [] save=dparam.phaseNonZer.getValuesPhase(p);
+            
+            if (save!=null){
+                
+                
+                
+                double [] tmp=new double [save.length];
+                
+                double lik1=0;
+                for (int z=0;z<stackNumber;z++){
+                    
+                    for (int pp=0;pp<3;pp++){
+                        dparam.phaseZer.setA(pp, this.registrationStack[pp][z]);
+                    }
+                    
+                    for (int i=0;i<tmp.length;i++){
+                        tmp[i]=save[i]-h;
+                    }
+                    dparam.phaseNonZer.setValuesPhase(p, tmp);
+                    
+                    dparam.phaseZer.computeCombinationPlusOtherPhase(dparam.phaseNonZer.getPhasePointer());
+                    dparam.psf_many.updatePhasePointer(dparam.phaseZer.getPhasePointer());
+                    lik1+=computePSFLik(z);
+                    
+                }
+                
+                
+
+                
+                
+                
+                
+                double lik2=0;
+                for (int z=0;z<stackNumber;z++){
+                    for (int pp=0;pp<3;pp++){
+                        dparam.phaseZer.setA(pp, this.registrationStack[pp][z]);
+                    }
+                    dparam.phaseNonZer.setValuesPhase(p, save);
+                    
+                    dparam.phaseZer.computeCombinationPlusOtherPhase(dparam.phaseNonZer.getPhasePointer());
+                    dparam.psf_many.updatePhasePointer(dparam.phaseZer.getPhasePointer());
+                    lik2+=computePSFLik(z);
+                }
+                
+                
+                
+                double lik3=0;
+                for (int z=0;z<stackNumber;z++){
+                    for (int pp=0;pp<3;pp++){
+                        dparam.phaseZer.setA(pp, this.registrationStack[pp][z]);
+                    }
+                    for (int i=0;i<tmp.length;i++){
+                        tmp[i]=save[i]+h;
+                    }
+                    dparam.phaseNonZer.setValuesPhase(p, tmp);
+                    
+                    dparam.phaseZer.computeCombinationPlusOtherPhase(dparam.phaseNonZer.getPhasePointer());
+                    dparam.psf_many.updatePhasePointer(dparam.phaseZer.getPhasePointer());
+                    lik3+=computePSFLik(z);
+                }
+                
+                
+                
+                double grad=0;
+                if (Math.abs((lik3+lik1-2*lik2)/(h*h))==0){
+                    grad=((lik3-lik1)/(2*h));
+                }
+                else{
+                    grad=((lik3-lik1)/(2*h))/Math.abs((lik3+lik1-2*lik2)/(h*h));
+                }
+                
+                if (grad>Math.PI/10){
+                    grad=Math.PI/10;
+                }
+                if (grad<-Math.PI/10.){
+                    grad=-Math.PI/10.;
+                }
+                
+                boolean found=false;
+                loop:for (double gamma=1;gamma>.02;gamma/=10){
+                    
+                    double lik=0;
+                    for (int z=0;z<stackNumber;z++){
+                        for (int pp=0;pp<3;pp++){
+                            dparam.phaseZer.setA(pp, this.registrationStack[pp][z]);
+                        }
+                        for (int i=0;i<tmp.length;i++){
+                            tmp[i]=save[i]-gamma*grad;
+                        }
+                        dparam.phaseNonZer.setValuesPhase(p, tmp);
+                        dparam.phaseZer.computeCombinationPlusOtherPhase(dparam.phaseNonZer.getPhasePointer());
+                        dparam.psf_many.updatePhasePointer(dparam.phaseZer.getPhasePointer());
+                        lik+=computePSFLik(z);
+                    }
+                    
+                    
+                    if (lik<lik2){
+                        lastLikelihood=lik;
+                        found=true;
+                        break loop;
+                    }
+                    else{
+                        dparam.phaseNonZer.setValuesPhase(p, save);
+                    }
+                }
+                if (!found){
+                    dparam.phaseZer.computeCombinationPlusOtherPhase(dparam.phaseNonZer.getPhasePointer());
+                    dparam.psf_many.updatePhasePointer(dparam.phaseZer.getPhasePointer());
+                    
+                }
+            }
+        }
+        
+        
+    }
     
     
     

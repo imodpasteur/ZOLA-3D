@@ -3,8 +3,9 @@
  * To change this template file, choose Tools | Templates
  * and open the template in the editor.
  */
-package org.pasteur.imagej.process;
+package org.pasteur.imagej.process.gpu;
 
+import org.pasteur.imagej.process.PhaseParameters;
 import org.pasteur.imagej.cuda.*;
 
 import ij.IJ;
@@ -29,7 +30,7 @@ import jcuda.runtime.cudaError;
  *
  * @author benoit
  */
-public class PSFphaseJCudaFastDoubleModelMany {
+public class Modelmany_double_old {
     
     
     
@@ -65,9 +66,9 @@ public class PSFphaseJCudaFastDoubleModelMany {
     
     CUstream custream;
     
-    PhaseRetrievalParametersDouble param;
+    PhaseParameters param;
     //PSFphaseJCudaFastDoubleMany psfMany;
-    PSFphaseJCudaFastFloatMany psfMany_f;
+    PSFmany_float_ psfMany_f;
     
     
     
@@ -109,7 +110,7 @@ public class PSFphaseJCudaFastDoubleModelMany {
     private final  AtomicInteger atomic_numberPSFLaunched =  new AtomicInteger(0) ;
     private  AtomicInteger atomic_allPSFcomputed =  new AtomicInteger(0) ;
     
-    PSFphaseJCudaFastFloatMany psfMany_f_crlb;
+    PSFmany_float_ psfMany_f_crlb;
     Pointer device_AandB_crlb;
     Pointer host_AandB_crlb;
     Pointer device_model_crlb;
@@ -148,7 +149,7 @@ public class PSFphaseJCudaFastDoubleModelMany {
     boolean isSCMOS=false;
     
     
-    PSFphaseJCudaFastDoubleModelMany(PSFphaseJCudaFastFloatMany psfMany_f,PSFphaseJCudaFastFloatMany psfMany_f_crlb,PhaseRetrievalParametersDouble param,int numberPSF,boolean isSCMOS){
+    Modelmany_double_old(PSFmany_float_ psfMany_f,PSFmany_float_ psfMany_f_crlb,PhaseParameters param,int numberPSF,boolean isSCMOS){
         
         
         this.isSCMOS=isSCMOS;
@@ -370,8 +371,8 @@ public class PSFphaseJCudaFastDoubleModelMany {
         synchronized(monitor) {
             while (freePosit.size()==0){//no available position
                 //no wait if (frame number == thread number) // this is only to manage the case: (frame number < thread number)
-                try{Thread.sleep(0, 500000);}catch(Exception ee){}
-                IJ.log("setSubWinBlocked "+(param.stream-1)+"   freePosit:"+freePosit.size());
+                try{Thread.sleep(0, 5000);}catch(Exception ee){}
+                IJ.log("WARNING: no available position setSubWinBlocked "+(param.stream-1)+"   freePosit:"+freePosit.size());
             }
             
             newImageSet=true;

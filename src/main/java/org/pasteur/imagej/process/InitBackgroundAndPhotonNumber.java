@@ -18,7 +18,7 @@ import java.util.Arrays;
  *
  * @author benoit
  */
-public class InitBackgroundAndPhotonNumberMany {
+public class InitBackgroundAndPhotonNumber {
     
     //compute photon number and apply 0 padding
     
@@ -46,7 +46,7 @@ public class InitBackgroundAndPhotonNumberMany {
     int sizeFilt;
     
     
-    public InitBackgroundAndPhotonNumberMany(double [][][] image,float [] xpoints, float [] ypoints,int sizePatch,double adu, double gain,double offset,double zstep){
+    public InitBackgroundAndPhotonNumber(double [][][] image,float [] xpoints, float [] ypoints,int sizePatch,double adu, double gain,double offset,double zstep){
         
         
         width=image[0].length;
@@ -75,7 +75,7 @@ public class InitBackgroundAndPhotonNumberMany {
         
     }
     
-    public InitBackgroundAndPhotonNumberMany(double [][][] image,float [] xpoints, float [] ypoints,int sizePatch,double [][] scmosvariance,double [][] scmosgain,double [][] scmosoffset,double [][] scmosvargain,double zstep){
+    public InitBackgroundAndPhotonNumber(double [][][] image,float [] xpoints, float [] ypoints,int sizePatch,double [][] scmosvariance,double [][] scmosgain,double [][] scmosoffset,double [][] scmosvargain,double zstep){
         
         
         width=image[0].length;

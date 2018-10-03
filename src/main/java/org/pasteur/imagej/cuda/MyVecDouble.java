@@ -1593,6 +1593,16 @@ public class MyVecDouble
         call2DGrid("addPhotonsAndBackgroundMany_scmos", idStream, n, n,sizeSubImage, output, input, photonAndBackground,scmos);
     }
     
+    public static void addPhotonsAndBackgroundManyReshuffle(CUstream idStream,long n,int sizeSubImage,int numberPSFperModel, Pointer output, Pointer input, Pointer photonAndBackground)
+    {
+        call2DGrid("addPhotonsAndBackgroundManyReshuffle", idStream, n, n,sizeSubImage, numberPSFperModel, output, input, photonAndBackground);
+        
+    }
+    
+    public static void addPhotonsAndBackgroundManyReshuffle_scmos(CUstream idStream,long n,int sizeSubImage,int numberPSFperModel, Pointer output, Pointer input, Pointer photonAndBackground, Pointer scmos)
+    {
+        call2DGrid("addPhotonsAndBackgroundManyReshuffle_scmos", idStream, n, n,sizeSubImage,numberPSFperModel, output, input, photonAndBackground,scmos);
+    }
     public static void divScalarMany_f(CUstream idStream,long n,int sizeSubImage, Pointer result,Pointer resultDouble, Pointer x, Pointer div)
     {
         call2DGrid("divScalarMany_f", idStream, n, n,sizeSubImage, result,resultDouble, x, div);

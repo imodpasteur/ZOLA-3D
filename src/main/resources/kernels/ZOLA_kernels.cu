@@ -2063,6 +2063,69 @@ __global__ void vec_computePoissonLikelihood (int n, double *result, double *ima
 
 
 
+//reshuffle: 
+//exemple 4 PSF to merge in 2 model
+//->>> PSF=1,2,3 merged with PSF=4,5,6
+//->>> PSF=7,8,9 merged with PSF=10,11,12
+//we need to reshuffle here to use then Dgemv for matrix operation
+//1,2,3,4,5,6,7,8,9,10,11,12 -> 1,2,3,7,8,9,4,5,6,10,11,12
+extern "C"
+__global__ void vec_addPhotonsAndBackgroundManyReshuffle (int n, int sizeSubImage,int numberPSFperModel,double *output, double *input, double *photonAndBackground)
+{
+	int idx = threadIdx.x + blockIdx.x * blockDim.x;
+	int idy = threadIdx.y + blockIdx.y * blockDim.y;
+	int id = idy * gridDim.x * blockDim.x + idx;
+
+	if (id < n)
+	{
+		int idPSF=id/sizeSubImage;
+		int idModel=idPSF/numberPSFperModel;
+		int idoffset=id%sizeSubImage;
+		int idposit=idPSF%numberPSFperModel;
+		int idreshuffle=idModel*sizeSubImage +idposit*sizeSubImage*(n/(sizeSubImage*numberPSFperModel))       +idoffset;
+		output[idreshuffle]=input[id]*photonAndBackground[idPSF*2]+photonAndBackground[idPSF*2+1];
+
+	}
+
+}
+
+
+
+
+
+
+extern "C"
+__global__ void vec_addPhotonsAndBackgroundManyReshuffle_scmos (int n, int sizeSubImage,int numberPSFperModel,double *output, double *input, double *photonAndBackground, double * scmos)
+{
+
+
+//print("to do as previous function");
+
+
+
+	int idx = threadIdx.x + blockIdx.x * blockDim.x;
+	int idy = threadIdx.y + blockIdx.y * blockDim.y;
+	int id = idy * gridDim.x * blockDim.x + idx;
+	
+	if (id < n)
+    {
+	int idPSF=id/sizeSubImage;
+	int idModel=idPSF/numberPSFperModel;
+	int idoffset=id%sizeSubImage;
+	int idposit=idPSF%numberPSFperModel;
+	int idreshuffle=idModel*sizeSubImage +idposit*sizeSubImage*(n/(sizeSubImage*numberPSFperModel))       +idoffset;
+	output[idreshuffle]=input[id]*photonAndBackground[idPSF*2]+photonAndBackground[idPSF*2+1]+scmos[id];
+
+    }
+
+}
+
+
+
+
+
+
+
 
 extern "C"
 __global__ void vec_addPhotonsAndBackgroundMany (int n, int sizeSubImage,double *output, double *input, double *photonAndBackground)
@@ -2098,6 +2161,7 @@ __global__ void vec_addPhotonsAndBackgroundMany_scmos (int n, int sizeSubImage,d
     }
 
 }
+
 
 
 

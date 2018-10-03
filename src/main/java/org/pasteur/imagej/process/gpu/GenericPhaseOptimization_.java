@@ -3,17 +3,11 @@
  * To change this template file, choose Tools | Templates
  * and open the template in the editor.
  */
-package org.pasteur.imagej.process;
+package org.pasteur.imagej.process.gpu;
 
 
 
-
-
-import org.pasteur.imagej.utils.Matrixe;
-import org.pasteur.imagej.utils.ImageShow;
-import org.pasteur.imagej.process.DataPhase;
-import org.pasteur.imagej.cuda.MyCudaStream;
-import org.pasteur.imagej.process.Model3DJCudaFastDouble;
+import org.pasteur.imagej.utils.*;
 import jcuda.runtime.JCuda;
 
 import jcuda.runtime.cudaError;
@@ -27,14 +21,14 @@ import jcuda.Pointer;
  *
  * @author benoit
  */
-public class PhaseOptimization {
+public class GenericPhaseOptimization_ {
     
     //int stream=0;//not parallel process: iterative
     double [] deltaZ;
     
     int methodLikelihood=0;
     
-    DataPhase dparam;
+    DataPhase_ dparam;
     
     
     
@@ -50,7 +44,7 @@ public class PhaseOptimization {
     float background;
     double nwat;
     double Zfocus;
-    public PhaseOptimization(int sizeFFT,int sizePatch,double xystep,double axialRange, double stepZ,double photonNumber, double background,double wavelength,double noil,double nwat,double zfocus,double na,int zernikeCoefNumber,String path_result){
+    public GenericPhaseOptimization_(int sizeFFT,int sizePatch,double xystep,double axialRange, double stepZ,double photonNumber, double background,double wavelength,double noil,double nwat,double zfocus,double na,String path_result){
         
         this.photonNumber=(float)photonNumber;
         this.background=(float)background;
@@ -58,7 +52,9 @@ public class PhaseOptimization {
         this.axialRange=axialRange;
         this.stepZ=stepZ;
         
-        dparam = new DataPhase(sizeFFT,sizePatch,0,xystep,stepZ,wavelength,noil,na,1,zernikeCoefNumber);
+        
+        dparam = new DataPhase_(sizeFFT,sizePatch,0,xystep,stepZ,wavelength,noil,na,1);
+        
         this.nwat=nwat;
         this.Zfocus=zfocus;
         
@@ -99,7 +95,7 @@ public class PhaseOptimization {
         dparam.param.Zfocus=0;
         //IJ.log("zstep "+dparam.param.zstep);
         
-        this.phase_optim_zernike(nbIter,true);
+        this.phase_optim(nbIter,true);
         
         
         dparam.setNwat(nwat);
@@ -108,14 +104,14 @@ public class PhaseOptimization {
         
         if (dparam.param.nwat!=dparam.param.noil){
             IJ.log("process ran a second time to deal with refractive index mismatch");
-            SearchPSFcenter spsfc= new SearchPSFcenter(dparam,axialRange);
+            SearchPSFcenter_ spsfc= new SearchPSFcenter_(dparam,axialRange);
             double position=spsfc.getPosition();
             for (int s=0;s<deltaZ.length;s++){
                 deltaZ[s]=position-(axialRange/2.)+dparam.param.zstep*(double)s;
                 //IJ.log("deltaZ "+deltaZ[s]);
             }
 
-            this.phase_optim_zernike(nbIter/2,false);
+            this.phase_optim(nbIter/2,false);
         }
         
         
@@ -125,7 +121,7 @@ public class PhaseOptimization {
             im[i]=dparam.psf_fMany.getPSF(i*7);
         }
         
-        ImageShow.imshow(im,"PSF");
+        //ImageShow.imshow(im,"PSF");
         
         
         /*double [][] rescrlb=compute_CRLB((float)0.05);
@@ -146,7 +142,7 @@ public class PhaseOptimization {
         
     }
     
-    private void phase_optim_zernike(int iterations,boolean init){
+    private void phase_optim(int iterations,boolean init){
         
         
         
@@ -169,7 +165,7 @@ public class PhaseOptimization {
         IJ.showProgress(.02);
         if (init){
             IJ.log("initialization started");
-            initPhaseZernike(hdec,15);
+            initPhaseGeneric(hdec);
         }
         
         
@@ -179,7 +175,7 @@ public class PhaseOptimization {
         IJ.log("optimization started");
         
         
-        dparam.psf_fMany.updatePhase(dparam.phaseZer.computeCombination());
+        dparam.psf_fMany.updatePhase(dparam.phaseNonZer.getPointerPhase());
         //ImageShow.imshow(dparam.psf_fMany.getPhase(),"phase "+0);
         
         for (int t=0;t<iterations;t++){
@@ -188,25 +184,10 @@ public class PhaseOptimization {
             IJ.log("remaining iterations: "+(iterations-t));
             IJ.showProgress(((double)t/(double)iterations));
             
-            //if (t%2==0){
-            //    IJ.log("remaining iterations: "+(int)((double)iterations-(double)t/2));
-            //}
-            //IJ.showProgress(.02+0.5*((double)t/(double)iterations));
             
-            if (t<iterations/3){
-                lik=this.updatePhaseZernike(hdec,10);
+            lik=this.updatePhaseGeneric(hdec);
                 
-            }
-            else if (t<iterations/2){
-                lik=this.updatePhaseZernike(hdec,15);
-                //lik=this.updatePhaseZernike(hdec,15);
-                
-            }
-            else{
-                lik=this.updatePhaseZernike(hdec,dparam.phaseZer.numCoef);
-                //lik=this.updatePhaseZernike(hdec,dparam.phaseZer.numCoef);
-                
-            }
+            
             
             
             
@@ -215,33 +196,6 @@ public class PhaseOptimization {
         }
         
         
-        
-        
-        /*for (int t=0;t<iterations;t++){
-            
-            if (t%2==0){
-                IJ.log("remaining iterations: "+(int)((double)iterations/2-(double)t/2));
-            }
-            IJ.showProgress(0.5+0.5*((double)t/(double)iterations));
-            if (t<iterations/3){
-                lik=this.updatePhaseZernike_std(hdec,10);
-                
-            }
-            else if (t<iterations/2){
-                lik=this.updatePhaseZernike_std(hdec,15);
-                //lik=this.updatePhaseZernike(hdec,15);
-                
-            }
-            else{
-                lik=this.updatePhaseZernike_std(hdec,dparam.phaseZer.numCoef);
-                //lik=this.updatePhaseZernike(hdec,dparam.phaseZer.numCoef);
-                
-            }
-            
-            
-        
-            
-        }*/
         IJ.showProgress(1);
         
         ImageShow.imshow(dparam.psf_fMany.getPhase(),"phase");
@@ -567,22 +521,23 @@ public class PhaseOptimization {
     
     
     
-    private double updatePhaseZernike(double h,int numbCoef){
+    private double updatePhaseGeneric(double h){
         
-        if (numbCoef>dparam.phaseZer.numCoef){
-            numbCoef=dparam.phaseZer.numCoef;
-        }
         
         
         double lastLikelihood=-1;
         
        
-        for (int p=3;p<numbCoef;p++){
+        for (int p=0;p<dparam.param.sizeDisk;p++){
             
-            if ((p!=4)&&(p!=12)){
-            
+            if (true){
                 
-                dparam.psf_fMany.updatePhase(dparam.phaseZer.computeCombination(p, -h));
+                double save=dparam.phaseNonZer.getValuePixel(p);
+                
+                
+                dparam.phaseNonZer.setValuePixel(p, save-h);
+                
+                dparam.psf_fMany.updatePhase(dparam.phaseNonZer.getPointerPhase());
                 
                 double lik1=this.compute_sum_CRLB((float)h);
                 
@@ -591,8 +546,8 @@ public class PhaseOptimization {
 
                 
                 
-                
-                dparam.psf_fMany.updatePhase(dparam.phaseZer.computeCombination());
+                dparam.phaseNonZer.setValuePixel(p, save);
+                dparam.psf_fMany.updatePhase(dparam.phaseNonZer.getPointerPhase());
                 
                 double lik2=this.compute_sum_CRLB((float)h);
                 
@@ -601,8 +556,8 @@ public class PhaseOptimization {
                 
                 
                 
-                
-                dparam.psf_fMany.updatePhase(dparam.phaseZer.computeCombination(p, h));
+                dparam.phaseNonZer.setValuePixel(p, save+h);
+                dparam.psf_fMany.updatePhase(dparam.phaseNonZer.getPointerPhase());
                 
                 double lik3=this.compute_sum_CRLB((float)h);
                 
@@ -612,7 +567,6 @@ public class PhaseOptimization {
                 
                 
                 
-                double save=dparam.phaseZer.getA(p);
                 double grad=0;
                 if (Math.abs((lik3+lik1-2*lik2)/(h*h))==0){
                     grad=((lik3-lik1)/(2*h));
@@ -622,6 +576,13 @@ public class PhaseOptimization {
                 }
                 
                 
+                if (grad>Math.PI/10){
+                    grad=Math.PI/10;
+                }
+                if (grad<-Math.PI/10.){
+                    grad=-Math.PI/10.;
+                }
+                
                 //IJ.log("lik("+p+") "+lik1+"  "+lik2+"  "+lik3+"  "+grad);
                 
                 
@@ -629,9 +590,9 @@ public class PhaseOptimization {
                 loop:for (double gamma=1;gamma>.02;gamma/=10){
                     
                     
+                    dparam.phaseNonZer.setValuePixel(p, save-gamma*grad);
+                    dparam.psf_fMany.updatePhase(dparam.phaseNonZer.getPointerPhase());
                     
-                    dparam.phaseZer.setA(p, save-gamma*grad);
-                    dparam.psf_fMany.updatePhase(dparam.phaseZer.computeCombination());
                     double lik=this.compute_sum_CRLB((float)h);
                 
                     
@@ -647,7 +608,7 @@ public class PhaseOptimization {
                     }
                 }
                 if (!found){
-                    dparam.psf_fMany.updatePhase(dparam.phaseZer.computeCombination());
+                    dparam.psf_fMany.updatePhase(dparam.phaseNonZer.getPointerPhase());
                     
                     
                 }
@@ -664,60 +625,552 @@ public class PhaseOptimization {
     
     
     
-    private void initPhaseZernike(double h,int numbCoef){
+    
+    
+    
+    private double updatePhaseGeneric(double h,int angleSplit,int distSplit){
         
-        if (numbCoef>dparam.phaseZer.numCoef){
-            numbCoef=dparam.phaseZer.numCoef;
+        h=.1;
+        
+        int splitNumber=angleSplit*distSplit;
+        
+        if ((dparam.phaseNonZer.angleNumber!=angleSplit)||(dparam.phaseNonZer.distNumber!=distSplit)){
+            dparam.phaseNonZer.createSplits(angleSplit, distSplit);
         }
         
         
-        for (int p=3;p<numbCoef;p++){
-            if (p%5==0){
-                IJ.log("step "+(int)(p/5)+"/"+(int)(numbCoef/5));
-            }
-            //IJ.log("init coef "+p);
-            if ((p!=4)&&(p!=12)){
-                dparam.phaseZer.setA(p, 0);
+        
+        double lastLikelihood=-1;
+        
+       
+        for (int p=0;p<splitNumber;p++){
+        
+            double [] save=dparam.phaseNonZer.getValuesPhase(p);
+            
+            if (save!=null){
                 
-                double likelihood=Double.MAX_VALUE;
-                double val=0;
-                for (double up=-5*Math.PI;up<=5*Math.PI;up+=Math.PI){
-                    //IJ.log("up_init "+up);
-                    if (up!=0){
-                        dparam.psf_fMany.updatePhase(dparam.phaseZer.computeCombination(p, up));
-                        double lik1=this.compute_sum_CRLB((float)h);
-                        if (likelihood>lik1){
-                            likelihood=lik1;
-                            val=up;
+                
+                
+                double [] tmp=new double [save.length];
+                
+                for (int i=0;i<tmp.length;i++){
+                    tmp[i]=save[i]-h;
+                    
+                }
+                dparam.phaseNonZer.setValuesPhase(p, tmp);
+                dparam.psf_fMany.updatePhase(dparam.phaseNonZer.getPointerPhase());
+                
+                
+                double lik1=this.compute_sum_CRLB((float)h);
+                
+                
+                
+
+                
+                
+                for (int i=0;i<tmp.length;i++){
+                    tmp[i]=save[i];
+                    
+                }
+                dparam.phaseNonZer.setValuesPhase(p, tmp);
+                dparam.psf_fMany.updatePhase(dparam.phaseNonZer.getPointerPhase());
+                
+                double lik2=this.compute_sum_CRLB((float)h);
+                
+                
+                
+                
+                
+                
+                for (int i=0;i<tmp.length;i++){
+                    tmp[i]=save[i]+h;
+                    
+                }
+                dparam.phaseNonZer.setValuesPhase(p, tmp);
+                dparam.psf_fMany.updatePhase(dparam.phaseNonZer.getPointerPhase());
+                
+                double lik3=this.compute_sum_CRLB((float)h);
+                
+                
+                
+                
+                
+                
+                
+                double grad=0;
+                if (Math.abs((lik3+lik1-2*lik2)/(h*h))==0){
+                    grad=((lik3-lik1)/(2*h));
+                }
+                else{
+                    grad=((lik3-lik1)/(2*h))/Math.abs((lik3+lik1-2*lik2)/(h*h));
+                }
+                
+                if (grad>Math.PI/10){
+                    grad=Math.PI/10;
+                }
+                if (grad<-Math.PI/10.){
+                    grad=-Math.PI/10.;
+                }
+                
+                
+                
+                
+                boolean found=false;
+                loop:for (double gamma=1;gamma>.02;gamma/=10){
+                    
+                    boolean isNan=false;
+                    for (int i=0;i<tmp.length;i++){
+                        tmp[i]=save[i]-gamma*grad;
+                        if (Double.isNaN(tmp[i])){
+                            isNan=true;
                         }
                     }
-                    //IJ.log("up "+up+"  "+lik1);
-                }
-                
-                
-                for (double up=-Math.PI;up<=Math.PI;up+=Math.PI/4){
-                    //IJ.log("up_init "+up);
-                    dparam.psf_fMany.updatePhase(dparam.phaseZer.computeCombination(p, up));
-                    double lik1=this.compute_sum_CRLB((float)h);
-                    if (likelihood>lik1){
-                        likelihood=lik1;
-                        val=up;
+                    if (!isNan){
+                        dparam.phaseNonZer.setValuesPhase(p, tmp);
+                        dparam.psf_fMany.updatePhase(dparam.phaseNonZer.getPointerPhase());
+
+                        double lik=this.compute_sum_CRLB((float)h);
+
+
+
+
+                        if (lik<lik2){
+                            lastLikelihood=lik;
+                            found=true;
+                            break loop;
+                        }
+                        else{
+                            dparam.phaseNonZer.setValuesPhase(p, save);
+                        }
                     }
-                    //IJ.log("up "+up+"  "+lik1);
+                    
                 }
-                
-                dparam.phaseZer.setA(p, val);
-                
-                
-                
-                
-                //dparam.psf_fMany.updatePhase(dparam.phaseZer.computeCombination());
-                
+                if (!found){
+                    dparam.phaseNonZer.setValuesPhase(p, save);
+                    dparam.psf_fMany.updatePhase(dparam.phaseNonZer.getPointerPhase());
+                    
+                    
+                }
             }
         }
+        
+        return lastLikelihood;
+        
+    }
+    
+    
+    
+    
+    
+    
+    
+    
+    private void initPhaseGeneric(double h){
+        
+        float [][][] im;
+        
+        IJ.log("initialization 1/6");
+        
+        
+        
+        
+        double lastLikelihood=-1;
+        
+        
+        /*for (int u=0;u<10;u++){
+            double v=Math.random()*3;
+            this.init(h, 4, 1, -v, v, v);
+
+            ImageShow.imshow(dparam.psf_fMany.getPhase(),"phase");
+            im = new float [deltaZ.length][][];
+            for (int i=0;i<deltaZ.length;i++){
+                im[i]=dparam.psf_fMany.getPSF(i*7);
+            }
+            ImageShow.imshow(im,"PSF1_"+u);
+        }*/
+        
+        
+        for (int u=0;u<1;u++){
+            double v=Math.random()*5;
+            double angle=Math.random()*2*Math.PI;
+            double radius=Math.random();
+            double dist=Math.max(1,Math.random()+radius);
+            this.initRing(h, angle, dist, radius, -v, v, v);
+
+            ImageShow.imshow(dparam.psf_fMany.getPhase(),"phase");
+            im = new float [deltaZ.length][][];
+            for (int i=0;i<deltaZ.length;i++){
+                im[i]=dparam.psf_fMany.getPSF(i*7);
+            }
+            ImageShow.imshow(im,"PSF2_"+u);
+        }
+        
+        
+        
+        /*for (int u=0;u<1;u++){
+            double v=Math.random()*5;
+            this.init(h, 4, 1, -v, v, v);
+
+            ImageShow.imshow(dparam.psf_fMany.getPhase(),"phase");
+            im = new float [deltaZ.length][][];
+            for (int i=0;i<deltaZ.length;i++){
+                im[i]=dparam.psf_fMany.getPSF(i*7);
+            }
+            ImageShow.imshow(im,"PSF2_"+u);
+        }*/
+        
+        
+        //INITIALISE checking differents values for each split
+        /*for (int u=0;u<5;u++){
+            IJ.log("WARNING... HERE, we should check all combinations at the same time");
+            dparam.phaseNonZer.createSplits(a, b);
+            for (int p=0;p<splitNumber;p++){
+                double [] save=dparam.phaseNonZer.getValuesPhase(p);
+                dparam.psf_fMany.updatePhase(dparam.phaseNonZer.getPointerPhase());
+                lastLikelihood=this.compute_sum_CRLB((float)h);
+
+                if (save!=null){
+
+                    double [] tmp=new double [save.length];
+                    double [] remember=new double [save.length];
+                    for (double t=-Math.PI;t<=Math.PI;t+=.5){
+                        for (int i=0;i<tmp.length;i++){
+                            tmp[i]=save[i]+t;
+
+                        }
+                        dparam.phaseNonZer.setValuesPhase(p, tmp);
+                        dparam.psf_fMany.updatePhase(dparam.phaseNonZer.getPointerPhase());
+
+
+                        double lik1=this.compute_sum_CRLB((float)h);
+
+                        if (lik1<lastLikelihood){
+                            for (int i=0;i<tmp.length;i++){
+                                remember[i]=tmp[i];
+
+                            }
+                            lastLikelihood=lik1;
+                        }
+                    }
+
+                    dparam.phaseNonZer.setValuesPhase(p, remember);
+                    dparam.psf_fMany.updatePhase(dparam.phaseNonZer.getPointerPhase());
+
+                }
+
+            }
+        }
+        
+        
+        ImageShow.imshow(dparam.psf_fMany.getPhase(),"phase");
+        float [][][] im = new float [deltaZ.length][][];
+        for (int i=0;i<deltaZ.length;i++){
+            im[i]=dparam.psf_fMany.getPSF(i*7);
+        }
+        ImageShow.imshow(im,"PSF");
+        
+        
+        this.updatePhaseGeneric(.001,a,b);
+        
+        
+        
+        for (int u=0;u<20;u++){
+            int angleSplit=4+(int)(Math.random()*3);
+            int distSplit=2+(int)(Math.random()*3);
+            this.updatePhaseGeneric(.001,angleSplit,distSplit);
+            
+        }
+        
+        
+        ImageShow.imshow(dparam.psf_fMany.getPhase(),"phase");
+        im = new float [deltaZ.length][][];
+        for (int i=0;i<deltaZ.length;i++){
+            im[i]=dparam.psf_fMany.getPSF(i*7);
+        }
+        ImageShow.imshow(im,"PSF");
+        
+        
+        IJ.log("initialization 2/6");
+        
+        
+        for (int u=0;u<20;u++){
+            int angleSplit=4+(int)(Math.random()*12);
+            int distSplit=2+(int)(Math.random()*12);
+            this.updatePhaseGeneric(.001,angleSplit,distSplit);
+        }
+        
+        
+        ImageShow.imshow(dparam.psf_fMany.getPhase(),"phase");
+        im = new float [deltaZ.length][][];
+        for (int i=0;i<deltaZ.length;i++){
+            im[i]=dparam.psf_fMany.getPSF(i*7);
+        }
+        ImageShow.imshow(im,"PSF");
+        
+        
+        IJ.log("initialization 3/6");
+        
+        for (int u=0;u<20;u++){
+            int angleSplit=4+(int)(Math.random()*15);
+            int distSplit=2+(int)(Math.random()*15);
+            this.updatePhaseGeneric(.001,angleSplit,distSplit);
+        }
+        
+        
+        
+        ImageShow.imshow(dparam.psf_fMany.getPhase(),"phase");
+        im = new float [deltaZ.length][][];
+        for (int i=0;i<deltaZ.length;i++){
+            im[i]=dparam.psf_fMany.getPSF(i*7);
+        }
+        ImageShow.imshow(im,"PSF");
+        
+        
+        IJ.log("initialization 4/6");
+        
+        for (int u=0;u<15;u++){
+            int angleSplit=4+(int)(Math.random()*20);
+            int distSplit=2+(int)(Math.random()*20);
+            this.updatePhaseGeneric(.001,angleSplit,distSplit);
+        }
+        
+        
+        
+        
+        IJ.log("initialization 5/6");
+        
+        
+        for (int u=0;u<10;u++){
+            int angleSplit=10+(int)(Math.random()*25);
+            int distSplit=8+(int)(Math.random()*14);
+            this.updatePhaseGeneric(.001,angleSplit,distSplit);
+        }
+        
+        
+        
+        
+        
+        
+        
+        
+        
+        IJ.log("initialization 6/6");
+        
+        for (int u=0;u<5;u++){
+            int angleSplit=4+(int)(Math.random()*58);
+            int distSplit=20+(int)(Math.random()*12);
+            this.updatePhaseGeneric(.001,angleSplit,distSplit);
+        }*/
+        
+        
         
         
     }
+    
+    
+    
+    private double init(double h,int angleSplit,int distSplit,double min,double max,double step){
+        
+        
+        
+        dparam.psf_fMany.updatePhase(dparam.phaseNonZer.getPointerPhase());
+        double likelihood=this.compute_sum_CRLB((float)h);
+        
+        
+        
+        
+        
+        int splitNumber=angleSplit*distSplit;
+        
+        
+        
+        //INITIALISE checking differents values for each split
+        dparam.phaseNonZer.createSplits(angleSplit, distSplit);
+        
+        
+        double [][] init=new double [splitNumber][];
+        for (int i=0;i<splitNumber;i++){
+            init[i]=dparam.phaseNonZer.getValuesPhase(i);
+        }
+        
+        
+        
+        int t=0;
+        for (double val=min;val<=max;val+=step){
+            t++;
+        }
+        double [] valstep = new double [t];
+        t=0;
+        for (double val=min;val<=max;val+=step){
+            //IJ.log("val "+val+"  "+min+"  "+max+"  "+step);
+            valstep[t]=val;
+            t++;
+        }
+        int numberOfCoef=splitNumber;
+        int numberOfVal=valstep.length;
+        
+        IJ.log("size   "+dparam.param.sizeDisk+" * "+Math.pow(numberOfVal,numberOfCoef));
+        double [][] coco = new double [(int)Math.round(Math.pow(numberOfVal,numberOfCoef))][dparam.param.sizeDisk];
+        for (int j=0;j<coco.length;j++){
+            coco[j]=dparam.phaseNonZer.getValuesPhase();
+        }
+        
+        int [] id = new int [numberOfCoef];
+        for (int i=0;i<id.length;i++){
+            id[i]=0;
+        }
+        for (int i=0;i<coco.length;i++){
+            
+            
+            //on compte en base numberOfVal
+            int number=i;
+            for (int b=0;b<id.length;b++){
+                id[b]=number%numberOfVal;
+                number=number/numberOfVal;
+            }
+            
+            for (int b=0,bb=0;b<splitNumber;b++,bb++){
+                int [] posit=dparam.phaseNonZer.getPositSplitPointer(b);
+                for (int u=0;u<posit.length;u++){
+                        coco[i][posit[u]]+=valstep[id[bb]];
+                }
+                
+            }
+        }
+        
+        int bestId=0;
+        
+        for (int p=0;p<coco.length;p++){
+            
+            
+            if (p%10==0){
+                IJ.log(""+(coco.length-p)/10);
+            }
+            
+            dparam.phaseNonZer.setValuesPhase(coco[p]);
+            dparam.psf_fMany.updatePhase(dparam.phaseNonZer.getPointerPhase());
+                
+            double lik=this.compute_sum_CRLB((float)h);
+            
+
+            if (lik<=likelihood){
+                likelihood=lik;
+                bestId=p;
+            }
+
+        }
+        
+        dparam.phaseNonZer.setValuesPhase(coco[bestId]);
+        dparam.psf_fMany.updatePhase(dparam.phaseNonZer.getPointerPhase());
+        
+        
+        return likelihood;
+    }
+    
+    
+    
+    
+    
+    
+    private double initRing(double h,double angle,double dist,double radius,double min,double max,double step){
+        
+        
+        
+        dparam.psf_fMany.updatePhase(dparam.phaseNonZer.getPointerPhase());
+        double likelihood=this.compute_sum_CRLB((float)h);
+        
+        
+        
+        
+        
+        int splitNumber=2;
+        
+        
+        
+        //INITIALISE checking differents values for each split
+        dparam.phaseNonZer.createSplitsAs2Rings(angle, dist, radius);
+        
+        
+        double [][] init=new double [splitNumber][];
+        for (int i=0;i<splitNumber;i++){
+            init[i]=dparam.phaseNonZer.getValuesPhase(i);
+        }
+        
+        
+        
+        int t=0;
+        for (double val=min;val<=max;val+=step){
+            t++;
+        }
+        double [] valstep = new double [t];
+        t=0;
+        for (double val=min;val<=max;val+=step){
+            //IJ.log("val "+val+"  "+min+"  "+max+"  "+step);
+            valstep[t]=val;
+            t++;
+        }
+        int numberOfCoef=splitNumber;
+        int numberOfVal=valstep.length;
+        
+        
+        double [][] coco = new double [(int)Math.round(Math.pow(numberOfVal,numberOfCoef))][dparam.param.sizeDisk];
+        for (int j=0;j<coco.length;j++){
+            coco[j]=dparam.phaseNonZer.getValuesPhase();
+        }
+        
+        int [] id = new int [numberOfCoef];
+        for (int i=0;i<id.length;i++){
+            id[i]=0;
+        }
+        for (int i=0;i<coco.length;i++){
+            
+            
+            //on compte en base numberOfVal
+            int number=i;
+            for (int b=0;b<id.length;b++){
+                id[b]=number%numberOfVal;
+                number=number/numberOfVal;
+            }
+            
+            for (int b=0,bb=0;b<splitNumber;b++,bb++){
+                int [] posit=dparam.phaseNonZer.getPositSplitPointer(b);
+                IJ.log("error here "+posit);
+                for (int u=0;u<posit.length;u++){
+                    coco[i][posit[u]]+=valstep[id[bb]];
+                }
+                
+            }
+        }
+        
+        int bestId=0;
+        
+        for (int p=0;p<coco.length;p++){
+            
+            
+            
+            
+            dparam.phaseNonZer.setValuesPhase(coco[p]);
+            dparam.psf_fMany.updatePhase(dparam.phaseNonZer.getPointerPhase());
+                
+            double lik=this.compute_sum_CRLB((float)h);
+            
+
+            if (lik<=likelihood){
+                likelihood=lik;
+                bestId=p;
+            }
+
+        }
+        
+        dparam.phaseNonZer.setValuesPhase(coco[bestId]);
+        dparam.psf_fMany.updatePhase(dparam.phaseNonZer.getPointerPhase());
+        
+        
+        return likelihood;
+    }
+    
+    
+    
     
     
     
@@ -785,6 +1238,7 @@ public class PhaseOptimization {
         som/=(double)crlb.length;
         somX/=(double)crlb.length;
         somY/=(double)crlb.length;
+        
         
         
         ////////////////begin modif to delete... max optim
@@ -867,6 +1321,7 @@ public class PhaseOptimization {
         
         dparam.psf_fMany.computePSF(x, y, zoil,z);
         
+        //dparam.psf_fMany.imshowFloat(dparam.psf_fMany.device_phase, "phase");
         
         
         
@@ -874,6 +1329,8 @@ public class PhaseOptimization {
         double [] v=new double [nbParam];
         
         for (int t=0;t<deltaZ.length;t++){
+        //for (int t=0;t<1;t++){
+            
             u[0]=0;
             u[1]=0;
             u[2]=deltaZ[t];
@@ -888,6 +1345,8 @@ public class PhaseOptimization {
             
             
             float [][] f1 =dparam.psf_fMany.getPSF(t*7+0);
+            
+            
             for (int i=0;i<f1.length;i++){
                 for (int ii=0;ii<f1[0].length;ii++){
                     f1[i][ii]=f1[i][ii]*this.photonNumber+this.background;
@@ -898,6 +1357,7 @@ public class PhaseOptimization {
             float [][][] f0=new float [nbParam][f1.length][f1[0].length];
             float [][][] f2=new float [nbParam][f1.length][f1[0].length];
 
+            
                         
             float [][] x2 =dparam.psf_fMany.getPSF(t*7+1);
             
@@ -908,7 +1368,8 @@ public class PhaseOptimization {
                     f2[0][i][ii]=x2[i][ii]*this.photonNumber+this.background;
                 }
             }
-
+            
+            
             
             float [][] y2 =dparam.psf_fMany.getPSF(t*7+3);
             
@@ -919,7 +1380,7 @@ public class PhaseOptimization {
                     f2[1][i][ii]=y2[i][ii]*this.photonNumber+this.background;
                 }
             }
-
+            
             
             float [][] z2 =dparam.psf_fMany.getPSF(t*7+5);
             
@@ -930,7 +1391,7 @@ public class PhaseOptimization {
                     f2[2][i][ii]=z2[i][ii]*this.photonNumber+this.background;
                 }
             }
-
+            
             //double  [][] a2 =new double[f1.length][f1[0].length];
             //double  [][] a0 =new double[f1.length][f1[0].length];
             for (int i=0;i<f1.length;i++){
@@ -940,6 +1401,7 @@ public class PhaseOptimization {
                 }
             }
 
+            
             //double  [][] b2 =new double[f1.length][f1[0].length];
             //double  [][] b0 =new double[f1.length][f1[0].length];
             for (int i=0;i<f1.length;i++){
@@ -950,11 +1412,12 @@ public class PhaseOptimization {
             }
             
             
-            
             //compute fisher
             double d1,d2;
             double [][] I=new double [nbParam][nbParam];
+            
             for (int p=0;p<nbParam;p++){
+                //String s="";
                 for (int pp=0;pp<nbParam;pp++){
                     I[p][pp]=0;
                     for (int i=0;i<f1.length;i++){
@@ -964,7 +1427,9 @@ public class PhaseOptimization {
                             I[p][pp]+=(1/f1[i][ii])*d1*d2;
                         }
                     }
+                    //s+=" "+I[p][pp];
                 }
+                //IJ.log("r "+s);
             }
 
             double [] std =new double[nbParam];
@@ -988,7 +1453,9 @@ public class PhaseOptimization {
                 inversible=false;
 
             }
-
+            
+            
+            
             
             if (inversible){
                 for (int i=0;i<nbParam;i++){
@@ -1000,6 +1467,9 @@ public class PhaseOptimization {
             
         }
         
+        if (Double.isNaN(crlb[0][0])){
+            IJ.log("ERROR: NanValue Phase optimization... maybe h is set too low -> no PSF difference ; h="+hdec);
+        }
         return crlb;
         
     }
