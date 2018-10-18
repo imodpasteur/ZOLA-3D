@@ -1597,7 +1597,7 @@ public class ZOLA implements PlugIn  {
             
             gd.addNumericField("Photon number: ", photonNumber,0);
             gd.addNumericField("Background intensity: ", background,0);
-            gd.addCheckbox("Use_pupil_apodization factor", withApoFactor);
+            gd.addCheckbox("Use_pupil_apodization factor (not selected by default)", withApoFactor);
             gd.addChoice("Phase-based method", fieldZernike,  fieldZernike[zernikeCoef]);
             
             gd.addNumericField("Iteration #: ", iterationNumber, 0);
@@ -1862,7 +1862,7 @@ public class ZOLA implements PlugIn  {
             
             gd.addNumericField("Patch_size: ", sizePatchPhaseRet, 0,6,"(pixels)");
             //gd.addSlider("Zernike_coefficient #", 0, 2*((int)Math.sqrt(nbImage)), (int)Math.sqrt(nbImage));
-            gd.addCheckbox("Use_pupil_apodization factor", withApoFactor);
+            gd.addCheckbox("Use_pupil_apodization factor (not selected by default)", withApoFactor);
             gd.addChoice("Zernike_coefficient number", fieldZernike,  fieldZernike[zernikeCoef]);
             //gd.addNumericField("Sigma_gaussian_blur", sigma,  2,6,"(pixels)");
             //gd.addNumericField("Zernike_coefficient #: ", zernikeCoef, 0);
