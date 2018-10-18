@@ -8,7 +8,7 @@ A brief introduction of ZOLA-3D is given here. Please, open the [User manual - H
 
 Example of reconstructed images can be downloaded [HERE](https://github.com/imodpasteur/ZOLA-3D/releases/download/v0.1.9/DATA.zip). Test data can be downloaded [HERE](https://github.com/imodpasteur/ZOLA-3D/releases/download/v0.1.9/TEST-DATA.zip).
 
-## Licence
+## License
 
 GPLV3
 
