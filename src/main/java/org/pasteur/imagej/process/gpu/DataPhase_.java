@@ -61,11 +61,11 @@ public class DataPhase_ {
     //public GaussianPupil pupilGauss;
     
     
-    public DataPhase_(int sizeFFT,int sizeoutput,int orderGaussianPupil,double xystep,double zstep,double wavelength,double noil,double na,double sigmaGaussianKernel,int zernikeCoefNumber){
+    public DataPhase_(int sizeFFT,int sizeoutput,int orderGaussianPupil,double xystep,double zstep,double wavelength,double noil,double na,double sigmaGaussianKernel,int zernikeCoefNumber,boolean withApoFactor){
         
         
         
-        param=new PhaseParameters(sizeFFT,sizeoutput,orderGaussianPupil,xystep,zstep,wavelength,noil,na,1,sigmaGaussianKernel);
+        param=new PhaseParameters(sizeFFT,sizeoutput,orderGaussianPupil,xystep,zstep,wavelength,noil,na,1,sigmaGaussianKernel,withApoFactor);
         
         
         //IJ.log("sigmaGaussianKernel "+sigmaGaussianKernel+"  "+param.sigmaGaussianKernel);
@@ -92,11 +92,11 @@ public class DataPhase_ {
     
     
     
-    public DataPhase_(int sizeFFT,int sizeoutput,int orderGaussianPupil,double xystep,double zstep,double wavelength,double noil,double na,double sigmaGaussianKernel){
+    public DataPhase_(int sizeFFT,int sizeoutput,int orderGaussianPupil,double xystep,double zstep,double wavelength,double noil,double na,double sigmaGaussianKernel,boolean withApoFactor){
         
         
         
-        param=new PhaseParameters(sizeFFT,sizeoutput,orderGaussianPupil,xystep,zstep,wavelength,noil,na,1,sigmaGaussianKernel);
+        param=new PhaseParameters(sizeFFT,sizeoutput,orderGaussianPupil,xystep,zstep,wavelength,noil,na,1,sigmaGaussianKernel,withApoFactor);
         
         
         //IJ.log("sigmaGaussianKernel "+sigmaGaussianKernel+"  "+param.sigmaGaussianKernel);
@@ -478,11 +478,11 @@ public class DataPhase_ {
             if (lin[0].startsWith("sigma")){
                 double sigmaGaussianKernel=Double.parseDouble(lin[1]);
                 
-                param = new PhaseParameters(sizeFFT,sizeFFT,order,xystep,zstep,wavelength,noil,na,1,sigmaGaussianKernel);
+                param = new PhaseParameters(sizeFFT,sizeFFT,order,xystep,zstep,wavelength,noil,na,1,sigmaGaussianKernel,false);
                 ligne=br.readLine();
             }
             else{
-                param = new PhaseParameters(sizeFFT,sizeFFT,order,xystep,zstep,wavelength,noil,na,1,1);
+                param = new PhaseParameters(sizeFFT,sizeFFT,order,xystep,zstep,wavelength,noil,na,1,1,false);
             }
             //IJ.log("sigGauss "+param.sigmaGaussianKernel);
             param.pathcalib=path;
@@ -723,6 +723,7 @@ public class DataPhase_ {
             int dimph=1;
             double sigmaGaussianKernel=0;
             boolean zernikedPSF;
+            boolean withApoFactor=false;
             //Object obj = parser.parse(new FileReader(path));
 
 
@@ -753,17 +754,23 @@ public class DataPhase_ {
 
 
             sigmaGaussianKernel = Double.parseDouble(json.get("sigmaGaussianKernel").toString());
-
-
-
-            if (zernikedPSF){
-                param = new PhaseParameters(sizeFFT,sizeFFT,order,xystep,zstep,wavelength,noil,na,1,sigmaGaussianKernel);
+            
+            String tmp=json.get("withApoFactor");
+            if (tmp!=null){
+                withApoFactor = Boolean.parseBoolean(tmp);
             }
             else{
-                param = new PhaseParameters(size,size,order,xystep,zstep,wavelength,noil,na,1,sigmaGaussianKernel);
+                withApoFactor = false;
+            }
+            
+
+            if (zernikedPSF){
+                param = new PhaseParameters(sizeFFT,sizeFFT,order,xystep,zstep,wavelength,noil,na,1,sigmaGaussianKernel,withApoFactor);
+            }
+            else{
+                param = new PhaseParameters(size,size,order,xystep,zstep,wavelength,noil,na,1,sigmaGaussianKernel,withApoFactor);
             }
             param.zernikedPSF=zernikedPSF;
-
             psf=new PSF_double_(param);
 
             if (zernikedPSF){
@@ -836,7 +843,7 @@ public class DataPhase_ {
             obj.put("wavelength",param.wavelength);
             obj.put("sigmaGaussianKernel",param.sigmaGaussianKernel);
             obj.put("zernikedPSF",param.zernikedPSF);
-            
+            obj.put("withApoFactor",param.withApoFactor);
             if (param.zernikedPSF){
                 //JSONArray zernikelist = new JSONArray();
                 double [] zer = new double [phaseZer.numCoef];

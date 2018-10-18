@@ -24,6 +24,7 @@ import java.util.concurrent.locks.ReentrantLock;
 public class DualCamLocalizationPipeline_ {
     
     
+    ArrayList<String> otherVariableName = new ArrayList<String>();
     
     StackLocalization stackloc;
     boolean saveOnTheFly=false;
@@ -145,6 +146,8 @@ public class DualCamLocalizationPipeline_ {
         
         loc=new Localization_[nbStream][nbThread];
         
+        otherVariableName.add("intensity2");
+        otherVariableName.add("background2");
         
     }
     
@@ -1063,8 +1066,10 @@ public class DualCamLocalizationPipeline_ {
                                         double my_x=1000*(xint1*dp[idStream][0].param.xystep-loc[idStream][idThread].getX());
                                         double my_y=1000*(yint1*dp[idStream][0].param.xystep-loc[idStream][idThread].getY());
                                         double my_z=(1000*loc[idStream][idThread].getZ());
-                                        double my_A=(loc[idStream][idThread].getA()[0][0]+loc[idStream][idThread].getA()[1][0]);
-                                        double my_B=(loc[idStream][idThread].getB()[0]+loc[idStream][idThread].getB()[1])/2;
+                                        double my_A=loc[idStream][idThread].getA()[0][0];
+                                        double my_A2=loc[idStream][idThread].getA()[1][0];
+                                        double my_B=loc[idStream][idThread].getB()[0];
+                                        double my_B2=loc[idStream][idThread].getB()[1];
                                         double my_Score=scoreCompute(patch[0],modelA,patch[1],modelB);
                                         double my_crlbx=(1000*loc[idStream][idThread].getCRLBX());
                                         double my_crlby=(1000*loc[idStream][idThread].getCRLBY());
@@ -1075,7 +1080,9 @@ public class DualCamLocalizationPipeline_ {
                                         //IJ.log("position:   X:"+my_x+"    Y:"+my_y+"    Z:"+my_z+"    A:"+my_A+"    B:"+my_B);
                                         
                                         PLocalization p = new PLocalization(idLoc,theframe,my_x,my_y,my_z,my_A,my_B,my_Score,my_crlbx,my_crlby,my_crlbz);
-                                        
+                                        p.addListOfVariables(otherVariableName);
+                                        p.setValueOtherVariable(0, my_A2);
+                                        p.setValueOtherVariable(1, my_B2);
                                         p.setDrift_X(dx1*1000);
                                         p.setDrift_Y(dy1*1000);
                                         p.setDrift_Z(dz1*1000);

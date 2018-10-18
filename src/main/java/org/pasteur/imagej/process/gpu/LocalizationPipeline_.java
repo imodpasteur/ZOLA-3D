@@ -196,7 +196,7 @@ public class LocalizationPipeline_ {
             
             SearchPSFcenter_ spc = new SearchPSFcenter_(dp[i],axialRange);
             posit=spc.getPosition();
-            //}
+            
             dp[i].param.ZfocusCenter=posit;
         }
         

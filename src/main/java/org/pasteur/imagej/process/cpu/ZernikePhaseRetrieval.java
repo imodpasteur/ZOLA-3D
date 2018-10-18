@@ -75,7 +75,7 @@ public class ZernikePhaseRetrieval {
     
     double maxDrift=10;//max drift between each frame (nm)
     
-    public ZernikePhaseRetrieval(int sizeFFT,double xystep,double zstep,double wavelength,double noil,double na,int zernikeCoefNumber,InitBackgroundAndPhotonNumber paramImage,String path_calibration,double sigma,int axialside){
+    public ZernikePhaseRetrieval(int sizeFFT,double xystep,double zstep,double wavelength,double noil,double na,int zernikeCoefNumber,InitBackgroundAndPhotonNumber paramImage,String path_calibration,double sigma,int axialside,boolean withApoFactor){
         this.sigma=sigma;
         this.image=paramImage.image;
         
@@ -85,7 +85,7 @@ public class ZernikePhaseRetrieval {
         
         nbProcess=nbSlice;
         
-        dparam = new DataPhase(sizeFFT,image[0][0].length,0,xystep,zstep,wavelength,noil,na,1.0,zernikeCoefNumber);
+        dparam = new DataPhase(sizeFFT,image[0][0].length,0,xystep,zstep,wavelength,noil,na,1.0,zernikeCoefNumber,withApoFactor);
         
         dparam.param.Zfocus=0;
         dparam.phaseZer.setMatAtPosit(dparam.psf.getKxPointer(),0);
@@ -127,9 +127,11 @@ public class ZernikePhaseRetrieval {
         for (int s=0;s<nbSlice;s++){
             if (axialside==0){
                 deltaZ[s]=(((double)s)-center)*dparam.param.zstep;
+                
             }
             else{
                 deltaZ[s]=-(((double)s)-center)*dparam.param.zstep;
+                
             }
         }
         

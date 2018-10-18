@@ -154,13 +154,18 @@ public class JSONformat {
     
     public String get(String s){
         int id=file.indexOf(s);
-        int start=1+file.indexOf(":", id);
-        int end=file.indexOf(",", start);
-        if (end<0){
-            end=file.indexOf("}");
+        if (id>=0){
+            int start=1+file.indexOf(":", id);
+            int end=file.indexOf(",", start);
+            if (end<0){
+                end=file.indexOf("}");
+            }
+            //IJ.log(""+s+"  "+id+"  "+start+"  "+end+"   "+file.substring(start));
+            return file.substring(start, end);
         }
-        //IJ.log(""+s+"  "+id+"  "+start+"  "+end+"   "+file.substring(start));
-        return file.substring(start, end);
+        else{
+            return null;
+        }
     }
     
     

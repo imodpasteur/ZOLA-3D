@@ -50,7 +50,7 @@ public class ZernikePhaseOptimization_ {
     float background;
     double nwat;
     double Zfocus;
-    public ZernikePhaseOptimization_(int sizeFFT,int sizePatch,double xystep,double axialRange, double stepZ,double photonNumber, double background,double wavelength,double noil,double nwat,double zfocus,double na,int zernikeCoefNumber,String path_result){
+    public ZernikePhaseOptimization_(int sizeFFT,int sizePatch,double xystep,double axialRange, double stepZ,double photonNumber, double background,double wavelength,double noil,double nwat,double zfocus,double na,int zernikeCoefNumber,String path_result,boolean withApoFactor){
         
         this.photonNumber=(float)photonNumber;
         this.background=(float)background;
@@ -58,7 +58,7 @@ public class ZernikePhaseOptimization_ {
         this.axialRange=axialRange;
         this.stepZ=stepZ;
         
-        dparam = new DataPhase_(sizeFFT,sizePatch,0,xystep,stepZ,wavelength,noil,na,1,zernikeCoefNumber);
+        dparam = new DataPhase_(sizeFFT,sizePatch,0,xystep,stepZ,wavelength,noil,na,1,zernikeCoefNumber,withApoFactor);
         this.nwat=nwat;
         this.Zfocus=zfocus;
         

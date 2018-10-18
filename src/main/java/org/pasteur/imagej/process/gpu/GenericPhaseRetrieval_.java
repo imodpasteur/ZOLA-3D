@@ -62,7 +62,7 @@ public class GenericPhaseRetrieval_ {
     double maxDrift=10;//max drift between each frame (nm)
     
     
-    public GenericPhaseRetrieval_(int sizeFFT,double xystep,double zstep,double wavelength,double noil,double na,InitBackgroundAndPhotonNumber paramImage,String path_calibration,double sigma,int axialside){
+    public GenericPhaseRetrieval_(int sizeFFT,double xystep,double zstep,double wavelength,double noil,double na,InitBackgroundAndPhotonNumber paramImage,String path_calibration,double sigma,int axialside,boolean withApoFactor){
         this.sigma=sigma;
         this.image=paramImage.image;
         
@@ -70,7 +70,7 @@ public class GenericPhaseRetrieval_ {
         nbSlice=image[0].length;
         imageLength=image[0][0].length*image[0][0][0].length;
         //dparam = new classes.cudaProcess.DataPhase(sizeFFT,image[0][0].length,0,xystep,zstep,wavelength,noil,na,1.0,zernikeCoefNumber);
-        dparam = new DataPhase_(sizeFFT,image[0][0].length,0,xystep,zstep,wavelength,noil,na,1.0);
+        dparam = new DataPhase_(sizeFFT,image[0][0].length,0,xystep,zstep,wavelength,noil,na,1.0,withApoFactor);
         dparam.setNwat(dparam.param.noil);//ca ne change rien normalement car bille collée à lamelle
         dparam.param.zernikedPSF=false;
         dparam.param.Zfocus=0;

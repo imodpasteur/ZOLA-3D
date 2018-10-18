@@ -15,7 +15,7 @@ import org.pasteur.imagej.cuda.*;
 
 
 
-
+import java.awt.Checkbox;
 import ij.IJ;
 import ij.WindowManager;
 import ij.Prefs;
@@ -54,6 +54,7 @@ import java.awt.Choice;
 import java.awt.Font;
 import java.awt.event.ActionEvent;
 import java.awt.event.ActionListener;
+import java.util.Random;
 
 
 /**
@@ -83,6 +84,8 @@ public class ZOLA implements PlugIn  {
     int sizeTextString=45;
     
     Prefs prefs = new Prefs(); 
+    
+    
     
     String path_SCMOSvariance="";
     String path_SCMOSoffset="";
@@ -152,6 +155,7 @@ public class ZOLA implements PlugIn  {
     
     boolean GPU_computation;
        
+    boolean withApoFactor;
     
     double sizeRendering=20;
             
@@ -277,7 +281,7 @@ public class ZOLA implements PlugIn  {
         
         
         GPU_computation=(boolean)prefs.get("Zola.GPU_computation", false);
-        
+        withApoFactor=(boolean)prefs.get("Zola.withApoFactor", false);
         sizeRendering=prefs.get("Zola.sizeRendering", 20);
         
         dualCamMaxDistanceMergingPlan=prefs.get("Zola.dualCamMaxDistanceMergingPlan", 250);
@@ -409,6 +413,12 @@ public class ZOLA implements PlugIn  {
             
         }
         
+        else if (command.startsWith("zola_driftCorrectionFiducialMarker")){
+            
+            driftCorrectionFiducialMarker();
+            
+            
+        }
         
         else if (command.startsWith("zola_driftCorrection")){
             
@@ -417,12 +427,7 @@ public class ZOLA implements PlugIn  {
             
         }
         
-        else if (command.startsWith("zola_driftCorrectionFiducialMarker")){
-            
-            driftCorrectionFiducialMarker();
-            
-            
-        }
+        
         
         else if (command.startsWith("zola_resetDrift")){
             
@@ -535,14 +540,19 @@ public class ZOLA implements PlugIn  {
             
             test();
         }
-        else if (command.startsWith("zola_simulation")){
-            
-            simulation();
-        }
         else if (command.startsWith("zola_simulation2beads")){
             
             simulation2beads();
         }
+        else if (command.startsWith("zola_simulationOverlappingBeads")){
+            
+            simulationOverlappingBeads();
+        }
+        else if (command.startsWith("zola_simulation")){
+            
+            simulation();
+        }
+        
         else if (command.startsWith("zola_crlb_FromFile")){
             
             crlbfromfile();
@@ -598,6 +608,7 @@ public class ZOLA implements PlugIn  {
         prefs.set("Zola.path_SCMOSgain", path_SCMOSgain);
         prefs.set("Zola.path_SCMOSoffset", path_SCMOSoffset);
         prefs.set("Zola.GPU_computation", GPU_computation);
+        prefs.set("Zola.withApoFactor", withApoFactor);
         prefs.set("Zola.pathlocalization", path_localization);
         prefs.set("Zola.pathlocalization2", path_localization2);
         prefs.set("Zola.path_registration", path_registration);
@@ -720,7 +731,6 @@ public class ZOLA implements PlugIn  {
             else{
                 
                 
-                
                 Roi r=imp.getRoi();
                 int width=imp.getWidth();
                 int height=imp.getHeight();
@@ -741,7 +751,7 @@ public class ZOLA implements PlugIn  {
                 path=path+"ZOLA_localization_table.csv";
                 
                 
-                GenericDialog gd = new GenericDialog("ZOLA: Localization");
+                NonBlockingGenericDialog gd = new NonBlockingGenericDialog("ZOLA: Localization");
                 
                 
                 Font font = gd.getFont();
@@ -750,7 +760,7 @@ public class ZOLA implements PlugIn  {
                 fontBold=new Font(font.getName(),Font.BOLD,font.getSize());
             }catch(Exception e){}
                 
-                gd.addCheckbox("Run_on_GPU :", GPU_computation);
+                gd.addCheckbox("Run_on_GPU", GPU_computation);
                 
                 
                 
@@ -814,31 +824,39 @@ public class ZOLA implements PlugIn  {
                 
                 gd.addStringField("Localization_table:",path,sizeTextString); 
                 
-        
+                Choice choicefield=null;
+                
+                
+                
                 TextField textField; 
-            TextField textField2; 
-            // Add a mouse listener to the config file field 
-            if (!(java.awt.GraphicsEnvironment.isHeadless() || IJ.isMacro())) 
-            {
-                int t=0;
-                
-                Vector<TextField> texts = (Vector<TextField>) gd.getStringFields(); 
-                
-                
-                textField = texts.get(t++); 
-                MouseOptionLoad mol=new MouseOptionLoad(textField,path_calibration,"Import calibration file");
-                textField.addMouseListener(mol); 
-                
-                
+                TextField textField2; 
+                // Add a mouse listener to the config file field 
+                if (!(java.awt.GraphicsEnvironment.isHeadless() || IJ.isMacro())) 
+                {
+                    int t=0;
+                    //textField
+                    Vector<TextField> texts = (Vector<TextField>) gd.getStringFields(); 
 
-                textField2 = texts.get(t++); 
-                MouseOptionSave mos=new MouseOptionSave(textField2,pathdir,"Export localization result table");
-                textField2.addMouseListener(mos); 
-                
-                
+                    textField = texts.get(t++); 
+                    MouseOptionLoad mol=new MouseOptionLoad(textField,path_calibration,"Import calibration file");
+                    textField.addMouseListener(mol); 
 
+                    textField2 = texts.get(t++); 
+                    MouseOptionSave mos=new MouseOptionSave(textField2,pathdir,"Export localization result table");
+                    textField2.addMouseListener(mos); 
+                    
+                    
+                    
+                    //NumericField
+                    Vector<TextField> nums = (Vector<TextField>) gd.getNumericFields(); 
+                    
+                    
+                    
+                    PreviewButton but = new PreviewButton(imp,texts,nums); 
+                    
+                    gd.add(but); 
 
-            }
+                }
         
         
                 gd.showDialog();
@@ -881,7 +899,7 @@ public class ZOLA implements PlugIn  {
                 
                 
                 int nnn=(path_localization.lastIndexOf("."));
-                if ((nnn>=0)&&(nnn>path_localization.length()-5)){
+                if ((nnn>=0)&&(nnn>path_localization.length()-6)){
                     path_localization=path_localization.substring(0,nnn);
                 }
                 path_localization+=".csv";
@@ -897,6 +915,10 @@ public class ZOLA implements PlugIn  {
                 if (sizePatch%2==1){
                     sizePatch++;
                 }
+                
+                
+                
+                
                 
                 
                 
@@ -1289,7 +1311,7 @@ public class ZOLA implements PlugIn  {
                 fontBold=new Font(font.getName(),Font.BOLD,font.getSize());
             }catch(Exception e){}        
                 
-        gd.addCheckbox("Run_on_GPU :", GPU_computation);
+        gd.addCheckbox("Run_on_GPU", GPU_computation);
         
         //String path_calibration2="";
         
@@ -1575,7 +1597,7 @@ public class ZOLA implements PlugIn  {
             
             gd.addNumericField("Photon number: ", photonNumber,0);
             gd.addNumericField("Background intensity: ", background,0);
-
+            gd.addCheckbox("Use_pupil_apodization factor", withApoFactor);
             gd.addChoice("Phase-based method", fieldZernike,  fieldZernike[zernikeCoef]);
             
             gd.addNumericField("Iteration #: ", iterationNumber, 0);
@@ -1622,7 +1644,7 @@ public class ZOLA implements PlugIn  {
                 background=(double)gd.getNextNumber();
 
                 
-                
+                withApoFactor=gd.getNextBoolean();
                 
                 zernikeCoef=gd.getNextChoiceIndex();
                 iterationNumber = (int)gd.getNextNumber();
@@ -1642,12 +1664,12 @@ public class ZOLA implements PlugIn  {
             
             if (zernikeCoef==0){
                         
-                org.pasteur.imagej.process.gpu.GenericPhaseOptimization_ po = new org.pasteur.imagej.process.gpu.GenericPhaseOptimization_(sizeFFT,sizeFFT,xystep,axialRange, stepZloc,photonNumber, background,wavelength,noil,nwat,zfocus,na,pathResult);
+                org.pasteur.imagej.process.gpu.GenericPhaseOptimization_ po = new org.pasteur.imagej.process.gpu.GenericPhaseOptimization_(sizeFFT,sizeFFT,xystep,axialRange, stepZloc,photonNumber, background,wavelength,noil,nwat,zfocus,na,pathResult,withApoFactor);
                 po.run(iterationNumber);
                 po.free();
             }
             else{
-                org.pasteur.imagej.process.gpu.ZernikePhaseOptimization_ po = new org.pasteur.imagej.process.gpu.ZernikePhaseOptimization_(sizeFFT,sizeFFT,xystep,axialRange, stepZloc,photonNumber, background,wavelength,noil,nwat,zfocus,na,(correspondingFieldZernike[zernikeCoef]),pathResult);
+                org.pasteur.imagej.process.gpu.ZernikePhaseOptimization_ po = new org.pasteur.imagej.process.gpu.ZernikePhaseOptimization_(sizeFFT,sizeFFT,xystep,axialRange, stepZloc,photonNumber, background,wavelength,noil,nwat,zfocus,na,(correspondingFieldZernike[zernikeCoef]),pathResult,withApoFactor);
                 po.run(iterationNumber);
                 po.free();
             }
@@ -1705,7 +1727,7 @@ public class ZOLA implements PlugIn  {
                 path=IJ.getDirectory("current");
             }
 //            int nn=(path.lastIndexOf("."));
-//            if ((nn>path.length()-5)&&(nn>=0)){
+//            if ((nn>path.length()-6)&&(nn>=0)){
 //                path=path.substring(0,nn);
 //            }
             path=path+"ZOLA_calibration_PSF.json";
@@ -1793,7 +1815,7 @@ public class ZOLA implements PlugIn  {
                 fontBold=new Font(font.getName(),Font.BOLD,font.getSize());
             }catch(Exception e){}
             
-            gd.addCheckbox("Run_on_GPU :", GPU_computation);
+            gd.addCheckbox("Run_on_GPU", GPU_computation);
             
             
                 if (!isSCMOS){
@@ -1840,6 +1862,7 @@ public class ZOLA implements PlugIn  {
             
             gd.addNumericField("Patch_size: ", sizePatchPhaseRet, 0,6,"(pixels)");
             //gd.addSlider("Zernike_coefficient #", 0, 2*((int)Math.sqrt(nbImage)), (int)Math.sqrt(nbImage));
+            gd.addCheckbox("Use_pupil_apodization factor", withApoFactor);
             gd.addChoice("Zernike_coefficient number", fieldZernike,  fieldZernike[zernikeCoef]);
             //gd.addNumericField("Sigma_gaussian_blur", sigma,  2,6,"(pixels)");
             //gd.addNumericField("Zernike_coefficient #: ", zernikeCoef, 0);
@@ -1882,7 +1905,7 @@ public class ZOLA implements PlugIn  {
                 wavelength = (double)gd.getNextNumber();
                 
                 sizePatchPhaseRet = (int)gd.getNextNumber();
-                
+                withApoFactor=(boolean)gd.getNextBoolean();
                 zernikeCoef=gd.getNextChoiceIndex();
                 
                 //sigma = (double)gd.getNextNumber();
@@ -1897,11 +1920,13 @@ public class ZOLA implements PlugIn  {
             }
             
             int nnn=(path_calibration.lastIndexOf("."));
-            if ((nnn>=0)&&(nnn>path_calibration.length()-5)){
+            //IJ.log("path_calibration "+path_calibration+"  "+nnn+"  "+path_calibration.length());
+            if ((nnn>=0)&&(nnn>path_calibration.length()-6)){
                 path_calibration=path_calibration.substring(0,nnn);
             }
-            path_calibration+=".json";
             
+            path_calibration+=".json";
+            //IJ.log("path_calibration "+path_calibration);
             if (sizePatchPhaseRet%2==1){
                 sizePatchPhaseRet++;
             }
@@ -1939,12 +1964,12 @@ public class ZOLA implements PlugIn  {
                     //IJ.log("param ok");
                     if (zernikeCoef==0){
                         
-                        org.pasteur.imagej.process.gpu.GenericPhaseRetrieval_ gp = new org.pasteur.imagej.process.gpu.GenericPhaseRetrieval_(sizeFFT,xystep,zstep,wavelength,noil,na,paramImage,path_calibration,sigma,axialside);
+                        org.pasteur.imagej.process.gpu.GenericPhaseRetrieval_ gp = new org.pasteur.imagej.process.gpu.GenericPhaseRetrieval_(sizeFFT,xystep,zstep,wavelength,noil,na,paramImage,path_calibration,sigma,axialside,withApoFactor);
                         gp.run(iterationNumber);
                         gp.free();
                     }
                     else{
-                        org.pasteur.imagej.process.gpu.ZernikePhaseRetrieval_ prp = new org.pasteur.imagej.process.gpu.ZernikePhaseRetrieval_(sizeFFT,xystep,zstep,wavelength,noil,na,(correspondingFieldZernike[zernikeCoef]),paramImage,path_calibration,sigma,axialside);
+                        org.pasteur.imagej.process.gpu.ZernikePhaseRetrieval_ prp = new org.pasteur.imagej.process.gpu.ZernikePhaseRetrieval_(sizeFFT,xystep,zstep,wavelength,noil,na,(correspondingFieldZernike[zernikeCoef]),paramImage,path_calibration,sigma,axialside,withApoFactor);
                         //IJ.log("process many ok");
                         prp.run(iterationNumber);
                         //IJ.log("run ok");
@@ -1956,11 +1981,11 @@ public class ZOLA implements PlugIn  {
                     
                     if (zernikeCoef==0){
                         
-                        org.pasteur.imagej.process.cpu.GenericPhaseRetrieval prp = new org.pasteur.imagej.process.cpu.GenericPhaseRetrieval(sizeFFT,xystep,zstep,wavelength,noil,na,paramImage,path_calibration,sigma,axialside);
+                        org.pasteur.imagej.process.cpu.GenericPhaseRetrieval prp = new org.pasteur.imagej.process.cpu.GenericPhaseRetrieval(sizeFFT,xystep,zstep,wavelength,noil,na,paramImage,path_calibration,sigma,axialside,withApoFactor);
                         prp.run(iterationNumber);
                     }
                     else{
-                        org.pasteur.imagej.process.cpu.ZernikePhaseRetrieval prp = new org.pasteur.imagej.process.cpu.ZernikePhaseRetrieval(sizeFFT,xystep,zstep,wavelength,noil,na,correspondingFieldZernike[zernikeCoef],paramImage,path_calibration,sigma,axialside);
+                        org.pasteur.imagej.process.cpu.ZernikePhaseRetrieval prp = new org.pasteur.imagej.process.cpu.ZernikePhaseRetrieval(sizeFFT,xystep,zstep,wavelength,noil,na,correspondingFieldZernike[zernikeCoef],paramImage,path_calibration,sigma,axialside,withApoFactor);
                         prp.run(iterationNumber);
                     }
                     
@@ -2239,7 +2264,7 @@ public class ZOLA implements PlugIn  {
             try{
                 fontBold=new Font(font.getName(),Font.BOLD,font.getSize());
             }catch(Exception e){}
-            gd.addCheckbox("Run_on_GPU :", GPU_computation);
+            gd.addCheckbox("Run_on_GPU", GPU_computation);
             
             String [] binNumber = {"2","3","4","5","6","7","8","9","10"};
             if (drift_bin>=binNumber.length){
@@ -5234,6 +5259,147 @@ public class ZOLA implements PlugIn  {
     
     
     
+    void simulationOverlappingBeads(){
+        
+        if ((processing !=null)&&(processing.booleanValue()==true)){
+            printErrorMessage();
+            return;
+        }
+        
+        processing=new Boolean(true);
+            
+        double backSecOrder=-0.001;
+        double photonNumber=2000;
+        double background=30;
+        double stepXloc=0;
+        double stepYloc=0;
+        
+        double distance=1;//µm
+        
+        
+        GenericDialog gd = new GenericDialog("Simulation Overlapping beads");
+        
+        gd.addStringField("Calibration file:",path_calibration,sizeTextString); 
+        
+        
+        double refIndex=1.33;
+        IJ.log("WARNING: REFRACTIVE INDEX SIMULATION IMMERSION MEDIUM="+refIndex);
+        
+        gd.addMessage("Computation parameter");
+
+        
+        gd.addNumericField("patch size: ", sizePatchPhaseRet,0);
+
+        gd.addMessage("Simulation parameters");
+        
+        gd.addNumericField("distance_focus_to_coverslip (µm): ", zfocus, 3);
+        
+        
+        gd.addNumericField("Axial_range: ", axialRange,2,6,"(µm)");
+        
+        
+        //gd.addNumericField("sample ref index: ", refIndex,2);
+
+        gd.addNumericField("Photon_number: ", photonNumber,0);
+        gd.addNumericField("Background_intensity: ", background,0);
+        
+        
+        gd.addNumericField("max_distance_overlapping: ", distance,2,6,"(µm)");
+        
+        
+        TextField textField;  
+        // Add a mouse listener to the config file field 
+        if (!(java.awt.GraphicsEnvironment.isHeadless() || IJ.isMacro())) 
+        {
+            int t=0;
+            
+            Vector<TextField> texts = (Vector<TextField>) gd.getStringFields(); 
+            textField = texts.get(t++); 
+            MouseOptionLoad mol=new MouseOptionLoad(textField,path_calibration,"Import calibration file");
+            textField.addMouseListener(mol); 
+            
+            
+            
+            
+        }
+        
+        
+        gd.showDialog();
+
+
+
+        if (!gd.wasCanceled()){
+            
+            path_calibration = gd.getNextString(); 
+            
+            sizePatchPhaseRet = (int)gd.getNextNumber();
+            
+            zfocus = (double)gd.getNextNumber();
+            
+            
+            axialRange= (double)gd.getNextNumber();
+            
+            
+            //refIndex=(double)gd.getNextNumber();
+            
+            
+            photonNumber=(double)gd.getNextNumber();
+            background=(double)gd.getNextNumber();
+            
+            
+            distance=(double)gd.getNextNumber();
+            
+            
+
+        }
+        else{
+            processing=new Boolean(false);
+            return;
+        }
+        
+        
+        
+        int sizeFFT=128;
+        sizeFFT=Math.max(sizeFFT,sizePatchPhaseRet*2);
+        sizeFFT=Math.min(sizeFFT,maxFFT);
+        
+        MyCudaStream.init(1);
+
+        org.pasteur.imagej.process.gpu.DataPhase_ dp = new org.pasteur.imagej.process.gpu.DataPhase_(sizeFFT,path_calibration);
+        if (!dp.loading){
+            IJ.log("impossible to load "+path_calibration);
+            processing=new Boolean(false);
+            return;
+        }
+        if (dp.param!=null){
+            dp.setSizeoutput(sizePatchPhaseRet);
+            dp.setNwat(refIndex);
+            dp.param.Zfocus=zfocus;
+            //warning: we should use Zfocus and use SearchPSFcenter class
+            org.pasteur.imagej.development.SimulationOverlappingBeads sim =new org.pasteur.imagej.development.SimulationOverlappingBeads( dp,axialRange,photonNumber,background,sizePatchPhaseRet,distance); 
+            
+            sim.run();
+            
+            dp.free();
+        }
+        
+        MyCudaStream.destroy();
+        
+        processing=new Boolean(false);
+        
+    }
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
     
     
     void crlbfromfile(){
@@ -5606,7 +5772,6 @@ public class ZOLA implements PlugIn  {
         
         
         nbStream=1;
-        nbThread=100;  
             
         ImagePlus imp=IJ.getImage();
 
@@ -5659,7 +5824,7 @@ public class ZOLA implements PlugIn  {
                 fontBold=new Font(font.getName(),Font.BOLD,font.getSize());
             }catch(Exception e){}
                 
-                gd.addCheckbox("Run_on_GPU :", GPU_computation);
+                gd.addCheckbox("Run_on_GPU", GPU_computation);
                 
                 
                 
@@ -5789,7 +5954,7 @@ public class ZOLA implements PlugIn  {
                 
                 
                 int nnn=(path_localization.lastIndexOf("."));
-                if ((nnn>=0)&&(nnn>path_localization.length()-5)){
+                if ((nnn>=0)&&(nnn>path_localization.length()-6)){
                     path_localization=path_localization.substring(0,nnn);
                 }
                 path_localization+=".csv";
@@ -6357,6 +6522,8 @@ gd.addMessage("should have the same size as image to register !!");
     
     
     void test(){
+        
+        IJ.log("");
         nbStream=1;
         
         Zernike z=new Zernike(128,60,200);
@@ -6773,6 +6940,141 @@ gd.addMessage("should have the same size as image to register !!");
             d[1]=maxi;
             return d;
         }
+        
+    }
+    
+    
+    
+    
+    
+    
+    class PreviewButton extends Button  implements ActionListener{
+        ImagePlus imp;
+        Vector<TextField> texts;
+        Vector<Checkbox> bools;
+        Vector<TextField> nums;
+        PreviewButton(ImagePlus imp,Vector<TextField> texts,Vector<TextField> nums){
+            this.texts=texts;
+            this.bools=bools;
+            this.nums=nums;
+            this.imp=imp;
+            this.setLabel("preview");
+            addActionListener(this);
+        }
+        
+        public void actionPerformed(ActionEvent e) 
+        { 
+            //Execute when button is pressed 
+            
+
+            String path_calibration = texts.get(0).getText();
+
+
+            
+            double gain=0;
+
+            if (!isSCMOS){
+                gain = (double)Double.parseDouble(nums.get(0).getText());
+            }
+
+            double nwat= (double)Double.parseDouble(nums.get(1).getText());
+
+            double zfocus= (double)Double.parseDouble(nums.get(2).getText());
+
+            int sizePatch = (int)Double.parseDouble(nums.get(3).getText());
+            //nbStream = (int)gd.getNextNumber();
+            //nbThread = (int)gd.getNextNumber();
+
+            double axialRange= (double)Double.parseDouble(nums.get(4).getText());
+
+
+
+
+            int photonThreshold = (int)Double.parseDouble(nums.get(5).getText());
+
+
+
+
+            
+            
+            
+            
+            
+                
+                if (sizePatch%2==1){
+                    sizePatch++;
+                }
+                
+                int select=imp.getCurrentSlice();
+                IJ.log("localization is applied only on frame "+select);
+                ImageProcessor ip = imp.getProcessor();
+                ImagePlus impTest=new ImagePlus("test",ip);
+                
+                
+                Roi r=imp.getRoi();
+                int width=imp.getWidth();
+                int height=imp.getHeight();
+                
+                
+                if (r!=null){
+                    Rectangle bound=imp.getRoi().getBounds();
+                    width=bound.width;
+                    height=bound.height;
+                }
+                if ((width<sizePatch)||(height<sizePatch)){
+                    IJ.log("Process stopped: Localization impossible. The image, or selected ROI should be larger than patch size");
+                    IJ.log("Please, select a large rectangle in the image before running the localization");
+                    IJ.log("image width:"+width+" ; height:"+height+" ; sizePatch:"+sizePatch);
+                    processing=new Boolean(false);
+                    return;
+                }
+                
+                
+                
+                
+                
+                
+                if (gain==0||adu==0){
+                    new WaitForUserDialog("Error message", "gain has to be positive (default value = 1)").show();
+                }
+                else{
+                    
+                    
+                    
+                    
+                    int sizeFFT=128;
+                    sizeFFT=Math.max(sizeFFT,sizePatch*2);
+                    sizeFFT=Math.min(sizeFFT,maxFFT);
+                    
+                    
+                    
+                    org.pasteur.imagej.process.cpu.DataPhase dp = new org.pasteur.imagej.process.cpu.DataPhase(sizeFFT,path_calibration);
+                    if (!dp.loading){
+                        IJ.log("impossible to load "+path_calibration);
+                        processing=new Boolean(false);
+                        return;
+                    }
+                    dp.setSizeoutput(sizePatch);
+                    dp.setNwat(nwat);
+                    dp.param.Zfocus=zfocus;
+                    IJ.log("preview on current frame started");
+
+                    org.pasteur.imagej.process.cpu.LocalizationPipeline lp;
+                    if (isSCMOS){
+
+                        lp=new org.pasteur.imagej.process.cpu.LocalizationPipeline(dp,axialRange,photonThreshold,sizePatch,"",scmosvariance,scmosgain,scmosoffset,scmosvargain,true);
+                    }
+                    else{
+                        lp=new org.pasteur.imagej.process.cpu.LocalizationPipeline(dp,axialRange,photonThreshold,sizePatch,"",adu, gain,offset,true);
+                    }
+                    sl=new StackLocalization();
+                    sl=lp.detectParticles(impTest,sl);
+                    IJ.log("preview finished");
+                }
+                
+            
+        } 
+        
         
     }
     

@@ -178,7 +178,18 @@ public class PSFPhase {
                         kz_oil_is_imaginary[id]=0;
                     }
                     
-                    pupil[id]=1/(double)Math.sqrt(param.sizeDisk_cpu);//like that -> final sum=1
+                    if (param.withApoFactor){
+                        if (left_oil>right){
+                            pupil[id]=(float)(1/Math.pow(1-(right/left_oil),.25));//with apodization factor
+                        }
+                        else{
+                            pupil[id]=0;
+                        }
+                    }
+                    else{
+                        pupil[id]=1/(double)Math.sqrt(param.sizeDisk_cpu);//like that -> final sum=1 (unuseful actually because we normalize at the end)
+                    }
+                    
                     phase[id]=0;
                     
                     sparseIndexDiskX[id]=((i+param.size_cpu/2)%param.size_cpu);

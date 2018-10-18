@@ -67,12 +67,13 @@ public class PhaseParameters {
     public double ZfocusCenter=0;
     
     public boolean zernikedPSF=true;
+    public boolean withApoFactor=false;
     
     
-    public PhaseParameters(int size,int sizeoutput,int orderGaussianPupil,double xystep,double zstep,double wavelength,double noil,double na,double wz,double sigmaGaussianKernel){
+    public PhaseParameters(int size,int sizeoutput,int orderGaussianPupil,double xystep,double zstep,double wavelength,double noil,double na,double wz,double sigmaGaussianKernel,boolean withApoFactor){
         
         this.sigmaGaussianKernel=sigmaGaussianKernel;
-        
+        this.withApoFactor=withApoFactor;
         this.orderGaussianPupil=orderGaussianPupil;
         this.weightZ=wz;
         this.xystep=xystep; 
@@ -182,7 +183,7 @@ public class PhaseParameters {
         this.centerY=paramInit.centerY;
         this.centerZ=paramInit.centerZ;
         this.orderGaussianPupil=paramInit.orderGaussianPupil;
-        
+        this.withApoFactor=paramInit.withApoFactor;
         this.A=paramInit.A;
         this.B=paramInit.B;
         
@@ -255,7 +256,7 @@ public class PhaseParameters {
         this.stream=paramInit.stream;
         this.A=paramInit.A;
         this.B=paramInit.B;
-        
+        this.withApoFactor=paramInit.withApoFactor;
         this.weightZ=paramInit.weightZ;
         this.weightTMP=paramInit.weightTMP;
         this.xystep=paramInit.xystep; 

@@ -51,7 +51,7 @@ public class ConfigFile {
 "Plugins>ZOLA>Dual color, \"Color Registration\", org.pasteur.imagej.ZOLA(\"zola_colorRegistration\")\n",
     
         
-        "Plugins>ZOLA>Drift correction, \"3D Fiducial-markers\", org.pasteur.imagej.ZOLA(\"zola_driftCorrectionFiducial\")\n",
+        "Plugins>ZOLA>Drift correction, \"3D Fiducial-markers\", org.pasteur.imagej.ZOLA(\"zola_driftCorrectionFiducialMarker\")\n",
         
         "Plugins>ZOLA>additional tools>statistic, \"localization histogram\", org.pasteur.imagej.ZOLA(\"zola_stathisto\")\n"+
         "Plugins>ZOLA>additional tools>statistic, \"measure mean attach time\", org.pasteur.imagej.ZOLA(\"zola_statAttachTime1\")\n",
@@ -62,6 +62,7 @@ public class ConfigFile {
 "Plugins>ZOLA>dev, \"test\", org.pasteur.imagej.ZOLA(\"zola_test\")\n" +
 "Plugins>ZOLA>dev>Simulation, \"Simulation\", org.pasteur.imagej.ZOLA(\"zola_simulation\")\n" +
 "Plugins>ZOLA>dev>Simulation, \"Simulation2beads\", org.pasteur.imagej.ZOLA(\"zola_simulation2beads\")\n" +
+            "Plugins>ZOLA>dev>Simulation, \"SimulationOverlappingBeads\", org.pasteur.imagej.ZOLA(\"zola_simulationOverlappingBeads\")\n" +
 "Plugins>ZOLA>dev, \"CRLBfromFile\", org.pasteur.imagej.ZOLA(\"zola_crlb_FromFile\")\n" +
 "Plugins>ZOLA>dev, \"CRLBfromFileDualObj\", org.pasteur.imagej.ZOLA(\"zola_crlb_FromFileDualObj\")\n" +
 "Plugins>ZOLA>dev, \"Photon conversion wrong\", org.pasteur.imagej.ZOLA(\"zola_photonConversion\")\n"+

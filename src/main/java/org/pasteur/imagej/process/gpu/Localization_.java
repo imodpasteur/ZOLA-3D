@@ -377,6 +377,7 @@ public class Localization_ {
             }
             
             dparam[0].modelMany.getModel(id[0],modelPSF[0]);
+            
             this.computeFisher(0,s, thetaX, thetaY, thetaZ, thetaA[0][s], thetaB[0], h);
             for (int p=1;p<this.nbParam;p++){
                 
@@ -761,6 +762,8 @@ public class Localization_ {
     
     public void computeCRLB(){
         
+        
+        {
         double [][] mat = new double [5][5];
         for (int i=0;i<5;i++){
             for (int ii=0;ii<5;ii++){
@@ -778,6 +781,7 @@ public class Localization_ {
         try{
             Matrixe.inverse(mm,mmres);
             mmres.getMatrixe(mat);
+            
             for (int i=0;i<resCRLB.length;i++){
                 resCRLB[i]=Math.sqrt(mat[i][i]);
             }
@@ -798,15 +802,165 @@ public class Localization_ {
         mmres.free();
         mm.free();
         mat=null;
+        
+        
+        }
+        
+        /*double comb=resCRLB[0];
+        {
+        double [][] mat = new double [5][5];
+        for (int i=0;i<5;i++){
+            for (int ii=0;ii<5;ii++){
+                mat[i][ii]=0;
+                for (int p=0;p<1;p++){
+                    for (int s=0;s<size;s++){
+                        mat[i][ii]+=fisherMatrix[p][s][i][ii];
+                    }
+                }
+            }
+        }
+        //inverse matrix
+        Matrixe mm = new Matrixe(mat);
+        Matrixe mmres = new Matrixe(mm.getNrows(), mm.getNcols());
+        try{
+            Matrixe.inverse(mm,mmres);
+            mmres.getMatrixe(mat);
+            
+            for (int i=0;i<resCRLB.length;i++){
+                resCRLB[i]=Math.sqrt(mat[i][i]);
+            }
+        }catch(Exception ee){
+
+            //dont take into account covar if non inversible
+            //IJ.log("fisher matrix non inversible at z="+z);
+            for (int i=0;i<resCRLB.length;i++){
+                if (mat[i][i]!=0){
+                    resCRLB[i]=Math.sqrt(1/mat[i][i]);
+                }
+                else{
+                    resCRLB[i]=Double.MAX_VALUE;
+                }
+            }
+
+        }
+        mmres.free();
+        mm.free();
+        mat=null;
+        
+        
+        }
+        double first=resCRLB[0];
+        
+        {
+        double [][] mat = new double [5][5];
+        for (int i=0;i<5;i++){
+            for (int ii=0;ii<5;ii++){
+                mat[i][ii]=0;
+                for (int p=1;p<nbParam;p++){
+                    for (int s=0;s<size;s++){
+                        mat[i][ii]+=fisherMatrix[p][s][i][ii];
+                    }
+                }
+            }
+        }
+        //inverse matrix
+        Matrixe mm = new Matrixe(mat);
+        Matrixe mmres = new Matrixe(mm.getNrows(), mm.getNcols());
+        try{
+            Matrixe.inverse(mm,mmres);
+            mmres.getMatrixe(mat);
+            
+            for (int i=0;i<resCRLB.length;i++){
+                resCRLB[i]=Math.sqrt(mat[i][i]);
+            }
+        }catch(Exception ee){
+
+            //dont take into account covar if non inversible
+            //IJ.log("fisher matrix non inversible at z="+z);
+            for (int i=0;i<resCRLB.length;i++){
+                if (mat[i][i]!=0){
+                    resCRLB[i]=Math.sqrt(1/mat[i][i]);
+                }
+                else{
+                    resCRLB[i]=Double.MAX_VALUE;
+                }
+            }
+
+        }
+        mmres.free();
+        mm.free();
+        mat=null;
+        
+        
+        }
+        double second=resCRLB[0];
+        
+        IJ.log("crlb "+first+"  "+second+"  "+comb);*/
+        
+        
+        
+        
+        
+        
+        
+        
             
         
     }
      
     public void computeFisher(int idParam,int frame,double x,double y,double z,double a,double b,double h){
         
+        if (this.withregistration){
+            
+            if (idParam==0){
+                dparam[idParam].modelMany.computeFisherMatrix(id[idParam], x, y, dparam[idParam].param.Zfocus,z, a, b, h,this.fisherMatrix[idParam][frame]);
+            }
+            else{
+                double x2, y2, z2;
+                
+                //first, reverse x & y and apply the drift correction of cam 1 (necessary for registration)
+                x2=(-(x)-this.dx1);
+                y2=(-(y)-this.dy1);
+                z2=z-this.dz1;
+                
+                //registration: cam1 -> cam2
+                double [] v = new double [3];
+                v[0]=positionRefX+x2;
+                v[1]=positionRefY+y2;
+                v[2]=z2;
+                double [] res=pf.transform(v);
+                x2=res[0]-positionRefX;
+                y2=res[1]-positionRefY;
+                z2=res[2];
+                
+                
+                double xs=x2+this.dx2;
+                
+                
+                //remove drift correction of second cam
+                x2=x2+this.dx2;
+                y2=y2+this.dy2;
+                z2=z2+this.dz2;
+                
+                
+                
+                //finally, shift according to the window position and reverse x & y
+                x2=-(x2-this.decX);
+                y2=-(y2-this.decY);
+                
+                dparam[idParam].modelMany.computeFisherMatrix(id[idParam], x2, y2, dparam[idParam].param.Zfocus,z2, a, b, h,this.fisherMatrix[idParam][frame]);
+        
+            }
+            
+            
+        }
+        else{
+            dparam[idParam].modelMany.computeFisherMatrix(id[idParam], x, y, dparam[idParam].param.Zfocus,z, a, b, h,this.fisherMatrix[idParam][frame]);
+        
+            
+        }
         
         
-        dparam[idParam].modelMany.computeFisherMatrix(id[idParam], x, y, dparam[idParam].param.Zfocus,z, a, b, h,this.fisherMatrix[idParam][frame]);
         
         
         

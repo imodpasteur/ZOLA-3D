@@ -208,7 +208,6 @@ public class LocalizationPipeline {
         
         
         
-        
         //Killer killer = new Killer(150000);
         //killer.start();
 
@@ -258,9 +257,9 @@ public class LocalizationPipeline {
             
         }
         
-        
-        pr = new PlotResult(30,width,height);//update every 30 second
-        
+        if (!show){
+            pr = new PlotResult(1,width,height);//update every 30 second
+        }
         
         boolean saveOnTheFly=false;
         if (path_localization!=null){
@@ -276,8 +275,8 @@ public class LocalizationPipeline {
         //Killer killer = new Killer(150000);
         
         
-        GarbageLauncher gcl = new GarbageLauncher(1800000);//system gc every 30 min
-        gcl.start();
+        //GarbageLauncher gcl = new GarbageLauncher(1800000);//system gc every 30 min
+        //gcl.start();
         
         
         computedGlobalMask=0;
@@ -306,7 +305,6 @@ public class LocalizationPipeline {
         
         
         
-        
         for (int ip=0;ip<nbThread;ip++){
             try{
                 pdt[ip].join();
@@ -315,7 +313,6 @@ public class LocalizationPipeline {
         
         
         for (int ip=0;ip<lt.length;ip++){
-            
             try{
                 lt[ip].join();
             }catch(Exception eeee){System.out.println("join lt impossible");}
@@ -324,15 +321,17 @@ public class LocalizationPipeline {
         
         
         
-        
-        
-        pr.stop_();
+        if (!show){
+            pr.stop_();
+        }
         
         if (saveOnTheFly){
             stackloc.stopSaveOnTheFly();
         }
         
-        gcl.stopRun();
+        //gcl.stopRun();
+        
+        
         
         
         long timeEnd=System.currentTimeMillis();
@@ -359,7 +358,6 @@ public class LocalizationPipeline {
         else{
             IJ.log("Localization file not saved...you can use Zola->export plugin to save it.");
         }
-         
          
         return stackloc;
         
@@ -714,7 +712,6 @@ public class LocalizationPipeline {
             mainlooper:while (totNumberImageProcessed<sliceNumber){
                 
                 
-                
                 if (IJ.escapePressed()){
 
                     break mainlooper;
@@ -741,7 +738,6 @@ public class LocalizationPipeline {
                 }
                 
 
-                
                 
                 if (imageReaden){
                     
@@ -998,7 +994,6 @@ public class LocalizationPipeline {
                     
                     
                     //IJ.log("begin lock finishimage "+partNumber);
-                    
                     try{
                         lock.lock();
                         
@@ -1022,7 +1017,6 @@ public class LocalizationPipeline {
                             stopReading=true;
                         }
                         
-                        
                         if (imageNumber<nbGlobalMask){
                             computedGlobalMask++;
                             
@@ -1033,10 +1027,11 @@ public class LocalizationPipeline {
                                     globalmask=null;
                                     globalmask2=null;
                                 }
-                                pr.launch_();
+                                else{
+                                    pr.launch_();
+                                }
                             }
                         }
-                        
                         
                     }
                     catch(Exception ee){
@@ -1065,7 +1060,6 @@ public class LocalizationPipeline {
                     }
                 }
             }
-            
         }
         
         

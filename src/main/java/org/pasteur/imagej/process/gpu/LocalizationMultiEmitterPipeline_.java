@@ -90,7 +90,7 @@ public class LocalizationMultiEmitterPipeline_ {
     int popsize=300;
     int popsize4selection=20;//the best
     int numberPSFperModel=5;
-    int parallelcomputing=2;
+    int parallelcomputing=1;
     
     
     double axialRange;

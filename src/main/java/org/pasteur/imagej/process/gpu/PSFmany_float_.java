@@ -271,7 +271,19 @@ public class PSFmany_float_ {
                         kz_oil_is_imaginary[id]=(float)0;
                         
                     }
-                    pupil[id]=(float)(1/(double)Math.sqrt(param.sizeDisk));//like that -> final sum=1
+                    
+                    if (param.withApoFactor){
+                        if (left_oil>right){
+                            pupil[id]=(float)(1/Math.pow(1-(right/left_oil),.25));//with apodization factor
+                        }
+                        else{
+                            pupil[id]=0;
+                        }
+                    }
+                    else{
+                        pupil[id]=1/(float)Math.sqrt(param.sizeDisk_cpu);//like that -> final sum=1 (unuseful actually because we normalize at the end)
+                    }
+                    
                     phase[id]=0;
                     
                     
@@ -426,7 +438,7 @@ public class PSFmany_float_ {
         if (construct){
             setHost2Device(device_phase,host_phase,param.sizeDisk,Sizeof.FLOAT);
             setHost2Device(device_pupil,host_pupil,param.sizeDisk,Sizeof.FLOAT);
-
+            
 
 
             setHost2Device(device_kx,host_kx,param.sizeDisk,Sizeof.FLOAT);

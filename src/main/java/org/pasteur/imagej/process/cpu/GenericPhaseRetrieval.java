@@ -70,7 +70,7 @@ public class GenericPhaseRetrieval {
     
     double maxDrift=10;//max drift between each frame (nm)
     
-    public GenericPhaseRetrieval(int sizeFFT,double xystep,double zstep,double wavelength,double noil,double na,InitBackgroundAndPhotonNumber paramImage,String path_calibration,double sigma,int axialside){
+    public GenericPhaseRetrieval(int sizeFFT,double xystep,double zstep,double wavelength,double noil,double na,InitBackgroundAndPhotonNumber paramImage,String path_calibration,double sigma,int axialside,boolean withApoFactor){
         this.sigma=sigma;
         this.image=paramImage.image;
         
@@ -80,7 +80,7 @@ public class GenericPhaseRetrieval {
         
         nbProcess=nbSlice;
         
-        dparam = new DataPhase(sizeFFT,image[0][0].length,0,xystep,zstep,wavelength,noil,na,1.0);
+        dparam = new DataPhase(sizeFFT,image[0][0].length,0,xystep,zstep,wavelength,noil,na,1.0,withApoFactor);
         dparam.param.zernikedPSF=false;
         dparam.param.Zfocus=0;
         dparam.phaseZer.setMatAtPosit(dparam.psf.getKxPointer(),0);
