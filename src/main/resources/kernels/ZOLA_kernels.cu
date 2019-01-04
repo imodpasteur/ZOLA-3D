@@ -2062,6 +2062,29 @@ __global__ void vec_computePoissonLikelihood (int n, double *result, double *ima
 
 
 
+extern "C"
+__global__ void vec_computeGaussianLikelihood (int n, double *result, double *image, double  *model)
+{
+	int idx = threadIdx.x + blockIdx.x * blockDim.x;
+	int idy = threadIdx.y + blockIdx.y * blockDim.y;
+	int id = idy * gridDim.x * blockDim.x + idx;
+	if (id < n)
+    {
+		if (model[id]>0)
+			result[id]=(model[id]-image[id])*(model[id]-image[id]);
+		else
+			result[id]=10000000;
+			
+    }
+
+
+
+}
+
+
+
+
+
 
 //reshuffle: 
 //exemple 4 PSF to merge in 2 model

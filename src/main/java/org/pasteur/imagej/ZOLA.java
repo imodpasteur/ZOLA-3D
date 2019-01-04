@@ -49,6 +49,7 @@ import jcuda.runtime.cudaError;
 import ij.WindowManager;
 import ij.gui.NonBlockingGenericDialog;
 import ij.gui.YesNoCancelDialog;
+import ij.process.FloatProcessor;
 import java.awt.Button;
 import java.awt.Choice;
 import java.awt.Font;
@@ -91,6 +92,7 @@ public class ZOLA implements PlugIn  {
     String path_SCMOSoffset="";
     String path_SCMOSgain="";
     
+    String path_wobble="";
     
     String path_localization="";
     String path_result="";
@@ -205,6 +207,8 @@ public class ZOLA implements PlugIn  {
         
         path_result=prefs.get("Zola.path_result", IJ.getDirectory("image")+"path_result.csv");
         
+        path_wobble=prefs.get("Zola.pathwobble", IJ.getDirectory("image")+"calibration_wobble.csv");
+        
         path_localization=prefs.get("Zola.pathlocalization", IJ.getDirectory("image")+"localization_table.csv");
         path_localization2=prefs.get("Zola.pathlocalization2", IJ.getDirectory("image")+"localization_table.csv");
         path_calibration=prefs.get("Zola.pathcalibration", IJ.getDirectory("image")+"calibration_table.json");
@@ -311,7 +315,9 @@ public class ZOLA implements PlugIn  {
         IJ.log("system after "+System.getProperty("java.library.path"));*/
         
         /*System.load(System.getProperty("user.dir")+"/lib/JCudaRuntime");*/
-        
+        if (path_wobble==null){
+            path_wobble="";
+        }
         if (path_localization==null){
             path_localization="";
         }
@@ -335,8 +341,16 @@ public class ZOLA implements PlugIn  {
             
         }
         
-        
-        
+        if (command.startsWith("zola_wobblecalibration")){
+            
+            wobblecalibration();
+            
+        }
+        if (command.startsWith("zola_wobblecorrection")){
+            
+            wobblecorrection();
+            
+        }
         
         else if (command.startsWith("zola_filteringHistogram")){
             
@@ -540,6 +554,10 @@ public class ZOLA implements PlugIn  {
             
             test();
         }
+        else if (command.startsWith("zola_addPoissonNoise")){
+            
+            addPoissonNoise();
+        }
         else if (command.startsWith("zola_simulation2beads")){
             
             simulation2beads();
@@ -609,6 +627,7 @@ public class ZOLA implements PlugIn  {
         prefs.set("Zola.path_SCMOSoffset", path_SCMOSoffset);
         prefs.set("Zola.GPU_computation", GPU_computation);
         prefs.set("Zola.withApoFactor", withApoFactor);
+        prefs.set("Zola.pathwobble", path_wobble);
         prefs.set("Zola.pathlocalization", path_localization);
         prefs.set("Zola.pathlocalization2", path_localization2);
         prefs.set("Zola.path_registration", path_registration);
@@ -855,6 +874,10 @@ public class ZOLA implements PlugIn  {
                     PreviewButton but = new PreviewButton(imp,texts,nums); 
                     
                     gd.add(but); 
+                    
+                    AutoFocusButton afbut = new AutoFocusButton(imp,texts,nums); 
+                    
+                    gd.add(afbut); 
 
                 }
         
@@ -964,6 +987,7 @@ public class ZOLA implements PlugIn  {
                         dp.setSizeoutput(sizePatch);
                         dp.setNwat(nwat);
                         dp.param.Zfocus=zfocus;
+                        //dp.param.weightZ=.9;
                         IJ.log("Localization started");
 
 
@@ -999,6 +1023,7 @@ public class ZOLA implements PlugIn  {
                         dp.setSizeoutput(sizePatch);
                         dp.setNwat(nwat);
                         dp.param.Zfocus=zfocus;
+                        
                         IJ.log("Localization started");
                         
                         org.pasteur.imagej.process.cpu.LocalizationPipeline lp;
@@ -1789,8 +1814,8 @@ public class ZOLA implements PlugIn  {
             
             //classes.ImageShow.imshow(image,"image input");
             //String [] fieldZernike = {"6","10","15","21","28","36","45"};
-            String [] fieldZernike = {"pixel-based (prototype)","Zernike 15 coefs","Zernike 28 coefs","Zernike 45 coefs"};
-            int [] correspondingFieldZernike = {0,15,28,45};
+            String [] fieldZernike = {"pixel-based (prototype)","Zernike 15 coefs","Zernike 28 coefs","Zernike 45 coefs","Zernike 66 coefs"};
+            int [] correspondingFieldZernike = {0,15,28,45,66};
             if (zernikeCoef>=fieldZernike.length){
                 zernikeCoef=fieldZernike.length-1;
             }
@@ -1931,7 +1956,7 @@ public class ZOLA implements PlugIn  {
                 sizePatchPhaseRet++;
             }
             
-            int sizeFFT=128;
+            int sizeFFT=180;
             sizeFFT=Math.max(sizeFFT,sizePatchPhaseRet*2);
             sizeFFT=Math.min(sizeFFT,maxFFT);
             
@@ -2006,6 +2031,410 @@ public class ZOLA implements PlugIn  {
         
         
     }
+    
+    
+    
+    
+    
+    void wobblecorrection(){
+        if ((processing !=null)&&(processing.booleanValue()==true)){
+            printErrorMessage();
+            return;
+        }
+        
+        processing=new Boolean(true);
+        
+        if (sl!=null){
+            
+            String path=path_localization;
+            int lllll=path.lastIndexOf(File.separator);
+            path=path.substring(0,lllll);
+            
+            
+            
+            
+            GenericDialog gd = new GenericDialog("Wobble correction");
+            
+            
+            
+            gd.addStringField("Wobble calibration file: ",path_wobble,sizeTextString); 
+
+            
+            TextField textField;
+            
+            // Add a mouse listener to the config file field 
+            if (!(java.awt.GraphicsEnvironment.isHeadless() || IJ.isMacro())) 
+            {
+                int t=0;
+
+                Vector<TextField> texts = (Vector<TextField>) gd.getStringFields(); 
+
+                textField = texts.get(t++); 
+                MouseOptionLoad mol=new MouseOptionLoad(textField,path_wobble,"Import calibration file wobble");
+                textField.addMouseListener(mol); 
+                
+                
+
+
+            }
+            
+            gd.showDialog();
+            
+            
+            if (!gd.wasCanceled()){
+
+                
+                path_wobble  = gd.getNextString();
+                
+                
+                sl=WobbleCorrection.correction(path_wobble,sl);
+                
+                ZRendering.colorRendering(null,sl, 20,1,true);
+                IJ.log("wobble effect corrected. Please, export the localization table to save the correction");
+                
+            }
+        }
+        else{
+            IJ.log("Please, import first a table");
+        }
+        processing=new Boolean(false);
+    }
+    
+    
+    
+    
+    
+    
+        
+    void wobblecalibration(){
+        
+        
+        nbStream=5;
+        nbThread=100;  
+            
+        ImagePlus imp=IJ.getImage();
+
+
+        if ((processing !=null)&&(processing.booleanValue()==true)){
+            printErrorMessage();
+            return;
+        }
+        
+            processing=new Boolean(true);
+            
+            
+            if (imp==null){
+                IJ.log("no image opened");
+                processing=new Boolean(false);
+            }
+            /*else if ((imp.getWidth()>180)||(imp.getHeight()>180)){
+                IJ.log("image should be < 180 pixels for the moment");
+            }*/
+            else{
+                
+                
+                Roi r=imp.getRoi();
+                int width=imp.getWidth();
+                int height=imp.getHeight();
+                
+                boolean scmosLoad=false;
+                if (isSCMOS){
+                    scmosLoad=loadSCMOScameraFiles(width, height, r);
+                }
+                
+                
+                
+                String pathdir=IJ.getDirectory("image");
+                if (pathdir==null){
+                    pathdir=IJ.getDirectory("current");
+                }
+                String path=pathdir;
+                
+                path=path+"ZOLA_wobble_calibration.csv";
+                
+                
+                NonBlockingGenericDialog gd = new NonBlockingGenericDialog("ZOLA: wobble correction");
+                
+                
+                Font font = gd.getFont();
+                Font fontBold= gd.getFont();
+            try{
+                fontBold=new Font(font.getName(),Font.BOLD,font.getSize());
+            }catch(Exception e){}
+                
+                gd.addCheckbox("Run_on_GPU", GPU_computation);
+                
+                
+                
+                
+                
+                
+                if (!isSCMOS){
+                    gd.addMessage("Camera is EMCCD",fontBold);
+                    gd.addMessage("ADU = "+adu);
+                    gd.addNumericField("Gain = ", gain, 1,6,"(1 if camera provides photon counts)");
+                    gd.addMessage("Offset = "+offset);
+                    
+                }
+                else{
+                    if (scmosLoad){
+                        gd.addMessage("Camera is SCMOS",fontBold);
+                    }
+                    else{
+                        gd.addMessage("Camera is SCMOS / problem with image sizes / ERROR will occur",fontBold);
+                    }
+                    String sep=File.separator;
+                    String [] var=this.path_SCMOSvariance.split(sep);
+                    String [] off=this.path_SCMOSoffset.split(sep);
+                    String [] gain=this.path_SCMOSgain.split(sep);
+                    gd.addMessage("Offset file = "+off[var.length-1]);
+                    gd.addMessage("Variance file = "+var[var.length-1]);
+                    gd.addMessage("Gain file = "+gain[var.length-1]);
+                    
+                }
+                
+                
+                
+                gd.addStringField("PSF_calibration_file:",path_calibration,sizeTextString); 
+                
+                
+                
+                gd.addMessage("Sample parameters", fontBold);
+                
+                gd.addNumericField("Z_step: ", zstep*1000, 1,6,"(nm)");
+                
+                
+                
+                
+                
+                gd.addMessage("Advanced parameter", fontBold);
+                
+                
+                gd.addNumericField("Patch_size: ", sizePatch,0,6,"(pixels)");
+                
+                //gd.addNumericField("number_of_streams: ", nbStream,0);
+                //gd.addNumericField("number_of_threads: ", nbThread,0);
+                
+                
+                
+                
+                
+                gd.addNumericField("Expected_axial_range: ", axialRange,2,6,"(µm)");
+                
+                gd.addNumericField("Min_number_of_photons: ", photonThreshold,0);
+                
+                
+                gd.addStringField("wobble_calibration file:",path,sizeTextString); 
+                
+                Choice choicefield=null;
+                
+                
+                
+                TextField textField; 
+                TextField textField2; 
+                // Add a mouse listener to the config file field 
+                if (!(java.awt.GraphicsEnvironment.isHeadless() || IJ.isMacro())) 
+                {
+                    int t=0;
+                    //textField
+                    Vector<TextField> texts = (Vector<TextField>) gd.getStringFields(); 
+
+                    textField = texts.get(t++); 
+                    MouseOptionLoad mol=new MouseOptionLoad(textField,path_calibration,"Import calibration file");
+                    textField.addMouseListener(mol); 
+
+                    textField2 = texts.get(t++); 
+                    MouseOptionSave mos=new MouseOptionSave(textField2,pathdir,"Export wobble_calibration file");
+                    textField2.addMouseListener(mos); 
+                    
+                    
+                    
+
+                }
+        
+        
+                gd.showDialog();
+                
+                
+                
+                
+                
+                if (!gd.wasCanceled()){
+                    GPU_computation = (boolean)gd.getNextBoolean();
+                    
+                    if (!isSCMOS){
+                        gain = (double)gd.getNextNumber();
+                    }
+                    
+                    path_calibration = gd.getNextString(); 
+                    
+                    zstep = (double)gd.getNextNumber()/1000;
+                    
+                    sizePatch = (int)gd.getNextNumber();
+                    //nbStream = (int)gd.getNextNumber();
+                    //nbThread = (int)gd.getNextNumber();
+                    
+                    axialRange= (double)gd.getNextNumber();
+                    
+                    
+                            
+                    
+                    photonThreshold = (int)gd.getNextNumber();
+                    
+                    path = gd.getNextString(); 
+                }
+                else{
+                    processing=new Boolean(false);
+                    return;
+                }
+                
+                
+                
+                int nnn=(path.lastIndexOf("."));
+                if ((nnn>=0)&&(nnn>path.length()-6)){
+                    path=path.substring(0,nnn);
+                }
+                path+=".csv";
+            
+                if (path_localization.equals(path_calibration)){
+                    IJ.log("Process stopped: the localization path has to be different than calibration path");
+                    processing=new Boolean(false);
+                    return;
+                }
+                
+                
+                
+                if (sizePatch%2==1){
+                    sizePatch++;
+                }
+                
+                
+                
+                
+                
+                
+                
+                if (r!=null){
+                    Rectangle bound=imp.getRoi().getBounds();
+                    width=bound.width;
+                    height=bound.height;
+                }
+                if ((width<sizePatch)||(height<sizePatch)){
+                    IJ.log("Process stopped: Localization impossible. The image, or selected ROI should be larger than patch size");
+                    IJ.log("Please, select a large rectangle in the image before running the localization");
+                    IJ.log("image width:"+width+" ; height:"+height+" ; sizePatch:"+sizePatch);
+                    processing=new Boolean(false);
+                    return;
+                }
+                
+                
+                
+                
+                
+                
+                if (gain==0||adu==0){
+                    new WaitForUserDialog("Error message", "gain has to be positive (default value = 1)").show();
+                }
+                else{
+                    
+                    
+                    
+                    
+                    int sizeFFT=128;
+                    sizeFFT=Math.max(sizeFFT,sizePatch*2);
+                    sizeFFT=Math.min(sizeFFT,maxFFT);
+                    
+                    
+                    if (GPU_computation){
+                        MyCudaStream.init(nbStream+1);
+                        org.pasteur.imagej.process.gpu.DataPhase_ dp = new org.pasteur.imagej.process.gpu.DataPhase_(sizeFFT,path_calibration);
+                        if (!dp.loading){
+                            IJ.log("impossible to load "+path_calibration);
+                            processing=new Boolean(false);
+                            return;
+                        }
+                        dp.setSizeoutput(sizePatch);
+                        dp.setNwat(dp.param.noil);
+                        dp.param.Zfocus=0;
+                        IJ.log("ref index = "+dp.param.noil+"    "+dp.param.nwat+"  "+noil+"   na"+dp.param.na);
+                        xystep=dp.param.xystep;
+                        IJ.log("Localization started");
+
+
+                        org.pasteur.imagej.process.gpu.LocalizationPipeline_ lp;
+                        if (isSCMOS){
+                            lp=new org.pasteur.imagej.process.gpu.LocalizationPipeline_(dp,axialRange,photonThreshold,nbStream,nbThread,sizePatch,path_localization,scmosvariance,scmosgain,scmosoffset,scmosvargain,false);
+                        }
+                        else{
+                            lp=new org.pasteur.imagej.process.gpu.LocalizationPipeline_(dp,axialRange,photonThreshold,nbStream,nbThread,sizePatch,path_localization,adu, gain,offset,false);
+                        }
+                        sl=new StackLocalization();
+                        sl=lp.detectParticles(imp,sl);
+
+
+                        /*classes.testClass lp =new classes.testClass(dp,axialRange,photonThreshold,nbStream,nbThread,sizePatch,path_localization,rescale_slope, rescale_intercept);
+                        sl=new StackLocalization();
+                        sl=lp.detectParticles(imp,sl);*/
+
+
+
+                        dp.free();
+                    
+                    
+                        MyCudaStream.destroy();
+                    }
+                    else{
+                        org.pasteur.imagej.process.cpu.DataPhase dp = new org.pasteur.imagej.process.cpu.DataPhase(sizeFFT,path_calibration);
+                        if (!dp.loading){
+                            IJ.log("impossible to load "+path_calibration);
+                            processing=new Boolean(false);
+                            return;
+                        }
+                        dp.setSizeoutput(sizePatch);
+                        dp.setNwat(dp.param.noil);
+                        dp.param.Zfocus=0;
+                        xystep=dp.param.xystep;
+                        IJ.log("Localization started");
+                        
+                        org.pasteur.imagej.process.cpu.LocalizationPipeline lp;
+                        if (isSCMOS){
+                            
+                            lp=new org.pasteur.imagej.process.cpu.LocalizationPipeline(dp,axialRange,photonThreshold,sizePatch,path_localization,scmosvariance,scmosgain,scmosoffset,scmosvargain,false);
+                        }
+                        else{
+                            lp=new org.pasteur.imagej.process.cpu.LocalizationPipeline(dp,axialRange,photonThreshold,sizePatch,path_localization,adu, gain,offset,false);
+                        }
+                        sl=new StackLocalization();
+                        sl=lp.detectParticles(imp,sl);
+                        
+                        
+                        
+                    }
+                    
+                    
+                    
+                    WobbleCorrection.calibration(path, sl, zstep*1000, xystep*1000);
+                    
+                    this.path_wobble=path;
+                    
+                }
+            }
+        
+        processing=new Boolean(false);
+        
+    }
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
     
     
     
@@ -2575,13 +3004,15 @@ public class ZOLA implements PlugIn  {
             
             int offFrame=0;
             int start=0;
-            GenericDialog gd = new GenericDialog("ZOLA: stat time attachement 1 curve");
+            int end=100;
+            GenericDialog gd = new GenericDialog("ZOLA: stat residence time curve");
 
             gd.addNumericField("max._lateral distance between consecutive localizations: ", maxDistanceMergingPlan,1,6,"(nm)");
             gd.addNumericField("max._axial distance between consecutive localizations: ", maxDistanceMergingZ,1,6,"(nm)");
             
             gd.addNumericField("off_frame: ", offFrame,0);
             gd.addNumericField("start_histogram: ", start,0);
+            gd.addNumericField("end_histogram: ", end,0);
 
             
 
@@ -2634,28 +3065,33 @@ public class ZOLA implements PlugIn  {
                 
                 offFrame=(int)gd.getNextNumber();
                 start=(int)gd.getNextNumber();
-                
+                end=(int)gd.getNextNumber();
                 
                 
                 IJ.log("");
                 IJ.log("**********ON TIME***********");
                 Condensation cond=new Condensation(slb,maxDistanceMergingPlan, maxDistanceMergingZ,offFrame);
                 StackLocalization smerged=cond.run();
-                double [] p=cond.fitExponential1(start);
+                
+                
+                double [] p=cond.fitExponential1(start,end);
+                
                 parameterFit1=p[0];
                 parameterFit2=p[1];
+                IJ.log("Mean residence time="+p[1]+" frames");
                 IJ.log("");
                 
                 
                 
                 
-                IJ.log("**********OFF TIME***********");
-                IJ.log("note that here we use condensation with off_time=infinity");
-                /*classes.PasteurLocalization.Condensation cond2=new classes.PasteurLocalization.Condensation(slb,maxDistanceMergingPlan, maxDistanceMergingZ,Integer.MAX_VALUE);
-                StackLocalization smerged2=cond2.run();
-                cond.computeOffTimes(smerged2);
-                cond.fitExponential1(start);*/
-                IJ.log("");
+                //IJ.log("**********OFF TIME***********");
+                //IJ.log("note that here we use condensation with off_time=infinity");
+                //classes.PasteurLocalization.Condensation cond2=new classes.PasteurLocalization.Condensation(slb,maxDistanceMergingPlan, maxDistanceMergingZ,Integer.MAX_VALUE);
+                //StackLocalization smerged2=cond2.run();
+                //cond.computeOffTimes(smerged2);
+                //cond.fitExponential1(start);
+                //IJ.log("");
+                
                 
                 
             }
@@ -3878,10 +4314,21 @@ public class ZOLA implements PlugIn  {
         
         
         
+        
         if (path_localization!=null){
             File f = new File(path_localization);
             if (f.exists()){
                 sl=new StackLocalization(path_localization);
+                
+                
+                
+                /*for (int i=0;i<sl.fl.size();i++){
+                    for (int j=0;j<sl.fl.get(i).loc.size();j++){
+                        sl.fl.get(i).loc.get(j).X+=35.74;
+                        sl.fl.get(i).loc.get(j).Y+=103.25;
+                        sl.fl.get(i).loc.get(j).Z+=139.55;
+                    }
+                }*/
                 
                 
                 ZRendering.colorRendering(null,sl, 20,1,true);
@@ -4968,6 +5415,81 @@ public class ZOLA implements PlugIn  {
     
     
     
+    void addPoissonNoise(){
+        
+        ImagePlus imp=IJ.getImage();
+
+
+        if ((processing !=null)&&(processing.booleanValue()==true)){
+            printErrorMessage();
+            return;
+        }
+
+        processing=new Boolean(true);
+
+
+        if (imp==null){
+            IJ.log("no image opened");
+            processing=new Boolean(false);
+        }
+        /*else if ((imp.getWidth()>180)||(imp.getHeight()>180)){
+            IJ.log("image should be < 180 pixels for the moment");
+        }*/
+        else{
+
+
+            Roi r=imp.getRoi();
+            int width=imp.getWidth();
+            int height=imp.getHeight();
+            int startX=0;
+            int startY=0;
+            if (r!=null){
+                Rectangle bound=imp.getRoi().getBounds();
+                startX=bound.x;
+                startY=bound.y;
+                width=bound.width;
+                height=bound.height;
+            }
+            
+            ImageStack ims = new ImageStack(width,height);
+            for (int i=0;i<imp.getNSlices();i++){
+                for (int ii=0;ii<imp.getNFrames();ii++){
+                    imp.setSlice(i*imp.getNFrames()+ii+1);
+                    ImageProcessor p=imp.getProcessor();
+                    ImageProcessor p2 = new FloatProcessor(width,height);
+                    for (int u=startX;u<width;u++){
+                        for (int uu=startY;uu<height;uu++){
+                            double pixVal = p.getPixelValue(u, uu);
+                            java.util.Random rand = new java.util.Random();
+                            double L = (-(pixVal));
+                            int k = 0;
+                            double pp = 0;
+                            do {
+                               k++;
+                               // Generate uniform random number u in [0,1] and let p ← p × u.
+                               pp += Math.log(rand.nextDouble());
+                            } while (pp >= L);
+                            p2.putPixelValue(u, uu, k-1);
+                        }
+                    }
+                    ims.addSlice(p2);
+                }
+            }
+            ImagePlus imp2 = new ImagePlus("Poisson noise image",ims);
+            imp2.show();
+
+        }
+        
+        processing=new Boolean(false);
+        
+    }
+    
+    
+    
+    
+    
+    
+    
     void simulation(){
         
         if ((processing !=null)&&(processing.booleanValue()==true)){
@@ -6018,16 +6540,16 @@ public class ZOLA implements PlugIn  {
                         IJ.log("Localization started");
                         
                         
-                        org.pasteur.imagej.process.gpu.LocalizationMultiEmitterPipeline_ lmep=null;
+                        org.pasteur.imagej.process.gpu.LocalizationMotionBlurPipeline_ lmbp=null;
                         if (isSCMOS){
                             IJ.log("SCMOS not yet implemented");
                         }
                         else{
-                            lmep=new org.pasteur.imagej.process.gpu.LocalizationMultiEmitterPipeline_(dp,axialRange,photonThreshold,nbStream,sizePatch,path_localization,adu, gain,offset,true);
+                            lmbp=new org.pasteur.imagej.process.gpu.LocalizationMotionBlurPipeline_(dp,axialRange,photonThreshold,nbStream,sizePatch,path_localization,adu, gain,offset,true);
                         }
                         
                         sl=new StackLocalization();
-                        sl=lmep.detectParticles(imp,sl);
+                        sl=lmbp.detectParticles(imp,sl);
 
 
                         
@@ -6523,32 +7045,222 @@ gd.addMessage("should have the same size as image to register !!");
     
     void test(){
         
-        IJ.log("");
-        nbStream=1;
         
-        Zernike z=new Zernike(128,60,200);
-        ImageShow.imshow(z.Z,"z");
         
-        MyCudaStream.init(1);
-        org.pasteur.imagej.process.gpu.DataPhase_ dp = new org.pasteur.imagej.process.gpu.DataPhase_(128,path_calibration);
-        if (!dp.loading){
-            IJ.log("impossible to load "+path_calibration);
-            processing=new Boolean(false);
-            return;
+        
+        /*
+        
+        JFileChooser dialogue ;
+        dialogue = new JFileChooser(new File(IJ.getDirectory("image")));
+        File fichier;
+        String folder="";
+        dialogue.setDialogTitle("folder selection");
+        dialogue.setFileSelectionMode(JFileChooser.DIRECTORIES_ONLY);
+        int x=dialogue.showOpenDialog(null);
+        
+        if (x==JFileChooser.APPROVE_OPTION) {
+            fichier = dialogue.getSelectedFile();
+
+            OpenDialog.setDefaultDirectory(fichier.getParent());
+            
+            folder=fichier.getAbsolutePath();
+
         }
-        dp.setSizeoutput(sizePatch);
-        dp.setNwat(nwat);
-        dp.param.Zfocus=zfocus;
-        IJ.log("Localization started");
-
+        else if (x==JFileChooser.CANCEL_OPTION){
+            //IJ.log("Load canceled !");
+            folder=null;
+        }
         
-
-        dp.setMany(1000, 10);
-
-        dp.free();
-
-
-        MyCudaStream.destroy();
+        
+        IJ.log("folder "+folder);
+        String folder2="cut2";
+        String folder4="cut4";
+        String folder8="cut8";
+        
+        IJ.log(""+String.format("%08d", 2));
+        ImagePlus imp = IJ.getImage();
+        
+        ImageStack imss= imp.getStack();
+        
+        int w=imp.getWidth();
+        int h=imp.getHeight();
+        ImageStack ims = new ImageStack(w,h);
+        int nbFrame=Math.max(imp.getNFrames(), imp.getNSlices());
+        //IJ.log("imp.getNSlices() "+imp.getNSlices()+"  "+imp.getNFrames());
+        for (int i=1;i<=nbFrame;i+=8){
+        //for (int i=1;i<=100;i+=8){
+            ImageProcessor ip0=imss.getProcessor(i).duplicate();
+            imp.setSlice(i);
+            //ImageProcessor ip0=imp.getProcessor().duplicate();
+            imp.setSlice(i+1);
+            ImageProcessor ip1=imss.getProcessor(i+1).duplicate();
+            //ImageProcessor ip1=imp.getProcessor().duplicate();
+            for (int u=0;u<w;u++){
+                for (int uu=0;uu<h;uu++){
+                    ip1.putPixelValue(u, uu, ip1.getPixelValue(u, uu)+ip0.getPixelValue(u, uu));
+                    
+                }
+            }
+            ImagePlus impp1 = new ImagePlus("cutted_slices",ip1);
+            IJ.saveAsTiff(impp1, folder+"/"+folder2+"/image"+String.format("%08d", (i-1)/2));
+            
+            
+            
+            imp.setSlice(i+2);
+            ImageProcessor ip2=imss.getProcessor(i+2).duplicate();
+            //ImageProcessor ip2=imp.getProcessor().duplicate();
+            imp.setSlice(i+3);
+            ImageProcessor ip3=imss.getProcessor(i+3).duplicate();
+            //ImageProcessor ip3=imp.getProcessor().duplicate();
+            for (int u=0;u<w;u++){
+                for (int uu=0;uu<h;uu++){
+                    ip3.putPixelValue(u, uu, ip3.getPixelValue(u, uu)+ip2.getPixelValue(u, uu));
+                }
+            }
+            ImagePlus impp2 = new ImagePlus("cutted_slices",ip3);
+            IJ.saveAsTiff(impp2, folder+"/"+folder2+"/image"+String.format("%08d", (i-1)/2+1));
+        
+            
+            imp.setSlice(i+4);
+            ImageProcessor ip4=imss.getProcessor(i+4).duplicate();
+            //ImageProcessor ip4=imp.getProcessor().duplicate();
+            imp.setSlice(i+5);
+            ImageProcessor ip5=imss.getProcessor(i+5).duplicate();
+            //ImageProcessor ip5=imp.getProcessor().duplicate();
+            for (int u=0;u<w;u++){
+                for (int uu=0;uu<h;uu++){
+                    ip5.putPixelValue(u, uu, ip5.getPixelValue(u, uu)+ip4.getPixelValue(u, uu));
+                }
+            }
+            ImagePlus impp3 = new ImagePlus("cutted_slices",ip5);
+            IJ.saveAsTiff(impp3, folder+"/"+folder2+"/image"+String.format("%08d", (i-1)/2+2));
+        
+            imp.setSlice(i+6);
+            ImageProcessor ip6=imss.getProcessor(i+6).duplicate();
+            //ImageProcessor ip6=imp.getProcessor().duplicate();
+            imp.setSlice(i+7);
+            ImageProcessor ip7=imss.getProcessor(i+7).duplicate();
+            //ImageProcessor ip7=imp.getProcessor().duplicate();
+            for (int u=0;u<w;u++){
+                for (int uu=0;uu<h;uu++){
+                    ip7.putPixelValue(u, uu, ip7.getPixelValue(u, uu)+ip6.getPixelValue(u, uu));
+                }
+            }
+            ImagePlus impp4 = new ImagePlus("cutted_slices",ip7);
+            IJ.saveAsTiff(impp4, folder+"/"+folder2+"/image"+String.format("%08d", (i-1)/2+3));
+        
+            
+            
+            
+            
+            for (int u=0;u<w;u++){
+                for (int uu=0;uu<h;uu++){
+                    ip3.putPixelValue(u, uu, ip3.getPixelValue(u, uu)+ip1.getPixelValue(u, uu));
+                }
+            }
+            ImagePlus impp5 = new ImagePlus("cutted_slices",ip3);
+            IJ.saveAsTiff(impp5, folder+"/"+folder4+"/image"+String.format("%08d", (i-1)/4));
+        
+        
+            for (int u=0;u<w;u++){
+                for (int uu=0;uu<h;uu++){
+                    ip7.putPixelValue(u, uu, ip7.getPixelValue(u, uu)+ip5.getPixelValue(u, uu));
+                }
+            }
+            ImagePlus impp6 = new ImagePlus("cutted_slices",ip7);
+            IJ.saveAsTiff(impp6, folder+"/"+folder4+"/image"+String.format("%08d", (i-1)/4+1));
+        
+            
+            
+            
+            
+            
+            
+            for (int u=0;u<w;u++){
+                for (int uu=0;uu<h;uu++){
+                    ip7.putPixelValue(u, uu, ip7.getPixelValue(u, uu)+ip3.getPixelValue(u, uu));
+                }
+            }
+            ImagePlus impp7 = new ImagePlus("cutted_slices",ip7);
+            IJ.saveAsTiff(impp7, folder+"/"+folder8+"/image"+String.format("%08d", (i-1)/8));
+        
+            
+        }
+        IJ.log("well done");
+        */
+        
+        
+        
+        ImagePlus imp = IJ.getImage();
+        
+        
+        Roi r=imp.getRoi();
+        int width=imp.getWidth();
+        int height=imp.getHeight();
+        int startX=0;
+        int startY=0;
+        if (r!=null){
+            Rectangle bound=imp.getRoi().getBounds();
+            startX=bound.x;
+            startY=bound.y;
+            width=bound.width;
+            height=bound.height;
+        }
+        
+        
+        for (int i=0;i<imp.getNSlices();i++){
+            
+            
+            
+            for (int ii=0;ii<imp.getNFrames();ii++){
+                
+                int newwidth=(int)Math.pow(2,(int)(Math.ceil(Math.log(width)/Math.log(2))));
+                int newheight=(int)Math.pow(2,(int)(Math.ceil(Math.log(height)/Math.log(2))));
+                
+                double [][] x=new double [newwidth][newheight];
+                
+                imp.setSlice(i*imp.getNFrames()+ii+1);
+                
+                ImageProcessor p=imp.getProcessor();
+                
+                for (int u=startX,v=0;u<width;u++,v++){
+                    for (int uu=startY,vv=0;uu<height;uu++,vv++){
+                        double pixVal = p.getPixelValue(u, uu);
+                        x[v][vv]=pixVal;
+                    }
+                }
+                
+                
+                double [][] y=new double [newwidth][newheight];
+                double [][] z=new double [newwidth][newheight];
+                double [][] t=new double [newwidth][newheight];
+                
+                FourierTransform ft = new FourierTransform();
+                ft.fft(x, y, z, t);
+                
+                
+                
+                double [][] xx=ft.shift2D(ft.getMagnitude(z, t));
+                ImageShow.imshow(xx);
+                
+                int xcenter=xx.length/2;
+                int ycenter=xx[0].length/2;
+                double [][] res = new double [xcenter-1][1];
+                for (int j=0;j<res.length;j++){
+                    res[j][0]=0;
+                    for (double u=0;u<2*3.141592;u+=.01){
+                        
+                        res[j][0]+=xx[(int)Math.round(xcenter+((double)j)*Math.cos(u))][(int)Math.round(ycenter+((double)j)*Math.sin(u))];
+                    }
+                    
+                }
+                
+                ImageShow.imshow(res,"2plot");
+            }
+        }
+        
+        
+        
         
     }
     
@@ -6949,7 +7661,7 @@ gd.addMessage("should have the same size as image to register !!");
     
     
     class PreviewButton extends Button  implements ActionListener{
-        ImagePlus imp;
+        ImagePlus imppb;
         Vector<TextField> texts;
         Vector<Checkbox> bools;
         Vector<TextField> nums;
@@ -6957,7 +7669,7 @@ gd.addMessage("should have the same size as image to register !!");
             this.texts=texts;
             this.bools=bools;
             this.nums=nums;
-            this.imp=imp;
+            this.imppb=imp;
             this.setLabel("preview");
             addActionListener(this);
         }
@@ -6966,31 +7678,46 @@ gd.addMessage("should have the same size as image to register !!");
         { 
             //Execute when button is pressed 
             
-
-            String path_calibration = texts.get(0).getText();
-
-
             
-            double gain=0;
-
-            if (!isSCMOS){
-                gain = (double)Double.parseDouble(nums.get(0).getText());
+            Action a = new Action();
+            a.start();
+            
+                
+            
+        } 
+        
+        class Action extends Thread{
+            
+            public Action(){
+                
             }
+            
+            public void run(){
 
-            double nwat= (double)Double.parseDouble(nums.get(1).getText());
-
-            double zfocus= (double)Double.parseDouble(nums.get(2).getText());
-
-            int sizePatch = (int)Double.parseDouble(nums.get(3).getText());
-            //nbStream = (int)gd.getNextNumber();
-            //nbThread = (int)gd.getNextNumber();
-
-            double axialRange= (double)Double.parseDouble(nums.get(4).getText());
+                String path_calibration = texts.get(0).getText();
 
 
 
+                double gain=0;
 
-            int photonThreshold = (int)Double.parseDouble(nums.get(5).getText());
+                if (!isSCMOS){
+                    gain = (double)Double.parseDouble(nums.get(0).getText());
+                }
+
+                double nwat= (double)Double.parseDouble(nums.get(1).getText());
+
+                double zfocus= (double)Double.parseDouble(nums.get(2).getText());
+
+                int sizePatch = (int)Double.parseDouble(nums.get(3).getText());
+                //nbStream = (int)gd.getNextNumber();
+                //nbThread = (int)gd.getNextNumber();
+
+                double axialRange= (double)Double.parseDouble(nums.get(4).getText());
+
+
+
+
+                int photonThreshold = (int)Double.parseDouble(nums.get(5).getText());
 
 
 
@@ -7005,21 +7732,41 @@ gd.addMessage("should have the same size as image to register !!");
                     sizePatch++;
                 }
                 
-                int select=imp.getCurrentSlice();
-                IJ.log("localization is applied only on frame "+select);
-                ImageProcessor ip = imp.getProcessor();
-                ImagePlus impTest=new ImagePlus("test",ip);
                 
                 
-                Roi r=imp.getRoi();
-                int width=imp.getWidth();
-                int height=imp.getHeight();
+                
+                boolean stacked=true;
+                int nbImage=imppb.getNSlices();
+                if (imppb.getNSlices()==1){
+                    nbImage=imppb.getNFrames();
+                    stacked=false;
+                }
+                ImageStack [] ims=null;
+                if (stacked){
+                    ims = new ImageStack[1];
+                    ims[0]=imppb.getStack();
+
+                }
+                
+                int select=imppb.getCurrentSlice();
                 
                 
+                
+                
+                Roi r=imppb.getRoi();
+                int width=imppb.getWidth();
+                int height=imppb.getHeight();
+                
+                
+                IJ.log("rrec "+r+"  "+width);
+                int startx=0;
+                int starty=0;
                 if (r!=null){
-                    Rectangle bound=imp.getRoi().getBounds();
+                    Rectangle bound=imppb.getRoi().getBounds();
                     width=bound.width;
                     height=bound.height;
+                    startx=bound.x;
+                    starty=bound.y;
                 }
                 if ((width<sizePatch)||(height<sizePatch)){
                     IJ.log("Process stopped: Localization impossible. The image, or selected ROI should be larger than patch size");
@@ -7030,9 +7777,23 @@ gd.addMessage("should have the same size as image to register !!");
                 }
                 
                 
+                ImageProcessor ip;
+                if (stacked){
+                    ip = ims[0].getProcessor(select);
+                }
+                else{
+                    imppb.setSlice(select);
+                    ip = imppb.getProcessor();
+                }
+                ImageProcessor ip2=new FloatProcessor(width,height);
                 
+                for (int i=0;i<width;i++){
+                    for (int ii=0;ii<height;ii++){
+                        ip2.putPixelValue(i, ii, ip.getPixelValue(i+startx, ii+starty));
+                    }
+                }
                 
-                
+                ImagePlus impTest=new ImagePlus("test",ip2);
                 
                 if (gain==0||adu==0){
                     new WaitForUserDialog("Error message", "gain has to be positive (default value = 1)").show();
@@ -7071,9 +7832,197 @@ gd.addMessage("should have the same size as image to register !!");
                     sl=lp.detectParticles(impTest,sl);
                     IJ.log("preview finished");
                 }
+            }  
+            
+        } 
+        
+        
+    }
+    
+    
+    
+    
+    
+    
+    
+    class AutoFocusButton extends Button  implements ActionListener{
+        ImagePlus imp;
+        Vector<TextField> texts;
+        Vector<Checkbox> bools;
+        Vector<TextField> nums;
+        AutoFocusButton(ImagePlus imp,Vector<TextField> texts,Vector<TextField> nums){
+            this.texts=texts;
+            this.bools=bools;
+            this.nums=nums;
+            this.imp=imp;
+            this.setLabel("auto-focus");
+            addActionListener(this);
+        }
+        
+        public void actionPerformed(ActionEvent e) 
+        { 
+            //Execute when button is pressed 
+            
+            Action a = new Action();
+            a.start();
+            
                 
             
         } 
+        
+        class Action extends Thread{
+            
+            public Action(){
+                
+            }
+            
+            public void run(){
+                String path_calibration = texts.get(0).getText();
+
+
+            
+                double gain=0;
+
+                if (!isSCMOS){
+                    gain = (double)Double.parseDouble(nums.get(0).getText());
+                }
+
+                double nwat= (double)Double.parseDouble(nums.get(1).getText());
+
+                double zfocustmp= (double)Double.parseDouble(nums.get(2).getText());
+
+                int sizePatch = (int)Double.parseDouble(nums.get(3).getText());
+                //nbStream = (int)gd.getNextNumber();
+                //nbThread = (int)gd.getNextNumber();
+
+                double axialRange= (double)Double.parseDouble(nums.get(4).getText());
+
+
+
+
+                int photonThreshold = (int)Double.parseDouble(nums.get(5).getText());
+
+
+
+                
+            
+                
+                if (sizePatch%2==1){
+                    sizePatch++;
+                }
+                
+                int select=imp.getCurrentSlice();
+                IJ.log("localization is applied only on frame "+select);
+                ImageProcessor ip = imp.getProcessor();
+                ImagePlus impTest=new ImagePlus("test",ip);
+                
+                
+                Roi r=imp.getRoi();
+                int width=imp.getWidth();
+                int height=imp.getHeight();
+                
+                if (r!=null){
+                    Rectangle bound=imp.getRoi().getBounds();
+                    width=bound.width;
+                    height=bound.height;
+                }
+                if ((width<sizePatch)||(height<sizePatch)){
+                    IJ.log("Process stopped: Localization impossible. The image, or selected ROI should be larger than patch size");
+                    IJ.log("Please, select a large rectangle in the image before running the localization");
+                    IJ.log("image width:"+width+" ; height:"+height+" ; sizePatch:"+sizePatch);
+                    processing=new Boolean(false);
+                    return;
+                }
+                
+                
+                
+                
+                
+                
+                if (gain==0||adu==0){
+                    new WaitForUserDialog("Error message", "gain has to be positive (default value = 1)").show();
+                }
+                else{
+                    
+                    
+                    
+                    
+                    int sizeFFT=128;
+                    sizeFFT=Math.max(sizeFFT,sizePatch*2);
+                    sizeFFT=Math.min(sizeFFT,maxFFT);
+                    
+                    
+                    
+                    if (GPU_computation){
+                        MyCudaStream.init(nbStream+1);
+                        org.pasteur.imagej.process.gpu.DataPhase_ dp = new org.pasteur.imagej.process.gpu.DataPhase_(sizeFFT,path_calibration);
+                        if (!dp.loading){
+                            IJ.log("impossible to load "+path_calibration);
+                            processing=new Boolean(false);
+                            return;
+                        }
+                        dp.setSizeoutput(sizePatch);
+                        dp.setNwat(nwat);
+                        dp.param.Zfocus=zfocustmp;
+                        
+                        
+                        
+                        IJ.log("auto-focus started on gpu");
+
+
+                        org.pasteur.imagej.process.gpu.LocalizationAutoFocusPipeline_ lp;
+                        if (isSCMOS){
+                            lp=new org.pasteur.imagej.process.gpu.LocalizationAutoFocusPipeline_(dp,axialRange,photonThreshold,nbStream,nbThread,sizePatch,scmosvariance,scmosgain,scmosoffset,scmosvargain,false);
+                        }
+                        else{
+                            lp=new org.pasteur.imagej.process.gpu.LocalizationAutoFocusPipeline_(dp,axialRange,photonThreshold,nbStream,nbThread,sizePatch,adu, gain,offset,false);
+                        }
+                        zfocustmp=lp.detectParticles(imp);
+                        
+                        
+                        /*classes.testClass lp =new classes.testClass(dp,axialRange,photonThreshold,nbStream,nbThread,sizePatch,path_localization,rescale_slope, rescale_intercept);
+                        sl=new StackLocalization();
+                        sl=lp.detectParticles(imp,sl);*/
+
+
+
+                        dp.free();
+                    
+                    
+                        MyCudaStream.destroy();
+                    }
+                    else{
+                        org.pasteur.imagej.process.cpu.DataPhase dp = new org.pasteur.imagej.process.cpu.DataPhase(sizeFFT,path_calibration);
+                        if (!dp.loading){
+                            IJ.log("impossible to load "+path_calibration);
+                            processing=new Boolean(false);
+                            return;
+                        }
+                        dp.setSizeoutput(sizePatch);
+                        dp.setNwat(nwat);
+                        dp.param.Zfocus=zfocustmp;
+                        IJ.log("auto-focus started on cpu : NOT YET IMPLEMENTED");
+                        
+                        org.pasteur.imagej.process.cpu.LocalizationPipeline lp;
+                        if (isSCMOS){
+                            
+                            //lp=new org.pasteur.imagej.process.cpu.LocalizationPipeline(dp,axialRange,photonThreshold,sizePatch,path_localization,scmosvariance,scmosgain,scmosoffset,scmosvargain,false);
+                        }
+                        else{
+                            //lp=new org.pasteur.imagej.process.cpu.LocalizationPipeline(dp,axialRange,photonThreshold,sizePatch,path_localization,adu, gain,offset,false);
+                        }
+                        
+                        
+                        
+                    }
+                    zfocus=zfocustmp;
+                    nums.get(2).setText(""+zfocus);
+                    IJ.log("auto-focus finished "+zfocus);
+                }
+            }
+            
+            
+        }
         
         
     }

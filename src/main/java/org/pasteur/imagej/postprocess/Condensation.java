@@ -112,8 +112,10 @@ public class Condensation {
                             }
                         }
                         
-                        if (p_next.size()<bin){
-                            hist[p_next.size()]++;
+                        
+                        int ppphist=p_next.get(p_next.size()-1).frame-p_current.frame+1;
+                        if (ppphist<bin){
+                            hist[ppphist]++;
                         }
                         mean+=p_next.size();
                         countmean++;
@@ -280,6 +282,10 @@ public class Condensation {
                             }
                             p_current.BG/=(double)(p_next.size()+1);
                         }
+                        for (int u=0;u<p_next.size();u++){
+                            p_next.get(u).id=p_current.id;
+                        }
+                        p_current.occurrence=p_next.get(p_next.size()-1).frame-p_current.frame+1;
                         fl.loc.add(p_current);
                  
                     }
@@ -361,36 +367,44 @@ public class Condensation {
     
     
     
-    public double [] fitExponential1(int start){
+    public double [] fitExponential1(int start,int end){
         int posit=hist.length;
         loop:for (int i=start;i<hist.length-1;i++){
-            if ((hist[i]<hist[start]*.01)||(hist[i]<1)){
+            if (hist[i]<1){
                 posit=i;
                 break loop;
             }
         }
-        posit=Math.min(3, posit);
-        posit=Math.min(hist.length-1, posit);
+        posit=Math.min(end, posit);
         if (posit<3){
-            IJ.log("WARNING: not enough points for fitting");
+            IJ.log("ERROR: not enough points for fitting");
+            return null;
         }
         int len=posit-start;
         double [] x= new double [len];
         double [] y= new double [len];
+        double [] xfull= new double [posit];
+        double [] yfull= new double [posit];
+        
+        for (int i=0;i<posit;i++){
+            xfull[i]=histaxis[i];
+            IJ.write(""+hist[i]);
+            yfull[i]=Math.log(hist[i]);
+        }
         for (int i=0;i<len;i++){
             x[i]=histaxis[i+start];
-            y[i]=hist[i+start];
+            y[i]=Math.log(hist[i+start]);
         }
         CurveFitter cf = new CurveFitter(x,y);
         
-        cf.doFit(CurveFitter.EXPONENTIAL);
+        cf.doFit(CurveFitter.STRAIGHT_LINE);
         double b=0;
         double a=0;
         double [] p = cf.getParams();
         if (p!=null){
             a=p[0];
             b=p[1];
-            IJ.log("fitted curve:  y = "+a+" exp(-t/ "+(-1/b)+" )");
+            IJ.log("fitted curve:  y = log["+a+" exp(-t/ "+(-1/b)+" )]");
         }
         else{
             IJ.log("curve impossible to fit with exponential");
@@ -406,10 +420,11 @@ public class Condensation {
         int id=0;
         for (double v=(double)x[0];v<(double)x[len-1];v+=((double)x[len-1]-(double)x[0])/(len*5)){
             xf[id]=v;
-            yf[id]=p[0]*Math.exp(p[1]*v);
+            yf[id]=p[0]+p[1]*v;
             id++;
         }
-        plotHist(x, y,xf,yf,"histogram of condensation","number of frames","occurrence number");
+        
+        plotHist(xfull, yfull,xf,yf,"histogram of condensation","number of frames","occurrence number");
         double [] v = new double[2];
         v[0]=a;
         v[1]=(-1/b);
@@ -585,6 +600,24 @@ public class Condensation {
             }
             if (yfit[i]>ymax){
                 ymax=yfit[i];
+            }
+            
+            
+        }
+        for (int i=0;i<x.length;i++){
+            
+            
+            if (x[i]<xmin){
+                xmin=x[i];
+            }
+            if (x[i]>xmax){
+                xmax=x[i];
+            }
+            if (y[i]<ymin){
+                ymin=y[i];
+            }
+            if (y[i]>ymax){
+                ymax=y[i];
             }
         }
         p.setLimits(xmin-1, xmax+1, ymin-(ymax*.1), ymax+(ymax*.1));

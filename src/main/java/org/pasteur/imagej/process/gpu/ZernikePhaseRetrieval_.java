@@ -352,7 +352,7 @@ public class ZernikePhaseRetrieval_ {
         
         double likelihood=initialization(iterations);
         
-        
+        //showImageAndModel();
         
         IJ.log("calibration started");
         
@@ -360,6 +360,7 @@ public class ZernikePhaseRetrieval_ {
         
         if (true){
 
+            
             
             loop1:for (int t=0;t<iterations;t++){
                 
@@ -376,6 +377,8 @@ public class ZernikePhaseRetrieval_ {
                 
                 
                 this.updateSigmaGaussianKernel(nbstack);///%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+                
+                
                 
                 //IJ.log("sigma "+dparam.param.sigmaGaussianKernel);
                 
@@ -408,6 +411,7 @@ public class ZernikePhaseRetrieval_ {
                 //IJ.log("drift "+dx+"  "+dy+"  "+dz);
                 
                 //this.updateWeightZ(nbstack);
+                
                 
                 for (int ss=0;ss<nbstack;ss++){
                     //IJ.log("registration  x:"+this.registrationStack[0][ss]+"  y;"+this.registrationStack[1][ss]+"  z:"+this.registrationStack[2][ss]);
@@ -453,15 +457,17 @@ public class ZernikePhaseRetrieval_ {
     }
     
     
-    
     void showImageAndModel(){
+        showImageAndModel(-1);
+    }
+    void showImageAndModel(int id){
         
         
         double [][][] modconcat = new double[image.length*image[0].length][image[0][0].length][image[0][0][0].length];
         double [][][] imageconcat = new double[image.length*image[0].length][image[0][0].length][image[0][0][0].length];
         double themin=Double.POSITIVE_INFINITY;
         double themax=Double.NEGATIVE_INFINITY;
-        this.computeModel3D(0);
+        
         
             
         
@@ -469,7 +475,22 @@ public class ZernikePhaseRetrieval_ {
         themin=Double.POSITIVE_INFINITY;
         themax=Double.NEGATIVE_INFINITY;
         double [][][][] mod = new double [model3D.length][][][];
+        
+        
+         
+            
+            
+        
         for (int i=0;i<model3D.length;i++){
+            
+            for (int pp=0;pp<3;pp++){//update due to registration of stacks
+                dparam.phaseZer.setA(pp, this.registrationStack[pp][i]);
+            }
+            dparam.psf_fMany.updatePhase(dparam.phaseZer.computeCombination());
+            compute2DModelMany_f(i);
+            
+            this.computeModel3D(i);
+            
             mod[i]=model3D[i].getModel();
         }
         for (int u=0;u<image.length;u++){
@@ -493,8 +514,12 @@ public class ZernikePhaseRetrieval_ {
         
         //computeMeanAndVar(this.image,mod);
         ///////////////////////////////////////////////////////////////////////////
-        
-        ImageShow.imshow(imageconcat,modconcat,"input-model image");
+        if (id==-1){
+            ImageShow.imshow(imageconcat,modconcat,"input-model image");
+        }
+        else{
+            ImageShow.imshow(imageconcat,modconcat,"input-model image "+id);
+        }
         IJ.setMinAndMax(themin, themax);
         
         
@@ -577,11 +602,10 @@ public class ZernikePhaseRetrieval_ {
         likelihood=init(likelihood,1, 10,15, -1, 1,1);
         likelihood=init(likelihood,1, 15,21, -1, 1,1);
         
-        
+        //remove parabola in order to fit the model center using updateRegistrationStacks method
+        dparam.phaseZer.setA(4, 0);
         
         IJ.log("initialization 3/6");
-        
-        //ImageShow.imshow(model3D[0].getModel(),"model");
         
         loop1_1:for (int t=0;t<Math.min(3,iterations/2+1);t++){
             
@@ -616,10 +640,11 @@ public class ZernikePhaseRetrieval_ {
             //IJ.showProgress(.1*(1.-(double)(iterations-t)/iterations)+.05);
             
             
-            this.updatePhaseZernike(1,10);
+            this.updatePhaseZernike(1,10,false);
+            this.updateRegistrationStacks(nbstack);
             this.updatePhotonBpoly(nbstack,0);
             
-            this.updateRegistrationStacks(1);
+            
             
             double lik=this.getLikelihood(1);
             
@@ -632,6 +657,8 @@ public class ZernikePhaseRetrieval_ {
             //IJ.log("likelihood "+likelihood);
             
         }
+        
+        
         
         IJ.log("initialization 4/6");
         
@@ -647,11 +674,11 @@ public class ZernikePhaseRetrieval_ {
             //IJ.showProgress(.15*(1.-(double)(iterations-t)/iterations)+.15);
             
             
-            this.updatePhaseZernike(1,15);
+            this.updatePhaseZernike(1,15,false);
             this.updatePhotonBpoly(nbstack,1);
             this.updatePhotonA(nbstack);
             
-            this.updateRegistrationStacks(1);
+            this.updateRegistrationStacks(nbstack);
             
             double lik=this.getLikelihood(1);
             if (Math.abs(likelihood-lik)<epsilon){
@@ -682,7 +709,7 @@ public class ZernikePhaseRetrieval_ {
             //IJ.log("pass 1 ; remaining iterations: "+(iterations-t));
             
             
-            this.updatePhaseZernike(1,15);
+            this.updatePhaseZernike(1,15,false);
             
             this.updatePhotonBpoly(nbstack,2);
             
@@ -710,23 +737,145 @@ public class ZernikePhaseRetrieval_ {
             
         }
         
+        
+        
+        
         IJ.log("initialization 6/6");
         
-        this.updatePhaseZernike(1,28);
+        this.updatePhaseZernike(1,28,false);
         this.updatePhotonBpoly(1,2);
         this.updatePhotonAeach(1);
-        this.updateRegistrationStacks(1);
-        this.updatePhaseZernike(1,45);
+        this.updateRegistrationStacks(nbstack);
+        this.updatePhaseZernike(1,45,false);
         this.updatePhotonBpoly(1,2);
         this.updatePhotonAeach(1);
-        this.updateRegistrationStacks(1);
-        this.updatePhaseZernike(1,66);
+        this.updateRegistrationStacks(nbstack);
+        this.updatePhaseZernike(1,66,false);
         this.updatePhotonBpoly(1,2);
         this.updatePhotonAeach(1);
-        this.updateRegistrationStacks(1);
+        this.updateRegistrationStacks(nbstack);
+        
+        
+        
+
+        this.updateRegistrationStacks(nbstack);
+        this.updatePhaseZernike(nbstack,false);
+        this.updateRegistrationStacks(nbstack);
+        this.updatePhaseZernike(nbstack,false);
+        
+        
         //this.computeModel3D(0);
         //sresd=model3D[0].getModel();
         //ImageShow.imshow(sresd,"PSF_model_pass3");
+        
+        likelihood = this.getLikelihood(nbstack);
+        
+        
+        return likelihood;
+    }
+    
+    
+    
+    
+    
+    
+    
+    
+    double initializationNew(int iterations){
+        
+        
+        
+        
+        double [][][][] stack;
+        
+        stack=this.image;
+        
+        
+        
+        
+        int stack_size = stack[0].length;
+        
+        double stack_center=center;
+        
+        
+        double epsilon=.0001;
+        
+        
+        
+        
+        int maxorder=1;
+        
+        //first pass...ont stack
+        double likelihood = Double.MAX_VALUE;
+        
+        
+        
+        for (int u=3;u<21;u++){dparam.phaseZer.setA(u, Math.random()*10);}
+        dparam.psf_fMany.updatePhase(dparam.phaseZer.computeCombination());
+        for (int t=0;t<iterations;t++){
+            this.updatePhotonBpoly(1,0);
+            this.updateRegistrationStacks(1);
+            this.updatePhotonA(1);
+            double lik=this.getLikelihood(1);
+            likelihood=lik;
+        }
+        this.updatePhaseZernike(1,21);
+        double lik0=this.getLikelihood(1);
+        showImageAndModel();
+        IJ.log("lik0 "+lik0);
+        
+        
+        for (int u=3;u<21;u++){dparam.phaseZer.setA(u, Math.random()*10);}
+        dparam.psf_fMany.updatePhase(dparam.phaseZer.computeCombination());
+        for (int t=0;t<iterations;t++){
+            this.updatePhotonBpoly(1,0);
+            this.updateRegistrationStacks(1);
+            this.updatePhotonA(1);
+            double lik=this.getLikelihood(1);
+            likelihood=lik;
+        }
+        this.updatePhaseZernike(1,21);
+        double lik1=this.getLikelihood(1);
+        showImageAndModel();
+        IJ.log("lik1 "+lik1);
+        
+        
+        for (int u=3;u<21;u++){dparam.phaseZer.setA(u, Math.random()*10);}
+        dparam.psf_fMany.updatePhase(dparam.phaseZer.computeCombination());
+        for (int t=0;t<iterations;t++){
+            this.updatePhotonBpoly(1,0);
+            this.updateRegistrationStacks(1);
+            this.updatePhotonA(1);
+            double lik=this.getLikelihood(1);
+            likelihood=lik;
+        }
+        this.updatePhaseZernike(1,21);
+        double lik2=this.getLikelihood(1);
+        showImageAndModel();
+        IJ.log("lik2 "+lik2);
+        
+        
+        for (int u=3;u<21;u++){dparam.phaseZer.setA(u, Math.random()*10);}
+        dparam.psf_fMany.updatePhase(dparam.phaseZer.computeCombination());
+        for (int t=0;t<iterations;t++){
+            this.updatePhotonBpoly(1,0);
+            this.updateRegistrationStacks(1);
+            this.updatePhotonA(1);
+            double lik=this.getLikelihood(1);
+            likelihood=lik;
+        }
+        this.updatePhaseZernike(1,21);
+        double lik3=this.getLikelihood(1);
+        showImageAndModel();
+        IJ.log("lik3 "+lik3);
+        
+        
+        
+        
+        
+        
+        
+        
         
         likelihood = this.getLikelihood(nbstack);
         
@@ -802,7 +951,6 @@ public class ZernikePhaseRetrieval_ {
     
     
     
-    
     private double init(double likelihood,int stackNumber,int startcoefNumber,int endcoefNumber,double min,double max,double step){
         
         
@@ -860,7 +1008,7 @@ public class ZernikePhaseRetrieval_ {
                 coco[i][b]=init[b];
             }
             for (int b=startcoefNumber,bb=0;b<endcoefNumber;b++,bb++){
-                coco[i][b]=valstep[id[bb]];
+                coco[i][b]=valstep[id[bb]]+init[b];
             }
             for (int b=endcoefNumber;b<dparam.phaseZer.numCoef;b++){
                 coco[i][b]=init[b];
@@ -877,6 +1025,8 @@ public class ZernikePhaseRetrieval_ {
             dparam.phaseZer.setA(coco[p]);
             dparam.psf_fMany.updatePhase(dparam.phaseZer.computeCombination());
             
+        
+            //showImageAndModel(p);
             for (int z=0;z<stackNumber;z++){
 
                 //dparam.psf_fMany.imshowFloat(dparam.psf_fMany.device_phase, "ph1 "+p); 
@@ -887,7 +1037,7 @@ public class ZernikePhaseRetrieval_ {
                 //ImageShow.imshow(model3D[z].getModel(),"model1");
                 lik+=model3D[z].getLikelihood(methodLikelihood);
             }
-
+            //IJ.log("lik("+p+") = "+lik);
             if (lik<=likelihood){
                 likelihood=lik;
                 bestId=p;
@@ -923,16 +1073,22 @@ public class ZernikePhaseRetrieval_ {
     
     
     
-    
-    
-    
-    
     private void updatePhaseZernike(int stackNumber){
-        updatePhaseZernike(stackNumber,-1);
+        updatePhaseZernike(stackNumber,-1,true);
+    }
+    
+    private void updatePhaseZernike(int stackNumber,int coefNumber){
+        updatePhaseZernike(stackNumber,coefNumber,true);
     }
     
     
-    private void updatePhaseZernike(int stackNumber,int coefNumber){
+    
+    private void updatePhaseZernike(int stackNumber,boolean withParabola){
+        updatePhaseZernike(stackNumber,-1,withParabola);
+    }
+    
+    
+    private void updatePhaseZernike(int stackNumber,int coefNumber,boolean withParabola){
         
         if (coefNumber<3){
             coefNumber=dparam.phaseZer.numCoef;
@@ -950,8 +1106,8 @@ public class ZernikePhaseRetrieval_ {
        
         for (int p=3;p<coefNumber;p++){
         
-            if (true){
-            
+            if ((withParabola)||(p!=4)){//do not update parabola if withParabola=false
+                
                 
                 double lik1=0;
                 for (int z=0;z<stackNumber;z++){

@@ -74,6 +74,9 @@ public class PolynomialFit {
         this.load(path);
     }
     
+    public PolynomialFit(){
+    }
+    
     
     public PolynomialFit(double [][] a,int dimensionFit,int ordre){
         this.dimensionFit=dimensionFit;
@@ -401,7 +404,8 @@ public class PolynomialFit {
 
 
                     sortie = new PrintWriter(new FileWriter(path, false));
-                    sortie.println(""+ordre);
+                    sortie.println(""+toString());
+                    /*sortie.println(""+ordre);
                     sortie.println(""+dimensionRef);
                     sortie.println(""+dimensionFit);
                     for (int i=0;i<a.length;i++){
@@ -417,7 +421,7 @@ public class PolynomialFit {
                     
 
 
-                    IJ.log("Save well done !");
+                    IJ.log("Save well done !");*/
                     sortie.close();
             }
         
@@ -431,23 +435,56 @@ public class PolynomialFit {
     
     
     public String toString(){
-        
         String out="";
-        out+=(""+ordre)+"\n";
-        out+=(""+dimensionRef)+"\n";
-        out+=(""+dimensionFit)+"\n";
-        for (int i=0;i<a.length;i++){
-            String s="";
-            for (int ii=0;ii<a[i].length&&ii<1;ii++){
-                s+=a[i][ii];
+        if (a!=null){
+            
+            out+=(""+ordre)+"\n";
+            out+=(""+dimensionRef)+"\n";
+            out+=(""+dimensionFit)+"\n";
+            for (int i=0;i<a.length;i++){
+                String s="";
+                for (int ii=0;ii<a[i].length&&ii<1;ii++){
+                    s+=a[i][ii];
+                }
+                for (int ii=1;ii<a[i].length;ii++){
+                    s+=","+a[i][ii];
+                }
+                out+=(""+s)+"\n";
             }
-            for (int ii=1;ii<a[i].length;ii++){
-                s+=","+a[i][ii];
-            }
-            out+=(""+s)+"\n";
         }
         
         return out;
+    }
+    
+    
+    public void fromString(String input){
+        
+        String [] lignes=input.split("\n");
+        
+        String ligne;
+        ligne=lignes[0];
+        this.ordre=Integer.parseInt(ligne);
+        ligne=lignes[1];
+        this.dimensionRef=Integer.parseInt(ligne);
+        ligne=lignes[2];
+        this.dimensionFit=Integer.parseInt(ligne);
+        this.base=ordre+1;
+        this.constructIndices();
+        size=indices.length;
+        a=new double[dimensionFit][size];
+        int t=0;
+        try{
+            theloopa:while ((ligne=lignes[t+3])!=null){
+                String [] lin=ligne.split(",");
+                for (int u=0;u<lin.length;u++){
+                    a[t][u]=Double.parseDouble(lin[u]);
+                }
+                t++;
+                if (t==dimensionRef){
+                    break theloopa;
+                }
+            }
+        }catch(Exception er){IJ.log("error loading polynomial function... wrong size ? "+er);}
     }
     
     
@@ -500,6 +537,8 @@ public class PolynomialFit {
 
         
     }
+    
+    
     
     
     class Computation extends Thread{

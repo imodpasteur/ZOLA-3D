@@ -70,6 +70,15 @@ public class JSONformat {
         }
     }
     
+    public void put(String s,String value){
+        if (file.endsWith("{}")){
+            file="{\""+s+"\":"+"\""+value+"\""+"}";
+        }
+        else{
+            file=file.substring(0, file.length()-1)+",\""+s+"\":\""+value+"\"}";
+        }
+    }
+    
     public void put(String s,int [] value){
         if (file.endsWith("{}")){
             file="{\""+s+"\":[";
@@ -152,16 +161,57 @@ public class JSONformat {
         }
     }
     
+    
+    public void put(String s,String [] value){
+        if (file.endsWith("{}")){
+            file="{\""+s+"\":[";
+            for (int i=0;i<value.length;i++){
+                if (i==0){
+                    file+="\""+value[i]+"\"";
+                }
+                else{
+                    file+=","+"\""+value[i]+"\"";
+                }
+            }
+            file+="]}";
+        }
+        else{
+            file=file.substring(0, file.length()-1)+",\""+s+"\":[";//+value+"}";
+            for (int i=0;i<value.length;i++){
+                if (i==0){
+                    file+="\""+value[i]+"\"";
+                }
+                else{
+                    file+=","+"\""+value[i]+"\"";
+                }
+            }
+            file+="]}";
+        }
+    }
+    
+    
     public String get(String s){
-        int id=file.indexOf(s);
+        int id=file.indexOf("\""+s+"\"");
         if (id>=0){
             int start=1+file.indexOf(":", id);
-            int end=file.indexOf(",", start);
+            int end=0;
+            if (file.subSequence(start, start+2).equals("\"{")){//check if it is json string 
+                start=start+1;
+                end=1+file.indexOf("}\"", start+2);
+            }
+            else if (file.subSequence(start, start+1).equals("\"")){//check if it is string 
+                start=start+1;
+                end=file.indexOf("\"", start+1);
+            }
+            else{
+                end=file.indexOf(",", start);
+            }
             if (end<0){
                 end=file.indexOf("}");
             }
             //IJ.log(""+s+"  "+id+"  "+start+"  "+end+"   "+file.substring(start));
             return file.substring(start, end);
+            
         }
         else{
             return null;
@@ -169,12 +219,36 @@ public class JSONformat {
     }
     
     
+    
+    
     public String [] getVect(String s){
-        int id=file.indexOf(s);
+        int id=file.indexOf("\""+s+"\"");
         int start=1+file.indexOf("[", id);
         int end=file.indexOf("]", id);
+        //IJ.log("start end "+file);
+        //IJ.log("start end "+id+"  "+start+"  "+end);
         String vect=file.substring(start, end);
-        return vect.split(",");
+        if (vect.startsWith("\"{")&&vect.endsWith("}\"")){//check if it is json list
+            //string case
+            String [] vsplit=vect.split("}\",\"{");
+            vsplit[0]=vsplit[0].substring(1)+"}";//remove first "
+            vsplit[vsplit.length-1]="{"+vsplit[vsplit.length-1].substring(0,vsplit[vsplit.length-1].length()-1);//remove last "
+            for (int i=1;i<vsplit.length-1;i++){
+                vsplit[i]="{"+vsplit[i]+"}";
+            }
+            
+            return vsplit;
+        }
+        else if (vect.startsWith("\"")&&vect.endsWith("\"")){//check if it is string 
+            //string case
+            String [] vsplit=vect.split("\",\"");
+            vsplit[0]=vsplit[0].substring(1);//remove first "
+            vsplit[vsplit.length-1]=vsplit[vsplit.length-1].substring(0,vsplit[vsplit.length-1].length()-1);//remove last "
+            return vsplit;
+        }
+        else{
+            return vect.split(",");
+        }
     }
     
     
@@ -193,7 +267,7 @@ public class JSONformat {
             String ligne;
 
             while ((ligne=br.readLine())!=null){
-                s+=ligne;
+                s+=ligne+"\n";
 
             }
             br.close();
@@ -220,6 +294,13 @@ public class JSONformat {
             e.printStackTrace();
             System.out.println(e.toString());
         }
+    }
+    
+    public String toString(){
+        return file;
+    }
+    public void fromString(String s){
+        this.file=s;
     }
     
 }

@@ -474,7 +474,6 @@ public class ZernikePhaseRetrieval {
         //first pass...ont stack
         double likelihood = Double.MAX_VALUE;
         
-        
         IJ.log("initialization 1/6");
         
         likelihood=init(likelihood,1, 3,6, -3, 3,1);
@@ -484,6 +483,8 @@ public class ZernikePhaseRetrieval {
         likelihood=init(likelihood,1, 15,21, -1, 1,1);
         
         IJ.log("initialization 3/6");
+        
+        
         
         
         //ImageShow.imshow(model3D[0].getModel(),"model");
@@ -1322,7 +1323,7 @@ public class ZernikePhaseRetrieval {
                 coco[i][b]=init[b];
             }
             for (int b=startcoefNumber,bb=0;b<endcoefNumber;b++,bb++){
-                coco[i][b]=valstep[id[bb]];
+                coco[i][b]=valstep[id[bb]]+init[b];
             }
             for (int b=endcoefNumber;b<dparam.phaseZer.numCoef;b++){
                 coco[i][b]=init[b];

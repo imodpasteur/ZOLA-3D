@@ -1410,6 +1410,20 @@ public class MyVecDouble
         call2DGrid("computePoissonLikelihood", idStream, n, n, result, image, model);
     }
     
+    /**
+     * specific function likelihood. result=M-I*log(M)
+     * 
+     * @param n The size of the vectors
+     * @param result the result real
+     * @param real real part
+     * @param imag imag part
+     * @param divide 
+     */
+    public static void computeGaussianLikelihood(CUstream idStream,long n, Pointer result, Pointer image, Pointer model)
+    {
+        call2DGrid("computeGaussianLikelihood", idStream, n, n, result, image, model);
+    }
+    
     
 
     

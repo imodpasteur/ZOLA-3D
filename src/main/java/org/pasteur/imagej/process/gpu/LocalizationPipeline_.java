@@ -31,6 +31,11 @@ import java.util.concurrent.locks.ReentrantLock;
  */
 public class LocalizationPipeline_ {
      
+    
+    
+    //static ArrayList<String> frameVariable = new ArrayList<String>();
+    
+    
     boolean show=false;
     
     
@@ -48,6 +53,7 @@ public class LocalizationPipeline_ {
     int totNumberImageProcessed=0;
     int totNumberImagePreDetected=0;
     ArrayList<Integer> imageInBuffer = new ArrayList<Integer>();
+    //ArrayList<String> frameNameInBuffer = new ArrayList<String>();
     int nbThread=100;
     int nbPart=1;
     
@@ -147,6 +153,8 @@ public class LocalizationPipeline_ {
         
         this.rescale_slope=rescale_slope;
         this.rescale_intercept=rescale_intercept;*/
+        
+        //frameVariable.add("name");
         
         this.show=show;
         this.photonThreshold=photonThreshold;
@@ -475,7 +483,7 @@ public class LocalizationPipeline_ {
             IJ.log("Localization file not saved...you can use Zola->export plugin to save it.");
         }
          
-         
+        IJ.resetEscape();
         return stackloc;
         
     }
@@ -669,7 +677,7 @@ public class LocalizationPipeline_ {
                         lock.lock();
                         totNumberImagePreDetected=sliceNumber;
                         imageInBuffer.clear();
-                        
+                        //frameNameInBuffer.clear();
                         
                     }
                     finally{
@@ -679,12 +687,15 @@ public class LocalizationPipeline_ {
                 }
                 
                 ImageProcessor ip;
+                String theName="default";
                 if (stacked){
                     ip = ims[0].getProcessor(z);
+                    theName = ims[0].getSliceLabel(z);
                 }
                 else{
                     imp.setSlice(z);
                     ip = imp.getProcessor();
+                    theName=imp.getStack().getSliceLabel(z);
                 }
 
                 image[z-1]=new double[width][height];
@@ -734,7 +745,7 @@ public class LocalizationPipeline_ {
                             }
                         }
                     }
-                    
+                    //frameNameInBuffer.add(theName);
                     imageInBuffer.add(z-1);
                     totNumberImagePreDetected++;
                 }
@@ -777,7 +788,7 @@ public class LocalizationPipeline_ {
     
     class LocalizationThread extends Thread{
         
-        
+        //String frameName="";
         boolean canBeLaunch=false;
         boolean stopReading=false;
         int [] positionPointer = new int[1];
@@ -820,12 +831,12 @@ public class LocalizationPipeline_ {
         
         public void run(){
             
-            mainlooper:while (totNumberImageProcessed<sliceNumber){
+            mainlooper:while ((totNumberImageProcessed<sliceNumber)&&(!stopReading)){
                 
                 
                 if (IJ.escapePressed()){
                     for (int u=0;u<dp.length;u++){
-
+                        
                         dpPart[partNumber][u].modelMany.decrementNumberPSFToCompute();
                     }
                     stopReading=true;
@@ -844,7 +855,9 @@ public class LocalizationPipeline_ {
                     if((imageInBuffer.size()>0)&&(!stopReading)){
                         imageReaden=true;
                         imageNumber=(int)imageInBuffer.get(0);
+                        //frameName=frameNameInBuffer.get(0);
                         imageInBuffer.remove(0);
+                        //frameNameInBuffer.remove(0);
                     }
                 }
                 catch(Exception ee){
@@ -904,7 +917,6 @@ public class LocalizationPipeline_ {
                             maxs[1]=(int)Math.round(vect[maxsP][1]);
                             maxs[2]=(int)Math.round(vect[maxsP][2]);
                             maxs[3]=(int)Math.round(vect[maxsP][3]);
-                            //IJ.log("maxs "+maxs[0]+"   "+maxs[1]+"  "+stream);
                             //maxs[2]=maxs[2]-1;
                             //IJ.log("position init : "+maxs[0]+"   "+maxs[1]+"   "+maxs[2]+"  "+maxs[3]+"   next Pointer:"+positionPointer[0]);
                             
@@ -1017,8 +1029,13 @@ public class LocalizationPipeline_ {
                                     
                                     locate=loc[partNumber][threadNumber].localize();
                                     
-                                    //else
-                                    //    loc[partNumber][threadNumber].finishtest();
+                                    
+                                    double my_ztmp=(loc[partNumber][threadNumber].getZ());
+                                    
+                                    //if (loc[partNumber][threadNumber].thetaA[0][0]>3000)
+                                    //    IJ.log("before/after    "+(rangePredetection[maxs[1]]+vect[maxsP][4])+"     "+my_ztmp);
+                                    
+                                    
                                     
                                     if ((true)&&(locate)){
 
@@ -1107,6 +1124,8 @@ public class LocalizationPipeline_ {
 //                                                        IJ.write((idLoc)+","+(imageNumber)+","+(spx)+","+(spy)+","+(spz)+","+(spa)+","+(spb)+","+(spl)+","+(stdshow)+","+crlbX+","+crlbY+","+crlbZ+","+maxs[2]+","+maxs[3]+","+predetection);
 
                                                         PLocalization p = new PLocalization(idLoc,imageNumber,my_x,my_y,my_z,my_A,my_B,my_Score,my_crlbx,my_crlby,my_crlbz);
+                                                        //p.addListOfVariables_String(frameVariable);
+                                                        //p.setValueOtherVariable_String(0, frameName);
                                                         fl.loc.add(p); 
                                                         
                                                         
@@ -1433,7 +1452,6 @@ public class LocalizationPipeline_ {
             int getPosit=-1;
             searchListSorted:for (int i=pointerPosition[0];(i<v.length);i++)
             {
-                
                 
                 if (!mask[(int)Math.round(v[i][2])][(int)Math.round(v[i][3])])
                 {

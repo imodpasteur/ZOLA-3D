@@ -133,7 +133,7 @@ public class Predetection {
                 
         dictionnaryR=new double [range.length][sizeFullImageFFTX][sizeFullImageFFTY];
         dictionnaryI=new double [range.length][sizeFullImageFFTX][sizeFullImageFFTY];
-        resultCorrelation=new double [range.length][sizeFullImageX][sizeFullImageY];
+        resultCorrelation=null;
         
         
         
@@ -433,9 +433,14 @@ public class Predetection {
     
     
     
-    
-    
     public double [][] convolveNormalizedInFourierDomain(){
+        if (resultCorrelation==null){
+            resultCorrelation=new double [range.length][sizeFullImageX][sizeFullImageY];
+        }
+        return convolveNormalizedInFourierDomain(this.resultCorrelation);
+    }
+    
+    public double [][] convolveNormalizedInFourierDomain(double [][][] resultCorrelation){
         double [][] inputR=fft.getPointerRealOut2D();
         double [][] inputI=fft.getPointerImagOut2D();
         double [][] inputR2=fft2.getPointerReal2D();
@@ -463,10 +468,10 @@ public class Predetection {
                         resultCorrelation[i][ii][iii]=outputR2[x][y]/Math.sqrt(varPSF[i]*varImage[ii][iii]);
                     }
                     else if (varPSF[i]<=0){
-                        this.resultCorrelation[i][ii][iii]=-1;
+                        resultCorrelation[i][ii][iii]=-1;
                     }
                     else if (varImage[ii][iii]<=0){
-                        this.resultCorrelation[i][ii][iii]=-2;
+                        resultCorrelation[i][ii][iii]=-2;
                     }
                 }
             }
@@ -537,37 +542,29 @@ public class Predetection {
 //                                    }
 //                                    if((min>0)){
                                         double [] machin = new double[7];
-                                        float offsetX=0;
-                                        float offsetY=0;
-                                        float offsetZ=0;
-                                        float count=0;
-                                        int shift=0;
-                                        for (int a=0;a<=0;a++){
-                                            if ((r+a>=0)&&(r+a<resultConvolution.length)){
-                                                for (int aa=-shift;aa<=shift;aa++){
-                                                    if ((i+aa>=0)&&(i+aa<resultConvolution[r].length)){
-                                                        for (int aaa=-shift;aaa<=shift;aaa++){
-                                                            if ((j+aaa>=0)&&(j+aaa<resultConvolution[r][i].length)){
-                                                                offsetZ+=((float)(a*zstep))*resultConvolution[r+a][i+aa][j+aaa];
-                                                                offsetX+=((float)(aa*xystep))*resultConvolution[r+a][i+aa][j+aaa];
-                                                                offsetY+=((float)(aaa*xystep))*resultConvolution[r+a][i+aa][j+aaa];
-                                                                count+=resultConvolution[r+a][i+aa][j+aaa];
-                                                            }
-                                                        }
-                                                    }
-                                                }
-                                            }
+                                        
+                                        double topZ=0;
+                                        if ((r>1)&&(r<resultConvolution.length-1)){
+                                            topZ=topOfParabola(-1.*zstep,resultConvolution[r-1][i][j],0,resultConvolution[r][i][j],1.*zstep,resultConvolution[r+1][i][j]);
                                         }
-                                        offsetX/=count;
-                                        offsetY/=count;
-                                        offsetZ/=count;
+                                        
+                                        double topX=0;
+                                        if ((i>1)&&(i<resultConvolution[0].length-1)){
+                                            topX=topOfParabola(-1.*xystep,resultConvolution[r][i-1][j],0,resultConvolution[r][i][j],1.*xystep,resultConvolution[r][i+1][j]);
+                                        }
+                                        
+                                        double topY=0;
+                                        if ((j>1)&&(r<resultConvolution[0][0].length-1)){
+                                            topY=topOfParabola(-1.*xystep,resultConvolution[r][i][j-1],0,resultConvolution[r][i][j],1.*xystep,resultConvolution[r][i][j+1]);
+                                        }
+                                        
                                         machin[0]=resultConvolution[r][i][j];
                                         machin[1]=r;
                                         machin[2]=i;
                                         machin[3]=j;
-                                        machin[4]=offsetZ;
-                                        machin[5]=offsetX;
-                                        machin[6]=offsetY;
+                                        machin[4]=topZ;
+                                        machin[5]=topX;
+                                        machin[6]=topY;
                                         al.add(machin);
 //                                    }
                                 }
@@ -589,6 +586,11 @@ public class Predetection {
         }
     
     
+        private double topOfParabola(double xa,double ya,double xb,double yb,double xc,double yc){
+            double a=(yc-ya)/((xc-xa)*(xc-xb))-(yb-ya)/((xb-xa)*(xc-xb));
+            double b=((yb-ya)/(xb-xa))-a*(xb+xa);
+            return(-b/(2*a));
+        }
     
     
     

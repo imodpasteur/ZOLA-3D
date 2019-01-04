@@ -900,7 +900,6 @@ public class LocalizationPipeline {
                                                         PLocalization p = new PLocalization(idLoc,imageNumber,my_x,my_y,my_z,my_A,my_B,my_Score,my_crlbx,my_crlby,my_crlbz);
                                                         fl.loc.add(p); 
                                                         
-                                                        
                                                          
                                                         //replacement in mask of the region corresponting to 20% of max PSF
                                                         try{

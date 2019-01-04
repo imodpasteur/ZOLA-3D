@@ -479,7 +479,16 @@ public class Modelmany_double_ {
         finally{lock.unlock();}*/
     }
     
+    
     void computeLikelihood(){
+        computeLikelihood(true);
+    }
+    
+    void computeLikelihoodWithoutPSFupdating(){
+        computeLikelihood(false);
+    }
+    
+    void computeLikelihood(boolean with){
         int   cudaResult;
         if (newImageSet){
             
@@ -497,9 +506,9 @@ public class Modelmany_double_ {
             updateAandB();
         //}
         
-        
-        psfMany_f.computePSF(X, Y, Zoil,Z);
-        
+        if (with){
+            psfMany_f.computePSF(X, Y, Zoil,Z);
+        }
         
         this.device_psf=psfMany_f.getPointerPSF();
         
@@ -537,7 +546,8 @@ public class Modelmany_double_ {
         
         //compute Likelihood
         MyVecDouble.computePoissonLikelihood(custream,sizeImage*sizeImage*numberModel, device_tmp, device_subwindow, device_model);
-
+        
+        
         cudaResult=jcuda.jcublas.JCublas2.cublasDgemv(handlecublas,CUBLAS_OP_T,sizeImage*sizeImage,numberModel,device_alpha,device_tmp,sizeImage*sizeImage,device_ones,1,device_beta,this.device_likelihoodResult,1);
         if (cudaResult != cudaError.cudaSuccess){IJ.log("ERROR Dgemv likelihood");}
         
@@ -803,6 +813,87 @@ public class Modelmany_double_ {
                     
                     hasBeenComputed=true;
                     computeLikelihood();
+                    numberModelToCompute2=this.numberModelToCompute;
+                    allPSFcomputed=0;
+                    monitor.notifyAll();
+                }
+                
+                
+                
+                
+                while (atom!=this.numberModelToCompute){
+                    
+                    try{ 
+                        monitor.wait();
+                    }catch(Exception ee){IJ.log("error wait function "+ee);}
+                    if (!hasBeenComputed){
+                        
+                        //IJ.log("notify "+(param.stream-1)+"   "+numberPSFLaunched+"/"+numberPSFToCompute);
+                        
+                    }
+                    atom=numberPSFLaunched;
+                }
+
+                
+                    
+                if (!hasBeenComputed){//possible if numberPSFToCompute decreases at the end of the frames (notify called)
+                    //IJ.log("free thread");
+                    numberPSFLaunched--;
+                    //we decrement and continue loop
+                }
+                  
+            }
+        }
+        
+        
+        
+        
+        //wait finish to put back atomic_numberPSFLaunched=0
+          
+        synchronized(monitor2) {
+            allPSFcomputed++;
+            //IJ.log("All "+allPSFcomputed);
+            if ((allPSFcomputed)==numberModelToCompute2){
+                numberPSFLaunched=0;
+                //IJ.log("notif ok ");
+                monitor2.notifyAll();
+            }
+            else{
+                while (allPSFcomputed!=numberModelToCompute2){
+                    
+                    try{
+                        monitor2.wait();
+                    }catch(Exception ee){IJ.log("error wait function "+ee);}
+                    
+                }
+            }
+        }
+        
+        //IJ.log("get lik ok... "+id);
+        
+        return likelihoodResult[id];
+        
+    }
+    
+    
+    
+    
+    
+    public double getLikelihoodWithoutPSFupdating(int id){
+        
+        
+        
+        synchronized(monitor) {
+            hasBeenComputed=false; 
+            while (!hasBeenComputed){
+                
+                numberPSFLaunched++;
+                
+                int atom=numberPSFLaunched;
+                if (((atom)==this.numberModelToCompute)&&(!hasBeenComputed)){//no need to use numberPSFperModel here
+                    
+                    hasBeenComputed=true;
+                    computeLikelihoodWithoutPSFupdating();
                     numberModelToCompute2=this.numberModelToCompute;
                     allPSFcomputed=0;
                     monitor.notifyAll();

@@ -141,6 +141,7 @@ public class CRLB_ {
                 //IJ.write(""+(axialRange)+" "+(stepZ)+" "+dp.phaseZer.numCoef+" "+this.photonNumber+" "+this.background+" "+meanCRLBX+" "+meanCRLBY+" "+meanCRLBZ);
         
                 ImageShow.imshow(this.dp.psf.getPhase(),"Phase");
+                ImageShow.imshow(this.dp.psf.getPupil(),"Pupil");
                 ImageShow.imshow(im,"PSF model");
                 
                 if (path!=null){

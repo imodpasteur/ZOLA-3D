@@ -425,59 +425,60 @@ public class StackLocalization {
                     //for (int i=nbParam-1;i>=0;i--){
                         //IJ.log("split-"+split[i]);
                         int xpt;
-                        if (((xpt=split[i].indexOf(p.getLabel_id()))!=-1)&&(xpt<5)){
+                        if (((xpt=split[i].indexOf(p.getLabel_id()))!=-1)&&(xpt<5)&&(id_id==-1)){
                             id_id=i;
                         }
-                        else if (((xpt=split[i].indexOf(p.getLabel_frame()))!=-1)&&(xpt<5)){
+                        else if (((xpt=split[i].indexOf(p.getLabel_frame()))!=-1)&&(xpt<5)&&(id_frame==-1)){
                             id_frame=i;
                         }
-                        else if (((xpt=split[i].indexOf(p.getLabel_x()))!=-1)&&(xpt<5)){
+                        else if (((xpt=split[i].indexOf(p.getLabel_x()))!=-1)&&(xpt<5)&&(id_x==-1)){
                             id_x=i;
                         }
-                        else if (((xpt=split[i].indexOf(p.getLabel_y()))!=-1)&&(xpt<5)){
+                        else if (((xpt=split[i].indexOf(p.getLabel_y()))!=-1)&&(xpt<5)&&(id_y==-1)){
                             id_y=i;
                         }
-                        else if (((xpt=split[i].indexOf(p.getLabel_z()))!=-1)&&(xpt<5)){
+                        else if (((xpt=split[i].indexOf(p.getLabel_z()))!=-1)&&(xpt<5)&&(id_z==-1)){
                             id_z=i;
                         }
-                        else if (((xpt=split[i].indexOf(p.getLabel_A()))!=-1)&&(xpt<5)){
+                        else if (((xpt=split[i].indexOf(p.getLabel_A()))!=-1)&&(xpt<5)&&(id_a==-1)){
                             id_a=i;
                         }
-                        else if (((xpt=split[i].indexOf(p.getLabel_B()))!=-1)&&(xpt<5)){
+                        else if (((xpt=split[i].indexOf(p.getLabel_B()))!=-1)&&(xpt<5)&&(id_b==-1)){
                             id_b=i;
                         }
-                        else if (((xpt=split[i].indexOf(p.getLabel_score()))!=-1)&&(xpt<5)){
+                        else if (((xpt=split[i].indexOf(p.getLabel_score()))!=-1)&&(xpt<5)&&(id_score==-1)){
                             id_score=i;
                         }
-                        else if (((xpt=split[i].indexOf(p.getLabel_crlbX()))!=-1)&&(xpt<5)){
+                        else if (((xpt=split[i].indexOf(p.getLabel_crlbX()))!=-1)&&(xpt<5)&&(id_crlbx==-1)){
                             id_crlbx=i;
                         }
-                        else if (((xpt=split[i].indexOf(p.getLabel_crlbY()))!=-1)&&(xpt<5)){
+                        else if (((xpt=split[i].indexOf(p.getLabel_crlbY()))!=-1)&&(xpt<5)&&(id_crlby==-1)){
                             id_crlby=i;
                         }
-                        else if (((xpt=split[i].indexOf(p.getLabel_crlbZ()))!=-1)&&(xpt<5)){
+                        else if (((xpt=split[i].indexOf(p.getLabel_crlbZ()))!=-1)&&(xpt<5)&&(id_crlbz==-1)){
                             id_crlbz=i;
                             
                         }
-                        else if (((xpt=split[i].indexOf(p.getLabel_driftX()))!=-1)&&(xpt<5)){
+                        else if (((xpt=split[i].indexOf(p.getLabel_driftX()))!=-1)&&(xpt<5)&&(id_driftx==-1)){
                             id_driftx=i;
                         }
-                        else if (((xpt=split[i].indexOf(p.getLabel_driftY()))!=-1)&&(xpt<5)){
+                        else if (((xpt=split[i].indexOf(p.getLabel_driftY()))!=-1)&&(xpt<5)&&(id_drifty==-1)){
                             id_drifty=i;
                         }
-                        else if (((xpt=split[i].indexOf(p.getLabel_driftZ()))!=-1)&&(xpt<5)){
+                        else if (((xpt=split[i].indexOf(p.getLabel_driftZ()))!=-1)&&(xpt<5)&&(id_driftz==-1)){
                             id_driftz=i;
                         }
-                        else if (((xpt=split[i].indexOf(p.getLabel_occurrence()))!=-1)&&(xpt<5)){
+                        else if (((xpt=split[i].indexOf(p.getLabel_occurrence()))!=-1)&&(xpt<5)&&(id_occ==-1)){
                             id_occ=i;
                         }
-                        else if (((xpt=split[i].indexOf("score"))!=-1)&&(xpt<5)){
+                        else if (((xpt=split[i].indexOf("score"))!=-1)&&(xpt<5)&&(id_score==-1)){
                             id_score=i;
                         }
                         else{
                             
                             otherVariable.add(split[i]);
                             otherVariableID.add(i);
+                            
                         }
                         
                     }
@@ -636,9 +637,13 @@ public class StackLocalization {
                                 p.occurrence=1;
                             }
                             for (int i=0;i<otherVariable.size();i++){
-                                p.setValueOtherVariable(i,Double.parseDouble(split[otherVariableID.get(i)]));
+                                try{
+                                    p.setValueOtherVariable(i,Double.parseDouble(split[otherVariableID.get(i)]));
+                                }catch(Exception e){
+                                    
+                                }
                             }
-                            //IJ.log("value found "+p.id+"  "+p.X+"  "+p.Y+"   "+p.frame);
+                            
                             //IJ.log("value found "+p.id+"  "+p.frame+"  "+p.drift_X+"  "+p.drift_Y);
                         }
                         catch(Exception ee){p.exists=false;}
@@ -646,10 +651,12 @@ public class StackLocalization {
                             al.add(p);
                             if (p.frame>maxFrame){
                                 maxFrame=p.frame;
+                                
+                                
                             }
                         }
                     }
-
+                    
                 }
                 br.close();
                 int [] frame = new int[maxFrame+1];

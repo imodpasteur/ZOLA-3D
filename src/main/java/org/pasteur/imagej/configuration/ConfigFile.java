@@ -54,7 +54,10 @@ public class ConfigFile {
         "Plugins>ZOLA>Drift correction, \"3D Fiducial-markers\", org.pasteur.imagej.ZOLA(\"zola_driftCorrectionFiducialMarker\")\n",
         
         "Plugins>ZOLA>additional tools>statistic, \"localization histogram\", org.pasteur.imagej.ZOLA(\"zola_stathisto\")\n"+
-        "Plugins>ZOLA>additional tools>statistic, \"measure mean attach time\", org.pasteur.imagej.ZOLA(\"zola_statAttachTime1\")\n",
+        "Plugins>ZOLA>additional tools>statistic, \"measure residence time\", org.pasteur.imagej.ZOLA(\"zola_statAttachTime1\")\n",
+        
+        "Plugins>ZOLA>additional tools>wobble correction, \"calibration\", org.pasteur.imagej.ZOLA(\"zola_wobblecalibration\")\n"+
+        "Plugins>ZOLA>additional tools>wobble correction, \"correction\", org.pasteur.imagej.ZOLA(\"zola_wobblecorrection\")\n",
         
         "Plugins>ZOLA>Visualization, \"frame color coding\", org.pasteur.imagej.ZOLA(\"zola_timeRendering\")\n",
         
@@ -62,7 +65,8 @@ public class ConfigFile {
 "Plugins>ZOLA>dev, \"test\", org.pasteur.imagej.ZOLA(\"zola_test\")\n" +
 "Plugins>ZOLA>dev>Simulation, \"Simulation\", org.pasteur.imagej.ZOLA(\"zola_simulation\")\n" +
 "Plugins>ZOLA>dev>Simulation, \"Simulation2beads\", org.pasteur.imagej.ZOLA(\"zola_simulation2beads\")\n" +
-            "Plugins>ZOLA>dev>Simulation, \"SimulationOverlappingBeads\", org.pasteur.imagej.ZOLA(\"zola_simulationOverlappingBeads\")\n" +
+"Plugins>ZOLA>dev>Simulation, \"SimulationOverlappingBeads\", org.pasteur.imagej.ZOLA(\"zola_simulationOverlappingBeads\")\n" +
+"Plugins>ZOLA>dev>Simulation, \"addPoissonNoise\", org.pasteur.imagej.ZOLA(\"zola_addPoissonNoise\")\n" +
 "Plugins>ZOLA>dev, \"CRLBfromFile\", org.pasteur.imagej.ZOLA(\"zola_crlb_FromFile\")\n" +
 "Plugins>ZOLA>dev, \"CRLBfromFileDualObj\", org.pasteur.imagej.ZOLA(\"zola_crlb_FromFileDualObj\")\n" +
 "Plugins>ZOLA>dev, \"Photon conversion wrong\", org.pasteur.imagej.ZOLA(\"zola_photonConversion\")\n"+
@@ -77,6 +81,7 @@ public class ConfigFile {
         "Dual_color_registration (beta) :",
         "Drift correction using fiducial markers (alpha) :",
         "Statistics: histograms/mean particle attach time :",
+        "Wobble correction :",
         "Visualization: frame color coding :",
         "developpement (prototype: not recommended) :",
         };
@@ -203,7 +208,7 @@ public class ConfigFile {
                   e.printStackTrace();
             }
             
-            new WaitForUserDialog("ZOLA configuration", "Please restart ImageJ").show();
+            new WaitForUserDialog("ZOLA configuration", "Please restart ImageJ or refresh menu (help -> refresh menu)").show();
         }
         
         

@@ -21,6 +21,8 @@ import java.io.FileWriter;
 import java.io.PrintWriter;
 import java.awt.Rectangle;
 import java.util.ArrayList;
+import java.util.Arrays;
+import java.util.Comparator;
 import jcuda.runtime.JCuda;
 
 import java.util.concurrent.locks.ReentrantLock;
@@ -29,9 +31,9 @@ import java.util.concurrent.locks.ReentrantLock;
  *
  * @author benoit
  */
-public class LocalizationMultiEmitterPipeline_ {
+public class LocalizationMotionBlurPipeline_ {
      
-    
+    static ArrayList<String> frameVariable = new ArrayList<String>();
     double sigmaGaussian=500;//nm precision for point distribution
     
     
@@ -52,6 +54,8 @@ public class LocalizationMultiEmitterPipeline_ {
     int totNumberImageProcessed=0;
     int totNumberImagePreDetected=0;
     ArrayList<Integer> imageInBuffer = new ArrayList<Integer>();
+    ArrayList<String> frameNameInBuffer = new ArrayList<String>();
+    ArrayList<Integer> crossCorrelationInBuffer = new ArrayList<Integer>();
     int nbPart=1;
     
     int sizePatch=32;
@@ -69,10 +73,15 @@ public class LocalizationMultiEmitterPipeline_ {
     double maxSNR=1; 
     
     double [][][] localMaxPosition;
+    int maxRead=5;//variable to block the program if the number of opened images is too big and use too much memory
+    //for multi-emitter the value is low to limit the memory because we need cross correlation result
+    float [][][][] resultCrossCorrelation;
+    ArrayList<Integer> freePositCrossCorrelation = new ArrayList<Integer>();
     
     double [][][] image;
     
     double [] rangePredetection;
+    
     double [][] psfPredetection;
     
     double photonThreshold=500;
@@ -87,10 +96,10 @@ public class LocalizationMultiEmitterPipeline_ {
     double [][][] globalmask=null ;//entire stack
     double [][][] globalmask2=null ;//entire stack
     
-    int popsize=500;
-    int popsize4selection=20;//the best
-    int numberPSFperModel=10;
-    int parallelcomputing=1;
+    int popsize=200;
+    int popsize4selection=50;//the best
+    int numberPSFperModel=2;
+    int parallelcomputing=8;
     
     
     double axialRange;
@@ -107,18 +116,18 @@ public class LocalizationMultiEmitterPipeline_ {
     double [][] scmosvargain;
     boolean isSCMOS;
     
-    public LocalizationMultiEmitterPipeline_(DataPhase_ dp,double axialRange,int photonThreshold,int nbPart,int sizePatch,String path_localization,double adu, double gain,double offset,boolean show){
+    public LocalizationMotionBlurPipeline_(DataPhase_ dp,double axialRange,int photonThreshold,int nbPart,int sizePatch,String path_localization,double adu, double gain,double offset,boolean show){
         
         isSCMOS=false;
         this.rescale_slope=adu/gain;
         this.rescale_intercept=-offset*adu/gain;
         
         
-        localizationMultiEmitterPipelineMany(dp,axialRange,photonThreshold,nbPart,sizePatch,path_localization,show);
+        localizationMotionBlurPipelineMany(dp,axialRange,photonThreshold,nbPart,sizePatch,path_localization,show);
         
     }
     
-    public LocalizationMultiEmitterPipeline_(DataPhase_ dp,double axialRange,int photonThreshold,int nbPart,int sizePatch,String path_localization,double [][] scmosvariance,double [][] scmosgain,double [][] scmosoffset,double [][] scmosvargain,boolean show){
+    public LocalizationMotionBlurPipeline_(DataPhase_ dp,double axialRange,int photonThreshold,int nbPart,int sizePatch,String path_localization,double [][] scmosvariance,double [][] scmosgain,double [][] scmosoffset,double [][] scmosvargain,boolean show){
         
         isSCMOS=true;
         
@@ -127,7 +136,7 @@ public class LocalizationMultiEmitterPipeline_ {
         this.scmosgain=scmosgain;
         this.scmosvargain=scmosvargain;
         
-        localizationMultiEmitterPipelineMany(dp,axialRange,photonThreshold,nbPart,sizePatch,path_localization,show);
+        localizationMotionBlurPipelineMany(dp,axialRange,photonThreshold,nbPart,sizePatch,path_localization,show);
         
     }
     
@@ -138,9 +147,9 @@ public class LocalizationMultiEmitterPipeline_ {
     
     
     
-    void localizationMultiEmitterPipelineMany(DataPhase_ dp,double axialRange,int photonThreshold,int nbPart,int sizePatch,String path_localization,boolean show){
+    void localizationMotionBlurPipelineMany(DataPhase_ dp,double axialRange,int photonThreshold,int nbPart,int sizePatch,String path_localization,boolean show){
         
-        
+        frameVariable.add("name");
         this.show=show;
         this.photonThreshold=photonThreshold;
         this.sizePatch=sizePatch;
@@ -224,6 +233,10 @@ public class LocalizationMultiEmitterPipeline_ {
         }
         
         parallelcomputing=Math.min(parallelcomputing, nbImage);
+        
+        maxRead=Math.min(maxRead, nbImage);
+        
+        
             
         width=imp.getWidth();
         height=imp.getHeight();
@@ -265,6 +278,8 @@ public class LocalizationMultiEmitterPipeline_ {
         IJ.log("memory Needed per stream : "+(memNeeded/6)+" MB");
         
         PreDetectionThread pdt = new PreDetectionThread(imp);
+        
+        
         
         JCuda.cudaMemGetInfo(memfree, memtot);
         
@@ -572,9 +587,11 @@ public class LocalizationMultiEmitterPipeline_ {
         
         ImagePlus imp;
         
-        int maxRead=1000;//variable to block the program if the number of opened images is too big and use too much memory
+        
         
         Predetection_ predGPU;
+        
+        
         PreDetectionThread(ImagePlus imp){
             
             this.imp=imp;
@@ -583,17 +600,18 @@ public class LocalizationMultiEmitterPipeline_ {
             predGPU=new Predetection_(sizeImage,dp,minZ, maxZ, stepZ,thresholdCrossCorrelation);
             psfPredetection=predGPU.getPSFNonNormalized();
             rangePredetection=predGPU.getRange();
+            int ssize=predGPU.getSizeImageCrossCorrel();
+            resultCrossCorrelation= new float [maxRead][rangePredetection.length][ssize][ssize];
             
-            
-            
+            for( int i=0;i<maxRead;i++){
+                freePositCrossCorrelation.add(i);
+            }
             
             
             
         }
         
-        void setLimit(int maxImageNumberInMemory){
-            this.maxRead=maxImageNumberInMemory;
-        }
+        
         
         
         
@@ -612,10 +630,8 @@ public class LocalizationMultiEmitterPipeline_ {
                 
             }
             
-            
             loop:for (int z=1;z<=nbImage;z++){
-                //IJ.log("image detection: "+(z-1));
-                lolo:while (imageInBuffer.size()>maxRead){
+                lolo:while (freePositCrossCorrelation.size()==0){
                     try{
                         Thread.sleep(10);
                         
@@ -633,7 +649,8 @@ public class LocalizationMultiEmitterPipeline_ {
                         lock.lock();
                         totNumberImagePreDetected=sliceNumber;
                         imageInBuffer.clear();
-                        
+                        frameNameInBuffer.clear();
+                        crossCorrelationInBuffer.clear();
                         
                     }
                     finally{
@@ -641,14 +658,18 @@ public class LocalizationMultiEmitterPipeline_ {
                     }
                     break loop;
                 }
-                
+                IJ.log("predetection start");
                 ImageProcessor ip;
+                String theName="default";
                 if (stacked){
                     ip = ims[0].getProcessor(z);
+                    theName = ims[0].getSliceLabel(z);
                 }
                 else{
                     imp.setSlice(z);
                     ip = imp.getProcessor();
+                    
+                    theName=imp.getStack().getSliceLabel(z);
                 }
 
                 image[z-1]=new double[width][height];
@@ -671,14 +692,14 @@ public class LocalizationMultiEmitterPipeline_ {
 
                     
 
-
                 //ImageShow.imshow(image[0][z-1]," im ");
                 //predetection on channel 0
 
                 predGPU.setImage(image[z-1]);
                 
-                
-                localMaxPosition[z-1]=predGPU.convolveNormalizedInFourierDomain();
+                int posit=freePositCrossCorrelation.get(0);
+                IJ.log("posit "+posit+"  "+resultCrossCorrelation[posit].length);
+                localMaxPosition[z-1]=predGPU.convolveNormalizedInFourierDomain(resultCrossCorrelation[posit]);
 
                 
                     
@@ -699,7 +720,10 @@ public class LocalizationMultiEmitterPipeline_ {
                         }
                     }
                     
+                    frameNameInBuffer.add(theName);
                     imageInBuffer.add(z-1);
+                    crossCorrelationInBuffer.add(posit);
+                    freePositCrossCorrelation.remove(0);
                     totNumberImagePreDetected++;
                 }
                 finally{
@@ -749,10 +773,12 @@ public class LocalizationMultiEmitterPipeline_ {
         double [] psf;
         
         int imageNumber=0;
-        
-        
+        String frameName="";
+        float [][][] crossCorrelation;
+        int positCrossCorrelation;
         boolean [][] mask ;
         double [] patch ;
+        double [][] scorecrosscorrel ;
         double [] patchscmos ;
         
         int threadNumber;
@@ -765,6 +791,7 @@ public class LocalizationMultiEmitterPipeline_ {
             mask = new boolean [width][height];
             
             patch =new double [sizePatch*sizePatch];
+            scorecrosscorrel =new double [sizePatch*sizePatch*rangePredetection.length][4];
             if (isSCMOS){
                 patchscmos=new double [sizePatch*sizePatch];
             }
@@ -807,7 +834,12 @@ public class LocalizationMultiEmitterPipeline_ {
                     if((imageInBuffer.size()>0)&&(!stopReading)){
                         imageReaden=true;
                         imageNumber=(int)imageInBuffer.get(0);
+                        frameName=frameNameInBuffer.get(0);
                         imageInBuffer.remove(0);
+                        frameNameInBuffer.remove(0);
+                        positCrossCorrelation=crossCorrelationInBuffer.get(0);
+                        crossCorrelation=resultCrossCorrelation[positCrossCorrelation];
+                        crossCorrelationInBuffer.remove(0);
                     }
                 }
                 catch(Exception ee){
@@ -957,7 +989,7 @@ public class LocalizationMultiEmitterPipeline_ {
                                     //loc[partNumber][threadNumber].init(AandB[0], AandB[1], -vect[maxsP][5], -vect[maxsP][6], rangePredetection[maxs[1]]+vect[maxsP][4]);
                                     //IJ.log("A/B "+AandB[0]+"  "+AandB[1]);
                                     
-                                    int nb=2000;
+                                    int nb=1000;
                                     double [] aList=new double [nb];
                                     double [] bList=new double [nb];
                                     double [] xList=new double [nb];
@@ -970,54 +1002,62 @@ public class LocalizationMultiEmitterPipeline_ {
                                     positionPointerNeighbor[0]=maxsP+1;
                                     localMaxima.add(maxsP);
                                     //IJ.log("init  (x,y,z): "+(-((maxs[2]-vect[maxsP][2])*dpPart[partNumber].param.xystep+vect[maxsP][5]))+"    "+(-((maxs[3]-vect[maxsP][3])*dpPart[partNumber].param.xystep+vect[maxsP][6]))+"    "+(rangePredetection[(int)Math.round(vect[maxsP][1])]+vect[maxsP][4]));
-                                    IJ.log("init  (x,y,z): "+maxs[2]+"  "+maxs[3]+"  "+rangePredetection[(int)Math.round(vect[maxsP][1])]);
-
-                                    int numbtmp=myGetMaxClosedPositions(vect,maxs[2],maxs[3],mask,positionPointerNeighbor,width,height);
-                                    
-                                    while (numbtmp>=0){
-                                        localMaxima.add(numbtmp);
-                                        numbtmp=myGetMaxClosedPositions(vect,maxs[2],maxs[3],mask,positionPointerNeighbor,width,height);
-                                        if (numbtmp>=0){
-                                            //IJ.log("neighbor(x,y,z): "+(-((maxs[2]-vect[numbtmp][2])*dpPart[partNumber].param.xystep+vect[numbtmp][5]))+"    "+(-((maxs[3]-vect[numbtmp][3])*dpPart[partNumber].param.xystep+vect[numbtmp][6]))+"    "+(rangePredetection[(int)Math.round(vect[numbtmp][1])]+vect[numbtmp][4]));
-                                            IJ.log("init  (x,y,z): "+vect[numbtmp][2]+"  "+vect[numbtmp][3]+"  "+rangePredetection[(int)Math.round(vect[numbtmp][1])]);
+                                    //IJ.log("init  (x,y,z): "+maxs[2]+"  "+maxs[3]+"  "+rangePredetection[(int)Math.round(vect[maxsP][1])]);
+                                    //IJ.log("maxs[0] "+maxs[0]);
+                                    for (int r=0;r<rangePredetection.length;r++){
+                                        for (int p=0;p<sizePatch;p++){
+                                            for (int pp=0;pp<sizePatch;pp++){
+                                                scorecrosscorrel[r*sizePatch*sizePatch+p*sizePatch+pp][0]=crossCorrelation[r][maxs[2]+p-sizePatch/2][maxs[3]+pp-sizePatch/2];
+                                                scorecrosscorrel[r*sizePatch*sizePatch+p*sizePatch+pp][1]=r;
+                                                scorecrosscorrel[r*sizePatch*sizePatch+p*sizePatch+pp][2]=p;
+                                                scorecrosscorrel[r*sizePatch*sizePatch+p*sizePatch+pp][3]=pp;
+                                            }
                                         }
                                     }
+                                    Arrays.sort(scorecrosscorrel, new Comparator<double[]>() {
+                                        @Override
+                                        public int compare(double[] o1, double[] o2) {
+                                            return ((Double) o2[0]).compareTo(o1[0]);
+                                        }
+                                    });
+                                    int lastindex=1;
+                                    looper:for (;lastindex<rangePredetection.length*sizePatch*sizePatch;lastindex++){
+                                        if (scorecrosscorrel[lastindex][0]>thresholdCrossCorrelation){
+                                            //if (scorecrosscorrel[lastindex][0]>maxs[0]/2){
+                                                scorecrosscorrel[lastindex][0]+=scorecrosscorrel[lastindex-1][0];
+                                            //}
+                                        }
+                                        else{
+                                            break looper;//we can break to increase speed since the vector is sorted
+                                        }
+                                    }
+                                    lastindex--;
+                                    double scoresum=scorecrosscorrel[lastindex][0];
                                     
-                                    IJ.log("Number in local neighborhood: "+localMaxima.size());
-                                    
-                                    double randNM=1;
                                     for (int nbt=0;nbt<nb;nbt++){
+                                        //weighted random position from cross correlation
+                                        double rand=Math.random()*scoresum;
+                                        int currentindex=0;
+                                        while (rand>scorecrosscorrel[currentindex][0]){
+                                            currentindex++;
+                                        }
+                                        //aList[nbt]=AandB[0]/numberPSFperModel;
+                                        //bList[nbt]=AandB[1]/numberPSFperModel;
                                         aList[nbt]=AandB[0]/numberPSFperModel;
-                                        bList[nbt]=AandB[1]/numberPSFperModel;
-                                        int localVariable=(int)Math.floor(Math.random()*localMaxima.size());
-                                        double xposit=-((maxs[2]-vect[localVariable][2])*dpPart[partNumber].param.xystep+vect[localVariable][5]);
-                                        double yposit=-((maxs[3]-vect[localVariable][3])*dpPart[partNumber].param.xystep+vect[localVariable][6]);
-                                        xList[nbt]=xposit+Math.random()*randNM-randNM/2;//randomly +-1µm
-                                        yList[nbt]=yposit+Math.random()*randNM-randNM/2;//randomly +-1µm
-                                        zList[nbt]=rangePredetection[(int)Math.round(vect[localVariable][1])]+vect[localVariable][4]+Math.random()*randNM-randNM/2;//randomly +-1µm
-                                        //xList[nbt]=-vect[maxsP][5]+Math.random()*4-2;//randomly +-2µm
-                                        //yList[nbt]=-vect[maxsP][6]+Math.random()*4-2;//randomly +-2µm
-                                        //zList[nbt]=rangePredetection[maxs[1]]+vect[maxsP][4]+Math.random()*4-2;//randomly +-2µm
-                                        //xList[nbt]=-vect[maxsP][5];//randomly +-.5µm
-                                        //yList[nbt]=-vect[maxsP][6];//randomly +-.5µm
-                                        //zList[nbt]=rangePredetection[maxs[1]]+vect[maxsP][4];//randomly +-.5µm
+                                        bList[nbt]=AandB[1];
+                                        
+                                        xList[nbt]=-((int)Math.round(scorecrosscorrel[currentindex][2])-sizePatch/2)*dpPart[partNumber].param.xystep;
+                                        yList[nbt]=-((int)Math.round(scorecrosscorrel[currentindex][3])-sizePatch/2)*dpPart[partNumber].param.xystep;
+                                        zList[nbt]=rangePredetection[(int)Math.round(scorecrosscorrel[currentindex][1])];
+                                        
                                         
                                     }
-                                    /*aList[0]=AandB[0]/numberPSFperModel;
-                                    bList[0]=AandB[1];
-                                    xList[0]=-vect[maxsP][5]-1;//randomly +-1µm
-                                    yList[0]=-vect[maxsP][6];//randomly +-1µm
-                                    zList[0]=rangePredetection[maxs[1]]+vect[maxsP][4];//randomly +-1µmaList[0]=AandB[0]/numberPSFperModel;
                                     
-                                    
-                                    aList[1]=AandB[0]/numberPSFperModel;
-                                    bList[1]=AandB[1];
-                                    xList[1]=-vect[maxsP][5]+1;//randomly +-1µm
-                                    yList[1]=-vect[maxsP][6];//randomly +-1µm
-                                    zList[1]=rangePredetection[maxs[1]]+vect[maxsP][4];//randomly +-1µm*/
                                     
                                     //loc[partNumber][threadNumber].init(aList, bList, xList, yList, zList, .5, sigmaGaussian/1000);
-                                    loc[partNumber][threadNumber].init(aList, bList, xList, yList, zList, 0, .5);
+                                    //loc[partNumber][threadNumber].initSorted(aList, bList, xList, yList, zList, 0, .5);
+                                    
+                                    loc[partNumber][threadNumber].initSorted(aList, bList, xList, yList, zList);
                                     
                                     
                                     //moyOffset+=(-vect[maxsP][5]);
@@ -1039,7 +1079,21 @@ public class LocalizationMultiEmitterPipeline_ {
                                         //ImageShow.imshow(loc[partNumber][threadNumber].mytest(),"mod "+zz+"   "+rangePredetection[maxs[1]]);
                                     //}
                                     //IJ.log("run "+partNumber+"  "+threadNumber+" ");
-                                    locate=loc[partNumber][threadNumber].localizeGeneticAlgorithm();
+                                    
+                                    
+                                    //locate=loc[partNumber][threadNumber].localizeCrossEntropy();
+                                    
+                                    //loc[partNumber][threadNumber].init(aList, bList, xList, yList, zList, 0, .5);
+                                    //loc[partNumber][threadNumber].bestLikelihood=Double.POSITIVE_INFINITY;
+                                    
+                                    //locate=loc[partNumber][threadNumber].localizeCrossEntropy();
+                                    
+                                    //loc[partNumber][threadNumber].setSubWindow(patch);
+                                    //loc[partNumber][threadNumber].init(aList, bList, xList, yList, zList, 0, .5);
+                                    
+                                    locate=loc[partNumber][threadNumber].localizeCrossEntropy();
+                                    
+                                    
                                     IJ.log("localization "+partNumber+"  "+threadNumber+"  ok");
                                     //else
                                     //    loc[partNumber][threadNumber].finishtest();
@@ -1084,6 +1138,8 @@ public class LocalizationMultiEmitterPipeline_ {
                                             double my_y2=1000*(maxs[3]*dpPart[partNumber].param.xystep-my_y[numPSF]);
                                             double my_z2=1000*(my_z[numPSF]);
                                             PLocalization p = new PLocalization(idLoc,imageNumber,my_x2,my_y2,my_z2,my_A[numPSF],my_B[numPSF],my_Score);
+                                            p.addListOfVariables_String(frameVariable);
+                                            p.setValueOtherVariable_String(0, frameName);
                                             fl.loc.add(p); 
                                         }
                                         
@@ -1175,7 +1231,12 @@ public class LocalizationMultiEmitterPipeline_ {
                     
                     try{
                         lock.lock();
-                            image[imageNumber]=null;
+                        
+                        freePositCrossCorrelation.add(positCrossCorrelation);
+                        
+                        
+                        
+                        image[imageNumber]=null;
                             
                         
                         stackloc.fl.add(fl);

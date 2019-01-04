@@ -6,18 +6,20 @@
 package org.pasteur.imagej.utils;
 
 import ij.IJ;
+import java.io.FileWriter;
+import java.io.PrintWriter;
 /**
  *
  * @author benoit
  */
 public class SplineFit {
     
-    double [] x;
-    double [] y;
+    public double [] x;
+    public double [] y;
     
-    int nbFit;
+    public int nbFit;
     
-    PolynomialFit [] pf;
+    public PolynomialFit [] pf;
     
     public SplineFit(double [] y,double [] x){
         this.x=new double[x.length];
@@ -76,7 +78,7 @@ public class SplineFit {
             }
         }
         if (!croissant){//tri bulle
-            IJ.log("WARNING... spline fit... data should be sorted... slow sort of data");
+            //IJ.log("WARNING... spline fit... data should be sorted... slow sort of data");
             double tmp;
             for (int i=0;i<this.x.length;i++){
                 for (int ii=1;ii<this.x.length-i;ii++){
@@ -96,6 +98,11 @@ public class SplineFit {
     }
     
     
+    public SplineFit(String jsonContent){
+    
+        this.fromString(jsonContent);
+        
+    }
     
     public void run(){
         
@@ -144,7 +151,9 @@ public class SplineFit {
                     y0[0][1]=y[id+1];
                     y0[0][2]=y[id+2];
                     y0[0][3]=y[id+3];
+                    //IJ.log("fit "+id+"  "+x[id]+"  "+y[id]+"     "+x[id+1]+"  "+y[id+1]+"     "+x[id+2]+"  "+y[id+2]+"     "+x[id+3]+"  "+y[id+3]);
                     pf[id]=new PolynomialFit(3,y0,x0);
+                    
                     pf[id].run();
                 }
             }
@@ -304,6 +313,71 @@ public class SplineFit {
     
     
     
+    
+    
+    
+    
+    
+    
+    
+    
+    public String toString(){
+        
+        JSONformat json = new JSONformat();
+        
+        json.put("x", x);
+        
+        json.put("y", x);
+        
+        String [] s = new String[pf.length];
+        
+        for (int i=0;i<pf.length;i++){
+            s[i]=pf[i].toString();
+        }
+        json.put("pf", s);
+
+        return json.toString();
+        
+            
+        
+    }
+    
+    public void fromString(String s){
+        
+        JSONformat json = new JSONformat();
+        json.fromString(s);
+        String [] sx = json.getVect("x");
+        String [] sy = json.getVect("y");
+        String [] spf = json.getVect("pf");
+        
+        this.nbFit=spf.length;
+        this.pf = new PolynomialFit[nbFit];
+        this.x = new double [sx.length];
+        this.y = new double [sy.length];
+        
+        
+        if (x.length!=y.length){
+            IJ.log("error vector size splineFit class string loading");
+        }
+        
+        for (int i=0;i<x.length;i++){
+            this.x[i]=Double.parseDouble(sx[i]);
+            this.y[i]=Double.parseDouble(sy[i]);
+        }
+        
+        
+        
+        for (int i=0;i<nbFit;i++){
+            pf[i]=new PolynomialFit();
+            pf[i].fromString(spf[i]);
+            
+        }
+        
+        
+        
+        
+        
+    }
     
     
     

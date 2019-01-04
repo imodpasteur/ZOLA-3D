@@ -58,6 +58,9 @@ public class Localization_ {
     double dx2;
     double dy2;
     double dz2;
+    
+    double [] zfocus;
+    
     PolynomialFit pf;
     
     double maxShift=50;//At one step, the maximum gradient shift is 50nm only
@@ -133,8 +136,10 @@ public class Localization_ {
         thetaA=new double[this.nbParam][this.size];
         thetaB=new double[this.nbParam];
         
-        
-            
+        zfocus=new double[nbParam];
+        for (int i=0;i<nbParam;i++){
+            zfocus[i]=dparam.param.Zfocus;
+        }
         
     }
     
@@ -162,6 +167,12 @@ public class Localization_ {
         modelPSF=new double [nbParam][width*height];
         thetaA=new double[this.nbParam][this.size];
         thetaB=new double[this.nbParam];
+        
+        zfocus=new double[nbParam];
+        for (int i=0;i<nbParam;i++){
+            zfocus[i]=dparam[i].param.Zfocus;
+        }
+        
         nbProcess=nbParam-1;
         if (nbParam>1){
             
@@ -234,7 +245,15 @@ public class Localization_ {
     
     
     
-    
+    public void init(double a, double b, double x, double y, double zfocus, double z,double minZ,double maxZ){
+        this.minZ=minZ;
+        this.maxZ=maxZ;
+        
+        for (int i=0;i<this.nbParam;i++){
+            this.zfocus[i]=zfocus;
+        }
+        init(a, b, x, y, z);
+    }
     
     public void init(double a, double b, double x, double y, double z){
         
@@ -249,6 +268,13 @@ public class Localization_ {
         this.thetaZ=z;
         
         
+    }
+    
+    public void init(double [][] a, double [] b, double x, double y, double [] zfocus,double z){
+        for (int i=0;i<this.nbParam;i++){
+            this.zfocus[i]=zfocus[i];
+        }
+        init(a, b, x, y, z);
     }
     
     public void init(double [][] a, double [] b, double x, double y, double z){
@@ -343,7 +369,7 @@ public class Localization_ {
     
     
     
-    public void finish(){
+    public void finish1(){
         
         double lik=0;
         for (int s=0;s<this.size;s++){
@@ -387,8 +413,19 @@ public class Localization_ {
                 
             }
         }
-            
+        
+        likelihood=lik;
+        
         this.computeCRLB();
+        
+    }
+    
+    
+    
+    
+    public void finish2(){
+        
+        
 
         dparam[0].modelMany.freePosit(id[0]);
         for (int p=1;p<this.nbParam;p++){
@@ -398,6 +435,8 @@ public class Localization_ {
         
         
     }
+    
+    
     
     
     
@@ -532,7 +571,16 @@ public class Localization_ {
     }
     
     
+    
+    
     public boolean localize(){
+        
+        boolean b=localizeWithoutFinishing();
+        finish2();
+        return b;
+    }
+    
+    public boolean localizeWithoutFinishing(){
         
                 
         testPhotonNumber();
@@ -558,11 +606,11 @@ public class Localization_ {
         //IJ.log("theta A init "+thetaA[0][0]);
         //improve initialization of photon number
         
-        likelihood=this.minimizeA();
-        testPhotonNumber();
+        
         likelihood=this.minimizeB();
         testPhotonNumber();
-        
+        likelihood=this.minimizeA();
+        testPhotonNumber();
         
         
         //IJ.log("theta A first "+thetaA[0][0]);
@@ -581,11 +629,11 @@ public class Localization_ {
             
             
             
-            likelihood=this.minimize(false,false,true,likelihood); 
             
             //for (int u=0;u<nbParam;u++){
             //    IJ.log("min Z ok cam:"+u+"  id:"+id[u]);
             //}
+            likelihood=this.minimize(false,false,true,likelihood); 
             
             if ((thetaZ<minZ)){
                 thetaZ=minZ;
@@ -690,7 +738,8 @@ public class Localization_ {
         }
         
         
-        this.finish();
+        
+        finish1();
         
         
         return !break4phCount;
@@ -710,7 +759,7 @@ public class Localization_ {
         if (this.withregistration){
             
             if (idParam==0){
-                lik=dparam[idParam].modelMany.getLikelihood(id[idParam], x, y,dparam[idParam].param.Zfocus, z, a, b);
+                lik=dparam[idParam].modelMany.getLikelihood(id[idParam], x, y,zfocus[idParam], z, a, b);
             }
             else{
                 double x2, y2, z2;
@@ -745,13 +794,13 @@ public class Localization_ {
                 x2=-(x2-this.decX);
                 y2=-(y2-this.decY);
                 
-                lik=dparam[idParam].modelMany.getLikelihood(id[idParam], x2, y2,dparam[idParam].param.Zfocus, z2, a, b);
+                lik=dparam[idParam].modelMany.getLikelihood(id[idParam], x2, y2,zfocus[idParam], z2, a, b);
             }
             
             
         }
         else{
-            lik=dparam[idParam].modelMany.getLikelihood(id[idParam], x, y,dparam[idParam].param.Zfocus, z, a, b);
+            lik=dparam[idParam].modelMany.getLikelihood(id[idParam], x, y,zfocus[idParam], z, a, b);
         }
         
         
@@ -975,6 +1024,7 @@ public class Localization_ {
     
     
     double minimizeB(){
+        double h=.01;
         double [] lik=new double [nbParam];
         double [] lik1=new double [nbParam];
         double [] lik2=new double [nbParam];
@@ -1092,12 +1142,7 @@ public class Localization_ {
             else{
                 grad[p]=((lik3[p]-lik1[p])/(2*h))/Math.abs((lik3[p]+lik1[p]-2*lik2[p])/(h*h));
             }
-            if (grad[p]>maxShift){
-                grad[p]=maxShift;
-            }
-            else if (grad[p]<-maxShift){
-                grad[p]=-maxShift;
-            }
+            
         }
         
         loop:for (double gamma=1;gamma>.02;gamma/=10){
@@ -1167,6 +1212,7 @@ public class Localization_ {
     
     
     double minimizeA(){
+        double h=.1;
         likelihood=0;
         for (int s=0;s<this.size;s++){
             double [] lik=new double [nbParam];
@@ -1180,8 +1226,8 @@ public class Localization_ {
                 lik2[p]=0;
                 lik3[p]=0;
             }
-        
-        
+            
+            
             if (nbProcess>=1){
                 for (int p=1;p<this.nbParam;p++){
                     cl[p-1].setParameter(p,thetaX,thetaY,thetaZ,thetaA[p][s],thetaB[p]);
@@ -1288,12 +1334,7 @@ public class Localization_ {
                 else{
                     grad[p]=((lik3[p]-lik1[p])/(2*h))/Math.abs((lik3[p]+lik1[p]-2*lik2[p])/(h*h));
                 }
-                if (grad[p]>maxShift){
-                    grad[p]=maxShift;
-                }
-                else if (grad[p]<-maxShift){
-                    grad[p]=-maxShift;
-                }
+                
             }
 
             loop:for (double gamma=10;gamma>.02;gamma/=10){
@@ -1500,6 +1541,153 @@ public class Localization_ {
     }
     
     */
+    
+    
+    
+    
+    double empiricalSearch(boolean x, boolean y, boolean z,double step,double range){
+        
+        double lik2=0;
+        
+        for (int s=0;s<this.size;s++){
+            if (nbProcess>=1){
+                for (int p=1;p<this.nbParam;p++){
+                    cl[p-1].setParameter(p,thetaX,thetaY,thetaZ,thetaA[p][s],thetaB[p]);
+                }
+                
+                cpt=0;
+                synchronized(monitor0){
+                    for (int k=0;k<nbProcess;k++){
+                        synchronized(monitor1[k]){
+                            toBeblocked[k]=true;
+                            monitor1[k].notify();
+                        }
+                    }
+                    lik2+=getLikelihood(0,thetaX,thetaY,thetaZ,thetaA[0][s],thetaB[0]);
+                    
+                    try{
+                        monitor0.wait();
+                    }catch(Exception ee){IJ.log("error wait function "+ee);}
+                }
+                for (int k=0;k<nbProcess;k++){
+                    lik2+=cl[k].getGlobalLikelihood();
+                }
+            }
+            else{
+                lik2+=getLikelihood(0,thetaX,thetaY,thetaZ,thetaA[0][s],thetaB[0]);
+            }
+        }
+        
+        
+        
+        return empiricalSearch(x,y,z,lik2,step,range);
+    }
+    double empiricalSearch(boolean x, boolean y, boolean z,double prevLik,double step,double range){
+        
+        double variable=0;
+        
+        double save;
+        if (x){
+            save=thetaX;
+            variable=thetaX;
+            if (y||z){
+                IJ.log("ERROR... please choose only 1 boolean among X, Y and Z");
+            }
+        }
+        else if (y){
+            save=thetaY;
+            variable=thetaY;
+            if (z){
+                IJ.log("ERROR... please choose only 1 boolean among X, Y and Z");
+            }
+        }
+        else if (z){
+            save=thetaZ;
+            variable=thetaZ;
+        }
+        else{
+            IJ.log("ERROR... please choose correct boolean value");
+        }
+        
+        
+        for (double var=variable-range/2.;var<=variable+range/2;var+=step){
+            double lik=0;
+            for (int s=0;s<this.size;s++){
+                if (nbProcess>=1){
+                    for (int p=1;p<this.nbParam;p++){
+                        if (x){
+                            cl[p-1].setParameter(p,var,thetaY,thetaZ,thetaA[p][s],thetaB[p]);
+                        }
+                        else if (y){
+                            cl[p-1].setParameter(p,thetaX,var,thetaZ,thetaA[p][s],thetaB[p]);
+                        }
+                        else if (z){
+                            cl[p-1].setParameter(p,thetaX,thetaY,var,thetaA[p][s],thetaB[p]);
+                        }
+                    }
+                    cpt=0;
+                    synchronized(monitor0){
+                        for (int k=0;k<nbProcess;k++){
+                            synchronized(monitor1[k]){
+                                toBeblocked[k]=true;
+                                monitor1[k].notify();
+                            }
+                        }
+                        if (x){
+                            lik+=getLikelihood(0,var,thetaY,thetaZ,thetaA[0][s],thetaB[0]);
+                        }
+                        else if (y){
+                            lik+=getLikelihood(0,thetaX,var,thetaZ,thetaA[0][s],thetaB[0]);
+                        }
+                        else if (z){
+                            lik+=getLikelihood(0,thetaX,thetaY,var,thetaA[0][s],thetaB[0]);
+                        }
+
+
+                        try{
+                            monitor0.wait();
+                        }catch(Exception ee){IJ.log("error wait function "+ee);}
+                    }
+                    for (int k=0;k<nbProcess;k++){
+                        lik+=cl[k].getGlobalLikelihood();
+                    }
+                }
+                else{
+                    if (x){
+                        lik+=getLikelihood(0,var,thetaY,thetaZ,thetaA[0][s],thetaB[0]);
+                    }
+                    else if (y){
+                        lik+=getLikelihood(0,thetaX,var,thetaZ,thetaA[0][s],thetaB[0]);
+                    }
+                    else if (z){
+                        lik+=getLikelihood(0,thetaX,thetaY,var,thetaA[0][s],thetaB[0]);
+                    }
+
+                }
+            }
+
+            
+            
+
+
+
+            if (lik<prevLik){
+                prevLik=lik;
+                if (x){
+                    thetaX=var;
+                }
+                else if (y){
+                    thetaY=var;
+                }
+                else if (z){
+                    thetaZ=var;
+                }
+            }
+
+            
+        }
+        return prevLik;
+    }
     
     
     

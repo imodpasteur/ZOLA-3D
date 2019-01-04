@@ -46,6 +46,9 @@ public class PLocalization{
     public static ArrayList<String> otherVariableName;
     public double [] otherVariable=null;
     
+    public static ArrayList<String> otherVariableName_String;
+    public String [] otherVariable_String=null;
+    
     public boolean exists=false;
     
             
@@ -148,6 +151,17 @@ public class PLocalization{
     
     
     
+    public void addListOfVariables_String(ArrayList<String> al){
+        this.otherVariableName_String=al;
+        /*for (int i=0;i<al.size();i++){
+            this.otherVariableName.add(al.get(i));
+            
+        }*/
+        this.otherVariable_String=new String[al.size()];
+    }
+    
+    
+    
     /*public PLocalization(String s){
         
         String [] r = s.split(",");
@@ -215,6 +229,12 @@ public class PLocalization{
                 s+=getLabel_regex()+otherVariable[i];
             }
         }
+        
+        if (otherVariableName_String!=null){
+            for (int i=0;i<this.otherVariableName_String.size();i++){
+                s+=getLabel_regex()+otherVariable_String[i];
+            }
+        }
         return s;
         
         
@@ -276,6 +296,11 @@ public class PLocalization{
                 s+=getLabel_regex()+otherVariableName.get(i);
             }
         }
+        if (otherVariableName_String!=null){
+            for (int i=0;i<otherVariableName_String.size();i++){
+                s+=getLabel_regex()+otherVariableName_String.get(i);
+            }
+        }
         return s;
         
     }
@@ -300,10 +325,19 @@ public class PLocalization{
             case 13: return "driftZ";
             case 14: return "occurrenceMerging";
         }
+        int n=0;
         if (otherVariableName!=null){
             for (int i=0;i<otherVariableName.size();i++){
+                n++;
                 if ((number-15)==i){
                     return otherVariableName.get(i);
+                }
+            }
+        }
+        if (otherVariableName_String!=null){
+            for (int i=0;i<otherVariableName_String.size();i++){
+                if ((number-15-n)==i){
+                    return otherVariableName_String.get(i);
                 }
             }
         }
@@ -312,11 +346,14 @@ public class PLocalization{
     
     
     public static int getNumberVariable(){
+        int n=15;
         if (otherVariableName!=null)
-            return 15+otherVariableName.size();
-        else
-            return 15;
+            n+=otherVariableName.size();
+        if (otherVariableName_String!=null)
+            n+=otherVariableName_String.size();
+        return n;
     }
+    
     
     public void setValueVariable(int variable,double value){
         switch (variable) {
@@ -384,6 +421,18 @@ public class PLocalization{
             return otherVariableName.size();
         else
             return 0;
+    }
+    
+    public static int getNumberOtherVariable_String(){
+        if (otherVariableName_String!=null)
+            return otherVariableName_String.size();
+        else
+            return 0;
+    }
+    
+    public void setValueOtherVariable_String(int numberOtherVariable,String value){
+        
+        otherVariable_String[numberOtherVariable]=value;
     }
     
     public void setValueOtherVariable(int numberOtherVariable,double value){
@@ -487,7 +536,7 @@ public class PLocalization{
     
     public PLocalization copy(){
         PLocalization p = new PLocalization(id,frame,X,Y, Z, I,BG,score,crlb_X,crlb_Y,crlb_Z,drift_X,drift_Y,drift_Z,occurrence);
-        if (otherVariableName.size()>0){
+        if ((otherVariableName!=null)&&(otherVariableName.size()>0)){
             p.addListOfVariables(otherVariableName);
             for (int i=0;i<otherVariableName.size();i++){
                 p.setValueOtherVariable(i, otherVariable[i]);
