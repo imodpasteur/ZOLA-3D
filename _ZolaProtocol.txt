@@ -1,0 +1,12 @@
+Reconstruction
+Calibration path:
+Localization path:.csv
+Reconstruction time:1.5188833333333334 min
+distance focus to coverslip:0.0
+Refractive index medium:1.33
+frame number:27765
+frame reconstructed:1291
+Reconstruction aborted:true
+localization number: 40487
+patch size: 16
+

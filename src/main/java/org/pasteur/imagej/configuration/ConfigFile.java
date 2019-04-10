@@ -59,7 +59,8 @@ public class ConfigFile {
         "Plugins>ZOLA>additional tools>wobble correction, \"calibration\", org.pasteur.imagej.ZOLA(\"zola_wobblecalibration\")\n"+
         "Plugins>ZOLA>additional tools>wobble correction, \"correction\", org.pasteur.imagej.ZOLA(\"zola_wobblecorrection\")\n",
         
-        "Plugins>ZOLA>Visualization, \"frame color coding\", org.pasteur.imagej.ZOLA(\"zola_timeRendering\")\n",
+        "Plugins>ZOLA>Visualization, \"frame color coding\", org.pasteur.imagej.ZOLA(\"zola_timeRendering\")\n"+
+        "Plugins>ZOLA>Visualization, \"scatter_plot\", org.pasteur.imagej.ZOLA(\"zola_scatterPlot\")\n",
         
     "Plugins>ZOLA>dev, \"Multi-emitter localization\", org.pasteur.imagej.ZOLA(\"zola_multi-emitter localization\")\n" +
 "Plugins>ZOLA>dev, \"test\", org.pasteur.imagej.ZOLA(\"zola_test\")\n" +
@@ -82,7 +83,7 @@ public class ConfigFile {
         "Drift correction using fiducial markers (alpha) :",
         "Statistics: histograms/mean particle attach time :",
         "Wobble correction :",
-        "Visualization: frame color coding :",
+        "Visualization: additional color rendering :",
         "developpement (prototype: not recommended) :",
         };
                 

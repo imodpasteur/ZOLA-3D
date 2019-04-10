@@ -82,6 +82,7 @@ public class SearchPSFcenter_ {
     
     double getMinRangeCRLB(double minZ, double maxZ, double stepZ){
         
+        //IJ.log("min max "+minZ+"  "+maxZ+"  "+stepZ+"  "+axialRange);
         
         axialRange/=2;
 
@@ -114,13 +115,48 @@ public class SearchPSFcenter_ {
             double [] res=this.computeFisher(0, 0, u, .0005);
             crlb[nb]=Math.sqrt(res[0]*res[0]+res[1]*res[1]);
 //            crlbX[nb]=u;
-//            IJ.log("crlb[nb] "+nb+"  "+crlb[nb]+"  "+crlb.length+"  "+crlbX.length);
+            //IJ.log(""+u+"  "+crlb[nb]+"  "+res[0]+"  "+res[1]);
             
             nb++;
         }
         
         double minivalue=Double.POSITIVE_INFINITY;
         double miniposit=0;
+        nb=(int)(axialRange/(2*stepZ));
+        //IJ.log("NB INIT "+nb);
+        for (double u=minZ;u<maxZ;u+=stepZ){
+            double CRLB=0;
+            int nb2=-(int)(axialRange/(2*stepZ));
+            for (double i=-axialRange/(2);i<=axialRange/(2);i+=stepZ){
+                //IJ.log("nb nb2 "+nb+ "  "+nb2+"  "+i+"  "+crlb.length+"  "+axialRange/(2));
+                CRLB+=crlb[nb+nb2];
+                nb2++;
+                
+            }
+            //IJ.log(""+u+"  "+crlb[nb]+"  "+CRLB+"  "+nb2);
+///////////////////////
+//            dp.psf.computePSF(0, 0, dp.param.Zfocus,u);
+//            im[k]=dp.psf.getPSF();
+//            crlbtmp[k]=CRLB;
+//            x_abs[k]=u;
+//            k++;
+////////////////////
+            
+            
+            if (minivalue>CRLB){
+                minivalue=CRLB;
+                miniposit=u;
+            }
+            nb++;
+            
+        }
+        //IJ.log("miniposit "+miniposit);
+        
+        /*double maxiLeft=Double.NEGATIVE_INFINITY;
+        double maxiRight=Double.NEGATIVE_INFINITY;
+        boolean left=true;
+        double minipositLeft=0;
+        double minipositRight=0;
         nb=(int)(axialRange/(2*stepZ));
 //        IJ.log("NB INIT "+nb);
         for (double u=minZ;u<maxZ;u+=stepZ){
@@ -147,7 +183,7 @@ public class SearchPSFcenter_ {
             nb++;
             
         }
-        
+        */
 ////////////////////
 //        ImageShow.imshow(im,"psf");
 //        this.plot(x_abs, crlbtmp,"CRLB(X)","Z (µm)","sigma (µm), min="+miniposit);

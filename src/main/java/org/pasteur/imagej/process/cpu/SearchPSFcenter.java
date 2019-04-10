@@ -120,22 +120,17 @@ public class SearchPSFcenter {
         double minivalue=Double.POSITIVE_INFINITY;
         double miniposit=0;
         nb=(int)(axialRange/(2*stepZ));
-//        IJ.log("NB INIT "+nb);
+        //IJ.log("NB INIT "+nb);
         for (double u=minZ;u<maxZ;u+=stepZ){
             double CRLB=0;
-            int nb2=0;
-            for (double i=-axialRange/2;i<=axialRange/2;i++){
+            int nb2=-(int)(axialRange/(2*stepZ));
+            for (double i=-axialRange/(2);i<=axialRange/(2);i+=stepZ){
+                //IJ.log("nb nb2 "+nb+ "  "+nb2+"  "+i+"  "+crlb.length+"  "+axialRange/(2));
                 CRLB+=crlb[nb+nb2];
                 nb2++;
+                
             }
             
-///////////////////////
-//            dp.psf.computePSF(0, 0, dp.param.Zfocus,u);
-//            im[k]=dp.psf.getPSF();
-//            crlbtmp[k]=CRLB;
-//            x_abs[k]=u;
-//            k++;
-////////////////////
             
             
             if (minivalue>CRLB){

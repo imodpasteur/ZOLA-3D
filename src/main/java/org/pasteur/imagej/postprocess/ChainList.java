@@ -17,6 +17,7 @@ import java.util.Comparator;
  */
 public class ChainList {
     
+        public int index;
         public int framePrevious;
         public int frameNext;
         public int locPrevious;
@@ -103,38 +104,49 @@ public class ChainList {
                                                 distXY=dXY;
                                                 idclosest[0]=i+1;
                                                 idclosest[1]=jj;
+                                                condens[idNext][jj].index=i+1+dec;
                                                 condens[idNext][jj].foundPrevious=true;
                                                 condens[idNext][jj].framePrevious=id;
                                                 condens[idNext][jj].locPrevious=ii;
                                                 condens[idNext][jj].distPrevious=dist;
-
+                                                
+                                                condens[id][ii].index=i;
                                                 condens[id][ii].foundNext=true;
                                                 condens[id][ii].frameNext=idNext;
                                                 condens[id][ii].locNext=jj;
                                                 condens[id][ii].distNext=dist;
+                                                
+                                                
+                                                
                                                 found=true;
                                                 condenseNumber++;
                                             }
-                                            else if (condens[idNext][jj].distPrevious>dist){
-                                                int [] pToRecompute = new int[2];
-                                                pToRecompute[0]=condens[idNext][jj].framePrevious;
-                                                pToRecompute[1]=condens[idNext][jj].locPrevious;
+                                            else if (condens[idNext][jj].distPrevious>d){////////////////////////dist or d ?************
+                                                int [] pToRecompute = new int[3];
+                                                pToRecompute[0]=condens[idNext][jj].index;
+                                                pToRecompute[1]=condens[idNext][jj].framePrevious;
+                                                pToRecompute[2]=condens[idNext][jj].locPrevious;
                                                 positionToRecompute.add(pToRecompute);
-                                                condens[pToRecompute[0]][pToRecompute[1]].foundNext=false;
+                                                condens[pToRecompute[1]][pToRecompute[2]].foundNext=false;
                                                 dist=d;
                                                 distZ=dZ;
                                                 distXY=dXY;
                                                 idclosest[0]=i+1;
                                                 idclosest[1]=jj;
+                                                condens[idNext][jj].index=i+1+dec;
                                                 condens[idNext][jj].foundPrevious=true;
                                                 condens[idNext][jj].framePrevious=id;
                                                 condens[idNext][jj].locPrevious=ii;
                                                 condens[idNext][jj].distPrevious=dist;
 
+                                                condens[id][ii].index=i;
                                                 condens[id][ii].foundNext=true;
                                                 condens[id][ii].frameNext=idNext;
                                                 condens[id][ii].locNext=jj;
                                                 condens[id][ii].distNext=dist;
+                                                
+                                                
+                                                
                                                 found=true;
                                             }
                                         }
@@ -153,10 +165,11 @@ public class ChainList {
         
         //IJ.showProgress(.5);
         
-        for (int i=0;i<positionToRecompute.size();i++){
+        for (int ip=0;ip<positionToRecompute.size();ip++){
             //IJ.showProgress(.5+.1*(float)i/(float)positionToRecompute.size());
-            int id=positionToRecompute.get(i)[0];
-            int ii=positionToRecompute.get(i)[1];
+            int i=positionToRecompute.get(ip)[0];
+            int id=positionToRecompute.get(ip)[1];
+            int ii=positionToRecompute.get(ip)[2];
             
             PLocalization p=sl1.fl.get(id).loc.get(ii);
             x=p.X;
@@ -187,37 +200,47 @@ public class ChainList {
                                             distXY=dXY;
                                             idclosest[0]=i+1;
                                             idclosest[1]=jj;
+                                            condens[idNext][jj].index=i+1+dec;
                                             condens[idNext][jj].foundPrevious=true;
                                             condens[idNext][jj].framePrevious=id;
                                             condens[idNext][jj].locPrevious=ii;
                                             condens[idNext][jj].distPrevious=dist;
 
+                                            condens[id][ii].index=i;
                                             condens[id][ii].foundNext=true;
                                             condens[id][ii].frameNext=idNext;
                                             condens[id][ii].locNext=jj;
                                             condens[id][ii].distNext=dist;
+                                            
+                                            
+                                            
                                             found=true;
                                         }
-                                        else if (condens[idNext][jj].distPrevious>dist){
-                                            int [] pToRecompute = new int[2];
-                                            pToRecompute[0]=condens[idNext][jj].framePrevious;
-                                            pToRecompute[1]=condens[idNext][jj].locPrevious;
+                                        else if (condens[idNext][jj].distPrevious>d){
+                                            int [] pToRecompute = new int[3];
+                                            pToRecompute[0]=condens[idNext][jj].index;
+                                            pToRecompute[1]=condens[idNext][jj].framePrevious;
+                                            pToRecompute[2]=condens[idNext][jj].locPrevious;
                                             positionToRecompute.add(pToRecompute);
-                                            condens[pToRecompute[0]][pToRecompute[1]].foundNext=false;
+                                            condens[pToRecompute[1]][pToRecompute[2]].foundNext=false;
                                             dist=d;
                                             distZ=dZ;
                                             distXY=dXY;
                                             idclosest[0]=i+1;
                                             idclosest[1]=jj;
+                                            condens[idNext][jj].index=i+1+dec;
                                             condens[idNext][jj].foundPrevious=true;
                                             condens[idNext][jj].framePrevious=id;
                                             condens[idNext][jj].locPrevious=ii;
                                             condens[idNext][jj].distPrevious=dist;
 
+                                            condens[id][ii].index=i;
                                             condens[id][ii].foundNext=true;
                                             condens[id][ii].frameNext=idNext;
                                             condens[id][ii].locNext=jj;
                                             condens[id][ii].distNext=dist;
+                                            
+                                            
                                             found=true;
                                         }
                                     }

@@ -1088,7 +1088,9 @@ public class LocalizationPipeline_ {
                                                         double my_crlbx=(1000*loc[partNumber][threadNumber].getCRLBX());
                                                         double my_crlby=(1000*loc[partNumber][threadNumber].getCRLBY());
                                                         double my_crlbz=(1000*loc[partNumber][threadNumber].getCRLBZ());
-
+                                                        
+                                                        
+                                                        
                                                         /*double spx=Math.floor(100* my_x)/100;
 
                                                         double spy=Math.floor(100* my_y)/100;

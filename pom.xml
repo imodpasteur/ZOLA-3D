@@ -14,12 +14,12 @@
 
 	<groupId>org.pasteur</groupId>
 	<artifactId>ZOLA_</artifactId>
-	<version>0.2.2-SNAPSHOT</version>
+	<version>0.2.4-SNAPSHOT</version>
 
 	<name>ZOLA</name>
 	<description>An ImageJ plugin for 3D localization microscopy.</description>
 	<url>https://research.pasteur.fr/en/team/imaging-and-modeling/</url>
-	<inceptionYear>2017</inceptionYear>
+	<inceptionYear>2018</inceptionYear>
 	<organization>
 		<name>Institut Pasteur</name>
 		<url>http://www.pasteur.fr/</url>

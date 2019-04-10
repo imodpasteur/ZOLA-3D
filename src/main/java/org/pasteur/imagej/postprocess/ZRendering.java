@@ -25,6 +25,11 @@ import java.io.File;
 import java.io.FileWriter;
 import java.io.PrintWriter;
 import java.util.ArrayList;
+import ij.LookUpTable;
+
+import ij.plugin.LutLoader;
+import ij.process.LUT;
+
 /**
  * Simple rendering using scatter plot. If there is any molecule at the pixel
  * location, the pixel value will be a constant positive number and zero
@@ -35,8 +40,42 @@ public class ZRendering {
     public static String nameHistPlot="3D histogram";
     public static String nameScatterPlot="3D scatter plot";
     
-    private static String lut="ZOLA.lut";
+    private static String pathLutFolder=IJ.getDirectory("startup")+"luts"+File.separator;
+    public static String lut="ZOLA.lut";
     private static String lut2="ZOLA2.lut";
+    
+    
+    public static String [] getFijiLUTs(){
+        
+        String [] liste=null;
+        try{
+            
+            File file = new File(pathLutFolder);
+            if (!file.exists()){
+                IJ.log("The 'luts' folder not found in the ImageJ folder");
+                return null;
+            }
+            liste = file.list();
+            int count=0;
+            for (int i=0; i<liste.length; i++) {
+                if (liste[i].endsWith(".lut")) {
+                    try{
+                        LUT lut=LutLoader.openLut(pathLutFolder+liste[i]);
+                        count++;
+                    }catch(Exception e ){}
+                    
+                }
+            }
+            return liste;
+        }
+        catch(Exception e2){}
+        
+        return null;
+    }
+    
+    
+    
+    
     
     
     public static void makeLUT(){
@@ -152,6 +191,7 @@ public class ZRendering {
     
     
     public static ImagePlus scatter2D(StackLocalization sl,double pixelsizeNM,boolean color) {
+        ZRendering.makeLUT();
         double binColor=256;
         double minX=Double.POSITIVE_INFINITY;
         double maxX=Double.NEGATIVE_INFINITY;
@@ -204,6 +244,7 @@ public class ZRendering {
     
     
     public static ImagePlus scatter2D(StackLocalization sl,double pixelsizeNM,double minX, double maxX, double minY, double maxY,double minZ, double maxZ,boolean color) {
+        ZRendering.makeLUT();
         if (maxZ-minZ<pixelsizeNM){
             maxZ=minZ+pixelsizeNM;
         }
@@ -286,8 +327,12 @@ public class ZRendering {
     
     
     
+    
+    
+    
+    //scatter 3D plot according to selected variable (by default Z position)
     public static ImagePlus scatter3D(StackLocalization sl,double pixelsizeNM,boolean color) {
-        
+        ZRendering.makeLUT();
         double minX=Double.POSITIVE_INFINITY;
         double maxX=Double.NEGATIVE_INFINITY;
         
@@ -331,11 +376,20 @@ public class ZRendering {
             }
         }
         
-        return scatter3D(sl,pixelsizeNM,minX,maxX,minY,maxY,minZ,maxZ,color);
+        return scatter3D(sl,pixelsizeNM,minX,maxX,minY,maxY,minZ,maxZ,-1);
         
     }
-    public static ImagePlus scatter3D(StackLocalization sl,double pixelsizeNM,double minX, double maxX, double minY, double maxY,double minZ, double maxZ,boolean color) {
-        
+    
+    
+    
+    
+    
+    public static ImagePlus scatter3D(StackLocalization sl,double pixelsizeNM,double minX, double maxX, double minY, double maxY,double minZ, double maxZ) {
+        return scatter3D(sl,pixelsizeNM,minX,maxX,minY,maxY,minZ,maxZ,-1);
+    }
+    
+    public static ImagePlus scatter3D(StackLocalization sl,double pixelsizeNM,double minX, double maxX, double minY, double maxY,double minZ, double maxZ,int idVariable) {
+        ZRendering.makeLUT();
         if (maxZ-minZ<pixelsizeNM){
             maxZ=minZ+pixelsizeNM;
         }
@@ -346,8 +400,34 @@ public class ZRendering {
             maxX=minX+pixelsizeNM;
         }
         
+        if (idVariable<0){
+            idVariable=4;//Z by default
+        }
+        
+        double minV=Double.POSITIVE_INFINITY;
+        double maxV=Double.NEGATIVE_INFINITY;
+        
+        
+        double v;
+        
+        //get min and max of selected variable
+        for (int i=0;i<sl.fl.size();i++){
+            for (int j=0;j<sl.fl.get(i).loc.size();j++){
+                if (sl.fl.get(i).loc.get(j).exists){
+                    v=sl.fl.get(i).loc.get(j).getValueVariable(idVariable);
+                    
+                    if (v<minV){
+                        minV=v;
+                    }
+                    if (v>maxV){
+                        maxV=v;
+                    }
+                }
+            }
+        }
+        
         ZRendering.makeLUT();
-        double binColor=256;
+        double binColor=255;
         
         double x;
         double y;
@@ -381,6 +461,7 @@ public class ZRendering {
                     x=sl.fl.get(i).loc.get(j).X;
                     y=sl.fl.get(i).loc.get(j).Y;
                     z=sl.fl.get(i).loc.get(j).Z;
+                    v=sl.fl.get(i).loc.get(j).getValueVariable(idVariable);
                     if (z<minZ){
                         z=minZ;
                     }
@@ -392,17 +473,8 @@ public class ZRendering {
                     //z=Math.min(Math.max((int)((z-minZ)/pixelsizeNM),0),depth-1);
                     int zzz=(int)Math.min(Math.max((int)((z-minZ)/pixelsizeNM),0),depth-1);
                     if ((zzz>=0)&&(zzz<ip.length)&&(x>=0)&&(x<width)&&(y>=0)&&(y<height)){
-                        if (Math.abs(maxZ-minZ)<.000000000000000001){
-                            ip[zzz].putPixelValue((int)x, (int)y, 1);
-                        }
-                        else{
-                            if (color){
-                                ip[zzz].putPixelValue((int)x, (int)y, (z-minZ)+((maxZ-minZ)/binColor));
-                            }
-                            else{
-                                ip[zzz].putPixelValue((int)x, (int)y, 1);
-                            }
-                        }
+                        ip[zzz].putPixelValue((int)x, (int)y, (v-minV+1));
+                            
                     }
                     
                 }
@@ -413,14 +485,12 @@ public class ZRendering {
         }
         ImagePlus imp = new ImagePlus(""+nameScatterPlot+" "+pixelsizeNM+"nm per px",ims);
         imp.show();
-        if (color){
-            try{
-                Thread.sleep(200);
-                IJ.run("ZOLA");
-            }
-            catch(Exception e){}
+        try{
+            Thread.sleep(200);
+            IJ.run("ZOLA");
         }
-        IJ.setMinAndMax(imp, 0, maxZ-minZ+(1./binColor));
+        catch(Exception e){}
+        IJ.setMinAndMax(imp, 0, maxV-minV+1+((maxZ-minZ)/binColor));
         return imp;
     }
 
@@ -698,26 +768,54 @@ public class ZRendering {
             }
         }
         
-        return colorRendering(imp,sl,pixelsizeNM,minX,maxX,minY,maxY,minZ,maxZ,shift,Double.POSITIVE_INFINITY,Double.POSITIVE_INFINITY,Double.POSITIVE_INFINITY,Double.POSITIVE_INFINITY,printLUT);
+        return colorRendering(imp,sl,pixelsizeNM,minX,maxX,minY,maxY,minZ,maxZ,shift,Double.POSITIVE_INFINITY,Double.POSITIVE_INFINITY,Double.POSITIVE_INFINITY,Double.POSITIVE_INFINITY,printLUT,ZRendering.lut);
         
     }
-    
-    
-    
     
     public static ImagePlus colorRendering(ImagePlus imp,StackLocalization sl,double pixelsizeNM,double minX, double maxX, double minY, double maxY,double minZ,double maxZ,int shift,boolean printLUT) {
         
         ZRendering.makeLUT();
         
         
-        return colorRendering(imp,sl,pixelsizeNM,minX,maxX,minY,maxY,minZ,maxZ,shift,Double.POSITIVE_INFINITY,Double.POSITIVE_INFINITY,Double.POSITIVE_INFINITY,Double.POSITIVE_INFINITY,printLUT);
+        return colorRendering(imp,sl,pixelsizeNM,minX,maxX,minY,maxY,minZ,maxZ,shift,Double.POSITIVE_INFINITY,Double.POSITIVE_INFINITY,Double.POSITIVE_INFINITY,Double.POSITIVE_INFINITY,printLUT,ZRendering.lut);
+        
+    }
+    
+    
+    public static ImagePlus colorRendering(ImagePlus imp,StackLocalization sl,double pixelsizeNM,double minX, double maxX, double minY, double maxY,double minZ,double maxZ,int shift,boolean printLUT,String lut) {
+        
+        ZRendering.makeLUT();
+        
+        
+        return colorRendering(imp,sl,pixelsizeNM,minX,maxX,minY,maxY,minZ,maxZ,shift,Double.POSITIVE_INFINITY,Double.POSITIVE_INFINITY,Double.POSITIVE_INFINITY,Double.POSITIVE_INFINITY,printLUT,lut);
         
     }
     
     
     
     
-    public static ImagePlus colorRendering(ImagePlus imp,StackLocalization sl,double pixelsizeNM,double minX, double maxX, double minY, double maxY,double minZsmart, double maxZsmart,int shift,double crlbXTh,double crlbYTh,double crlbZTh,double khiTh,boolean printLUT)  {
+    public static ImagePlus colorRendering(ImagePlus imp,StackLocalization sl,double pixelsizeNM,double minX, double maxX, double minY, double maxY,double minZsmart, double maxZsmart,int shift,double crlbXTh,double crlbYTh,double crlbZTh,double khiTh,boolean printLUT,String lut)  {
+        
+        
+        byte [] rlut=null; 
+        byte [] glut=null; 
+        byte [] blut=null; 
+        
+        if (lut!=ZRendering.lut){
+            try{
+                LUT lut_=LutLoader.openLut(pathLutFolder+lut);
+                rlut = new byte[256] ;
+                glut = new byte[256] ;
+                blut = new byte[256] ;
+                
+                lut_.getReds(rlut);
+                lut_.getBlues(blut);
+                lut_.getGreens(glut);
+                
+                
+            }catch(Exception e ){lut=ZRendering.lut;}
+            
+        }
         
         
         if (maxZsmart-minZsmart<pixelsizeNM){
@@ -861,33 +959,62 @@ public class ZRendering {
             for (int ii=0;ii<height;ii++){
                 val=weight[i][ii];
                 if (val!=0){
+                    
                     double angle=1.-((double)meanZ[i][ii]-minZsmart)/(maxZsmart-minZsmart);
-                    double H =-45.+((315.)*angle); //convert in degree 315->max color=red     +45 degres: min color blue
-                    if (H<0){
-                        H+=360;
-                    }
-                    double V=0,S=0;
+                    int [] RGB=null;
+                    if (lut.equals(ZRendering.lut)){
+                        double H =-45.+((315.)*angle); //convert in degree 315->max color=red     +45 degres: min color blue
+                        if (H<0){
+                            H+=360;
+                        }
+                        double V=0,S=0;
 
-                    /*if (val-minrange<((maxrange-minrange)/2)){
-                        S=1;
-                        V =((val)*2-minrange*2)/(maxrange-minrange);
+                        /*if (val-minrange<((maxrange-minrange)/2)){
+                            S=1;
+                            V =((val)*2-minrange*2)/(maxrange-minrange);
+                        }
+                        else{
+                            S=1-((val-((maxrange-minrange)/2))*2-minrange)/(maxrange-minrange);
+                            V =1;
+                        }*/
+
+                        //color bar cut in 3 maincolor (RGB)/ I put a factor 2 in order to have white color when  std is extremely large (blue/red) 
+                        //otherwise, a mix color is kept
+
+                        S=1-2*((double)stdZ[i][ii])/(maxZsmart-minZsmart);
+
+                        V =val/(meanWeight*2);//*2 to avoid saturation
+                        //V=1;
+                        V=Math.max(Math.min(V,1), 0);
+                        S=Math.max(Math.min(S,1), 0);
+                        RGB=getRGB(H,S,V);
                     }
                     else{
-                        S=1-((val-((maxrange-minrange)/2))*2-minrange)/(maxrange-minrange);
-                        V =1;
-                    }*/
+                        RGB=new int[3];
+                        double red=rlut[(int)Math.ceil((1-angle)*256)-1];
+                        double green=glut[(int)Math.ceil((1-angle)*256)-1];
+                        double blue=blut[(int)Math.ceil((1-angle)*256)-1];
+                        if (red<0){
+                            red+=256;
+                        }
+                        if (green<0){
+                            green+=256;
+                        }
+                        if (blue<0){
+                            blue+=256;
+                        }
+                        
+                        double V =val/(meanWeight*2);//*2 to avoid saturation
+                        //V=1;
+                        V=Math.max(Math.min(V,1), 0);
+                        
+                        RGB[0]=(int)(red*V);
+                        RGB[1]=(int)(green*V);
+                        RGB[2]=(int)(blue*V);
+                        
+                    }
                     
-                    //color bar cut in 3 maincolor (RGB)/ I put a factor 2 in order to have white color when  std is extremely large (blue/red) 
-                    //otherwise, a mix color is kept
                     
-                    S=1-2*((double)stdZ[i][ii])/(maxZsmart-minZsmart);
-                    
-                    V =val/(meanWeight*2);//*2 to avoid saturation
-                    //V=1;
-                    V=Math.max(Math.min(V,1), 0);
-                    S=Math.max(Math.min(S,1), 0);
-                    
-                    int [] RGB=getRGB(H,S,V);
                     ip.putPixel(i, ii,RGB);
                 }
             }
@@ -908,7 +1035,7 @@ public class ZRendering {
         
         
         if (printLUT){
-            addLUT(imp,minZsmart, maxZsmart);
+            addLUT(imp,minZsmart, maxZsmart,lut);
         }
         
         
@@ -1687,10 +1814,28 @@ public class ZRendering {
     }
     
     
-    
-    
     private static void addLUT(ImagePlus imp,double minZ, double maxZ){
+        addLUT(imp,minZ, maxZ,null);
+    }
+    
+    private static void addLUT(ImagePlus imp,double minZ, double maxZ,String pathLut){
         
+        byte [] r=null; 
+        byte [] g=null; 
+        byte [] b=null; 
+        
+        if (pathLut!=ZRendering.lut){
+            try{
+                LUT lut=LutLoader.openLut(pathLutFolder+pathLut);
+                r = new byte[256] ;
+                g = new byte[256] ;
+                b = new byte[256] ;
+                lut.getReds(r);
+                lut.getBlues(b);
+                lut.getGreens(g);
+            }catch(Exception e ){pathLut=ZRendering.lut;}
+            
+        }
         
         if (minZ<0){
             maxZ-=minZ;
@@ -1718,14 +1863,36 @@ public class ZRendering {
         
         for (int i=w-width-margin;i<w-width-margin+widthbar;i++){
             for (int ii=margin,iii=0;ii<height+margin;ii++,iii++){
-                double angle=((double)iii)/((double)(height));
-                double H =-45.+((315.)*angle); //convert in degree 315->max color=red     +45 degres: min color blue
-                if (H<0){
-                    H+=360;
-                }
-                double V=1,S=1;
                 
-                int [] RGB=getRGB(H,S,V);
+                double angle=((double)iii)/((double)(height));
+                int [] RGB=null;
+                if (pathLut==ZRendering.lut){
+                    double H =-45.+((315.)*angle); //convert in degree 315->max color=red     +45 degres: min color blue
+                    if (H<0){
+                        H+=360;
+                    }
+                    double V=1,S=1;
+
+                    RGB=getRGB(H,S,V);
+                }
+                else{
+                    RGB=new int[3];
+                    int red=r[(int)Math.ceil((1-angle)*256)-1];
+                    int green=g[(int)Math.ceil((1-angle)*256)-1];
+                    int blue=b[(int)Math.ceil((1-angle)*256)-1];
+                    if (red<0){
+                        red+=256;
+                    }
+                    if (green<0){
+                        green+=256;
+                    }
+                    if (blue<0){
+                        blue+=256;
+                    }
+                    RGB[0]=red;
+                    RGB[1]=green;
+                    RGB[2]=blue;
+                }
                 ip.putPixel(i, ii,RGB);
             }
             

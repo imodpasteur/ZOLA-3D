@@ -18,6 +18,7 @@ import ij.process.ImageProcessor;
 import java.util.Arrays;
 import java.util.Comparator;
 import java.util.ArrayList;
+import ij.plugin.GaussianBlur3D;
 /**
  *
  * @author benoit
@@ -69,7 +70,8 @@ public class DualColorFusion {
     int order;
     
     int way=0;
-    double sigmaGaussian;//nm
+    double sigmaGaussianXY;//nm
+    double sigmaGaussianZ;//nm
     
     //constructor to compute registration
     public DualColorFusion(StackLocalization sl1,StackLocalization sl2,String pathRes,double maxDistanceMergingXY, int order){
@@ -88,8 +90,9 @@ public class DualColorFusion {
     
     
     //constructor to compute registration with widefield
-    public DualColorFusion(ImagePlus im1,StackLocalization sl2,String pathRes,double pixSize,double zstep, int magnification,double sigma,ImagePlus im2,ImagePlus im3){
-        this.sigmaGaussian=sigma;
+    public DualColorFusion(ImagePlus im1,StackLocalization sl2,String pathRes,double pixSize,double zstep, int magnification,double sigmaXY,double sigmaZ,ImagePlus im2,ImagePlus im3){
+        this.sigmaGaussianXY=sigmaXY;
+        this.sigmaGaussianZ=sigmaZ;
         this.im1=im1;
         this.im2=im2;
         this.im3=im3;
@@ -334,10 +337,11 @@ public class DualColorFusion {
         IJ.showProgress(.2);
         IJ.log("images created");
         
-        double sigma=sigmaGaussian/pixsize;
-        double sigmaFourierPowx=((1./(sigma))*(double)sizeFFTX/(Math.PI*2.))*((1./(sigma))*(double)sizeFFTX/(Math.PI*2.));
-        double sigmaFourierPowy=((1./(sigma))*(double)sizeFFTY/(Math.PI*2.))*((1./(sigma))*(double)sizeFFTY/(Math.PI*2.));
-        double sigmaFourierPowz=((1./(sigma))*(double)sizeFFTZ/(Math.PI*2.))*((1./(sigma))*(double)sizeFFTZ/(Math.PI*2.));
+        double sigmaxy=sigmaGaussianXY/pixsize;
+        double sigmaz=sigmaGaussianZ/pixsize;
+        double sigmaFourierPowx=((1./(sigmaxy))*(double)sizeFFTX/(Math.PI*2.))*((1./(sigmaxy))*(double)sizeFFTX/(Math.PI*2.));
+        double sigmaFourierPowy=((1./(sigmaxy))*(double)sizeFFTY/(Math.PI*2.))*((1./(sigmaxy))*(double)sizeFFTY/(Math.PI*2.));
+        double sigmaFourierPowz=((1./(sigmaz))*(double)sizeFFTZ/(Math.PI*2.))*((1./(sigmaz))*(double)sizeFFTZ/(Math.PI*2.));
         
         for (int zzz=0;zzz<sizeFFTZ;zzz++){
             for (int xxx=0;xxx<sizeFFTX;xxx++){
@@ -443,8 +447,8 @@ public class DualColorFusion {
         ImageShow.imshow(imagewidefield1,"wf");
         ImagePlus impfinal=org.pasteur.imagej.postprocess.ZRendering.hist3D(sl2, pixsize/magnification, zstep/magnification, 0, width*pixsize, 0, height*pixsize, 0, nbImage*zstep, 0);
         impfinal.setTitle("hr");
-        try{Thread.sleep(500);}catch(Exception e){}
-        IJ.run("Merge Channels...", "c1=wf c2=hr create");
+        try{Thread.sleep(500);}catch(Exception e){} 
+        IJ.run("Merge Channels...", "c1=wf c2=hr keep create");
         
         if (im2!=null){
             ImageShow.imshow(imagewidefield2,"wf");
@@ -453,15 +457,49 @@ public class DualColorFusion {
             if (im3!=null){
                 ImageShow.imshow(imagewidefield3,"wfb");
                 try{Thread.sleep(500);}catch(Exception e){}
-                IJ.run("Merge Channels...", "c2=wf c1=hr c3=wfb create");
+                IJ.run("Merge Channels...", "c2=wf c1=hr c3=wfb keep create");
             }
             else{
                 try{Thread.sleep(500);}catch(Exception e){}
-                IJ.run("Merge Channels...", "c2=wf c1=hr create");
+                IJ.run("Merge Channels...", "c2=wf c1=hr keep create");
             }
             
         }
         IJ.showProgress(1);
+        
+        
+        
+        
+        
+        
+        
+        /*
+        ImageShow.imshow(imagewidefield1,"wf2");
+        ImagePlus impfinalblur=org.pasteur.imagej.postprocess.ZRendering.hist3D(sl2, pixsize/magnification, zstep/magnification, 0, width*pixsize, 0, height*pixsize, 0, nbImage*zstep, 0);
+        IJ.log("sx"+(sigmaGaussianXY/(pixsize/magnification)));
+        GaussianBlur3D.blur(impfinalblur, sigmaGaussianXY/(pixsize/magnification), sigmaGaussianXY/(pixsize/magnification), sigmaGaussianZ/(zstep/magnification));
+        
+        try{Thread.sleep(200);}catch(Exception e){}
+        impfinalblur.setTitle("hr2");
+        try{Thread.sleep(500);}catch(Exception e){}
+        IJ.run("Merge Channels...", "c1=wf2 c2=hr2 create");
+        
+        if (im2!=null){
+            ImageShow.imshow(imagewidefield2,"wf2");
+            ImagePlus impfinal2=org.pasteur.imagej.postprocess.ZRendering.hist3D(sl2, pixsize/magnification, zstep/magnification, 0, width*pixsize, 0, height*pixsize, 0, nbImage*zstep, 0);
+            impfinal2.setTitle("hr2");
+            if (im3!=null){
+                ImageShow.imshow(imagewidefield3,"wfb2");
+                try{Thread.sleep(500);}catch(Exception e){}
+                IJ.run("Merge Channels...", "c2=wf2 c1=hr2 c3=wfb2 create");
+            }
+            else{
+                try{Thread.sleep(500);}catch(Exception e){}
+                IJ.run("Merge Channels...", "c2=wf2 c1=hr2 create");
+            }
+            
+        }
+        IJ.showProgress(1);*/
         
     }
     

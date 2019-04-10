@@ -57,7 +57,67 @@ public class Zernike {
             //}
             //IJ.log("myComp= "+i+"  "+complexity[i]+"  "+poly[i][0]+"  "+poly[i][1]);
         }
+        
         //ImageShow.imshow(Z,"Z");
+        
+        
+        
+        
+        
+        /*IJ.log("WARNING: REMOVE FOLLOWING LINES IN ZERNIKE CLASS ************************************");
+        for (int i=polyNumber-20,j=0;i<polyNumber;i+=2,j++){
+            Z[i]=getART(0,j,false);
+            Z[i+1]=getART(0,j,true);
+
+        }
+        ImageShow.imshow(Z,"Z");
+        IJ.log("END WARNING: REMOVE PREVIOUS LINES IN ZERNIKE CLASS ************************************");*/
+        
+        
+        
+    }
+    
+    
+    public Zernike(int sizeImagePx, double radiusRing,boolean iscomplex){
+        
+            int maxM=10;
+            int maxN=4;
+            int polyNumber=maxM*maxN;
+            this.radiusRing=radiusRing;
+            this.sizeImagePx=sizeImagePx;
+            poly = new int[polyNumber][2];
+            complexity = new int[polyNumber];
+
+
+            int index=0;
+            loop:for (int i=0,rang=0;rang<maxN;rang++){
+                //String s="";
+                for (int u=0;u<maxM;u++){
+                    //s+=" "+u+"     ";
+                    poly[i][0]=rang;
+                    poly[i][1]=u;
+
+                    i++;
+                    if (i>=polyNumber){
+                        break loop;
+                    }
+                }
+                index--;
+                //IJ.log("u  "+s);
+            }
+
+            Z = new double [polyNumber][][];
+            for (int i=0;i<polyNumber;i++){
+                //IJ.log("  "+poly[0][i]+"   "+poly[1][i]);
+                Z[i]=getART(poly[i][0],poly[i][1],iscomplex);
+                complexity[i]=Math.abs(poly[i][0])+Math.abs(poly[i][1]);
+
+                //if (i==polyNumber-1){
+                //    Z[i]=getZRot();
+                //}
+                //IJ.log("myComp= "+i+"  "+complexity[i]+"  "+poly[i][0]+"  "+poly[i][1]);
+            }
+            //ImageShow.imshow(Z,"Z");
         
         
         
@@ -631,6 +691,75 @@ public class Zernike {
             }
         }
     }
+    
+    
+    
+    
+    
+    
+    
+    //angular radial transform
+    public double [][] getART(int n, int m,boolean iscomplex){
+        
+        double [][] image = new double [sizeImagePx][sizeImagePx];
+        
+        double centerX=((double)sizeImagePx)/2.-.5;
+        double centerY=((double)sizeImagePx)/2.-.5;
+        for (int i=0;i<sizeImagePx;i++){
+            for (int ii=0;ii<sizeImagePx;ii++){
+                double x=((double)(i-centerX)/radiusRing);
+                double y=((double)(ii-centerY)/radiusRing);
+                double theta=Math.atan2(y,x);
+                double rho=Math.sqrt(x*x+y*y);
+                
+                if (rho<1){
+                    image[i][ii]=this.getART(n, m, theta, rho,iscomplex);
+                    //IJ.log("im "+i+"  "+ii+"  "+image[i][ii]);
+                }
+            }
+        }
+        
+        
+        
+        
+        
+        
+        //ImageShow.imshow(image,"zernike "+n+"  "+m);
+        
+        
+        return image;
+        
+    }
+    
+    
+    
+    
+    //art angular radial transform
+    public double getART(int n, int m,double theta, double rho,boolean iscomplex){
+        
+        if (n==0){
+            if (iscomplex){
+                return (Math.sin(theta*m));
+            }
+            else{
+                return (Math.cos(theta*m));
+            }
+        }
+        else{
+            if (iscomplex){
+                return (Math.sin(theta*m))*2*Math.cos(Math.PI*n*rho);
+            }
+            else{
+                return (Math.cos(theta*m))*2*Math.cos(Math.PI*n*rho);
+                
+            }
+
+        }
+        
+    }
+    
+    
+    
     
     
     

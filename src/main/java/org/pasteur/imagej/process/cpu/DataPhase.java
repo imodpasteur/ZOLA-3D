@@ -224,8 +224,14 @@ public class DataPhase {
         //psfMany=new PSFphaseJCudaFastDoubleMany(param,numberPSF);
         //psfMany.updatePhase(phaseZer.computeCombination());
         psf_many=new PSFPhaseMany(param,numberPSF);
-        phaseZer.computeCombination();
-        psf_many.updatePhasePointer(phaseZer.getPhasePointer());
+        
+        if (param.zernikedPSF){
+            phaseZer.computeCombination();
+            psf_many.updatePhasePointer(phaseZer.getPhasePointer());
+        }
+        else{
+            psf_many.updatePhasePointer(phaseNonZer.getPhasePointer());
+        }
         
         
         
@@ -578,7 +584,6 @@ public class DataPhase {
     
     
     
-    
     public boolean loadJSON(int sizeFFT,String path){
         
         
@@ -634,9 +639,16 @@ public class DataPhase {
             }
             
             
-            param = new PhaseParameters(sizeFFT,sizeFFT,order,xystep,zstep,wavelength,noil,na,1,sigmaGaussianKernel,withApoFactor);
-            param.zernikedPSF=zernikedPSF;
             
+            if (zernikedPSF){
+                param = new PhaseParameters(sizeFFT,sizeFFT,order,xystep,zstep,wavelength,noil,na,1,sigmaGaussianKernel,withApoFactor);
+            }
+            else{
+                param = new PhaseParameters(size,size,order,xystep,zstep,wavelength,noil,na,1,sigmaGaussianKernel,withApoFactor);
+            }
+            
+            
+            param.zernikedPSF=zernikedPSF;
             
             
             
@@ -679,6 +691,8 @@ public class DataPhase {
                 }
                 
                 this.phaseNonZer=new Phase(param);
+                IJ.log("nbCoef "+nbCoefa+"    "+sizeFFT+"  "+param.size+"  "+param.size_cpu);
+                IJ.log("nbCoefphaseNonZer "+phaseNonZer.phase.length+"  ");
                 phaseNonZer.setValuesPhase(a);
                 
                 psf.updatePhase(phaseNonZer.getPhasePointer());

@@ -113,7 +113,7 @@ public class Condensation {
                         }
                         
                         
-                        int ppphist=p_next.get(p_next.size()-1).frame-p_current.frame+1;
+                        int ppphist=p_next.get(p_next.size()-1).frame-p_current.frame;
                         if (ppphist<bin){
                             hist[ppphist]++;
                         }
@@ -377,7 +377,7 @@ public class Condensation {
         }
         posit=Math.min(end, posit);
         if (posit<3){
-            IJ.log("ERROR: not enough points for fitting");
+            IJ.log("ERROR: not enough points for fitting "+end+"  "+posit+"  "+hist.length+"  "+hist[0]+"  "+hist[1]+"  "+hist[2]);
             return null;
         }
         int len=posit-start;
@@ -388,7 +388,7 @@ public class Condensation {
         
         for (int i=0;i<posit;i++){
             xfull[i]=histaxis[i];
-            IJ.write(""+hist[i]);
+            
             yfull[i]=Math.log(hist[i]);
         }
         for (int i=0;i<len;i++){

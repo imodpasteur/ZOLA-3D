@@ -46,6 +46,8 @@ public class GenericPhaseRetrieval_ {
     
     double epsilon=.00001;//stop criterion
     
+    double lambda=0;//regularization
+    
     double [][] registrationStack;//z,x,y registration for each stack
     
     String path_calibration;
@@ -61,6 +63,7 @@ public class GenericPhaseRetrieval_ {
     
     double maxDrift=10;//max drift between each frame (nm)
     
+    int [][] phasePosit;// from x,y -> return position in phase vector
     
     public GenericPhaseRetrieval_(int sizeFFT,double xystep,double zstep,double wavelength,double noil,double na,InitBackgroundAndPhotonNumber paramImage,String path_calibration,double sigma,int axialside,boolean withApoFactor){
         this.sigma=sigma;
@@ -79,7 +82,17 @@ public class GenericPhaseRetrieval_ {
         dparam.phaseZer.setMatAtPosit(dparam.psf.getPointerky(),1);
         dparam.phaseZer.setMatAtPosit(dparam.psf.getPointerkz(),2);
             
+        phasePosit=new int[dparam.param.size][dparam.param.size];
+        for (int i=0;i<dparam.param.size;i++){
+            for (int ii=0;ii<dparam.param.size;ii++){
+                phasePosit[i][ii]=-1;//outside
+            }
+        }
         
+        for (int i=0;i<dparam.param.sizeDisk;i++){
+            phasePosit[dparam.param.disk2D[i][0]][dparam.param.disk2D[i][1]]=i;
+        }
+        ImageShow.imshow(phasePosit);
         registrationStack=new double [3][nbstack];
         this.paramImage=paramImage;
         center=image[0].length/2;
@@ -181,6 +194,8 @@ public class GenericPhaseRetrieval_ {
         //IJ.log("zstep "+dparam.param.zstep);
         
         //this.phase_retrieve_zernike_cross_validation(nbIter);
+        
+        IJ.log("size "+dparam.param.sizeDisk+"  "+dparam.param.size+"  "+dparam.param.sizeRadiusRingPixel);
         
         this.phase_retrieve(nbIter);
         
@@ -555,13 +570,13 @@ public class GenericPhaseRetrieval_ {
         double likelihood = Double.MAX_VALUE;
         
         
-        IJ.log("initialization 1/6");
+        IJ.log("initialization 1/7");
         
         this.updatePhaseNonZernike(1,8,2);
         for (int u=0;u<10;u++){
             this.updateRegistrationStacks(1);
         }
-        for (int u=0;u<20;u++){
+        for (int u=0;u<100;u++){
             int angleSplit=4+(int)(Math.random()*3);
             int distSplit=2+(int)(Math.random()*3);
             this.updatePhaseNonZernike(1,angleSplit,distSplit);
@@ -571,7 +586,7 @@ public class GenericPhaseRetrieval_ {
         
         
         
-        IJ.log("initialization 2/6");
+        IJ.log("initialization 2/7");
         showPhase();
         this.showImageAndModel();
         
@@ -584,7 +599,7 @@ public class GenericPhaseRetrieval_ {
         
         
         
-        IJ.log("initialization 3/6");
+        IJ.log("initialization 3/7");
         showPhase();
         this.showImageAndModel();
         
@@ -602,7 +617,7 @@ public class GenericPhaseRetrieval_ {
         this.updatePhotonAeach(1);
         
         
-        IJ.log("initialization 4/6");
+        IJ.log("initialization 4/7");
         
         for (int u=0;u<15;u++){
             int angleSplit=4+(int)(Math.random()*20);
@@ -615,7 +630,7 @@ public class GenericPhaseRetrieval_ {
         this.updatePhotonAeach(1);
         
         
-        IJ.log("initialization 5/6");
+        IJ.log("initialization 5/7");
         showPhase();
         this.showImageAndModel();
         
@@ -635,29 +650,29 @@ public class GenericPhaseRetrieval_ {
         showPhase();
         this.showImageAndModel();
         
+        this.updatePhotonBpoly(nbstack,2);
+        this.updatePhotonAeach(nbstack);
+        this.updateRegistrationStacks(nbstack);
         
-        IJ.log("initialization 6/6");
+        IJ.log("initialization 6/7");
         
-        for (int u=0;u<5;u++){
+        for (int u=0;u<30;u++){
             int angleSplit=4+(int)(Math.random()*58);
             int distSplit=20+(int)(Math.random()*12);
-            this.updatePhaseNonZernike(1,angleSplit,distSplit);
+            this.updatePhaseNonZernike(nbstack,angleSplit,distSplit);
+            this.updatePhotonBpoly(nbstack,2);
+            this.updatePhotonAeach(nbstack);
+            this.updateRegistrationStacks(nbstack);
         }
         
         showPhase();
         this.showImageAndModel();
         
-        this.updatePhotonBpoly(nbstack,2);
-        this.updatePhotonAeach(nbstack);
-        this.updateRegistrationStacks(nbstack);
-        
-        
-        
         
         likelihood = this.getLikelihood(nbstack);
         
+        IJ.log("initialization 7/7");
         
-        showPhase();
         
         
         return likelihood;
@@ -747,6 +762,7 @@ public class GenericPhaseRetrieval_ {
     private void updatePhaseNonZernike(int stackNumber){
         
         
+        
         double h=.001;
         
         
@@ -780,6 +796,8 @@ public class GenericPhaseRetrieval_ {
                     lik1+=model3D[z].getLikelihood(methodLikelihood);
                 }
                 
+                IJ.log("lik1 "+lik1+"  "+getPhaseRegularization(p,save-h));
+                lik1+=lambda*getPhaseRegularization(p,save-h);
                 
 
                 
@@ -801,7 +819,7 @@ public class GenericPhaseRetrieval_ {
                     //ImageShow.imshow(model3D[z].getModel(),"model2");
                     lik2+=model3D[z].getLikelihood(methodLikelihood);
                 }
-                
+                lik2+=lambda*getPhaseRegularization(p,save);
                 
                 
                 double lik3=0;
@@ -819,7 +837,7 @@ public class GenericPhaseRetrieval_ {
                     //ImageShow.imshow(model3D[z].getModel(),"model3");
                     lik3+=model3D[z].getLikelihood(methodLikelihood);
                 }
-                
+                lik3+=lambda*getPhaseRegularization(p,save+h);
                 
                 
                 double grad=0;
@@ -852,7 +870,7 @@ public class GenericPhaseRetrieval_ {
                         this.computeModel3D(z);
                         lik+=model3D[z].getLikelihood(methodLikelihood);
                     }
-                    
+                    lik+=lambda*getPhaseRegularization(p,save-gamma*grad);
                     
                     if (lik<lik2){
                         lastLikelihood=lik;
@@ -2770,6 +2788,35 @@ public class GenericPhaseRetrieval_ {
     }
     
     
+    
+    
+    
+    private double getPhaseRegularization(int posit,double currentValue){
+        
+        int x=this.dparam.param.disk2D[posit][0];
+        int y=this.dparam.param.disk2D[posit][1];
+        
+        
+        
+        //deal with edge effet --> symmetry if outsize of the disk
+        int shiftx=1;
+        if (this.phasePosit[x+shiftx][y]<0){
+            shiftx=-1;
+        }
+        int shifty=1;
+        if (this.phasePosit[x][y+shifty]<0){
+            shifty=-1;
+        }
+        
+        
+        double X=this.dparam.phaseNonZer.getValuePixel(this.phasePosit[x+shiftx][y]);
+        double Y=this.dparam.phaseNonZer.getValuePixel(this.phasePosit[x][y+shifty]);
+        
+        double reg=Math.sqrt((X-currentValue)*(X-currentValue)+(Y-currentValue)*(Y-currentValue));
+        
+        return reg;
+        
+    }
     
     
     

@@ -55,7 +55,7 @@ public class Phase {
         
         
         
-        nbDataPerImage=param.sizeDisk;
+        nbDataPerImage=param.sizeDisk_cpu;
         
         id=new int [nbDataPerImage];
         //host_id=Pointer.to(id);
@@ -86,7 +86,7 @@ public class Phase {
         
         id_table= new int [maxId][];
         phase_list= new double [maxId][];
-        double maxDist=param.sizeRadiusRingPixel;
+        double maxDist=param.sizeRadiusRingPixel_cpu;
         
         //int [][] mat = new int [param.size][param.size];
         double angle,dist,x,y;

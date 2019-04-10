@@ -253,11 +253,20 @@ public class DataPhase_ {
         //psfMany.updatePhase(phaseZer.computeCombination());
         
         psf_fMany=new PSFmany_float_(param,numberModel);
-        psf_fMany.updatePhase(phaseZer.computeCombination());
-        
+        if (param.zernikedPSF){
+            psf_fMany.updatePhase(phaseZer.computeCombination());
+        }
+        else{
+            psf_fMany.updatePhase(phaseNonZer.getPointerPhase());
+        }
         
         psf_f_crlbMany=new PSFmany_float_(param,11);//for CRLB computation: 5*5 matrix -> 11 elem to compute derivatives
-        psf_f_crlbMany.updatePhase(phaseZer.computeCombination());
+        if (param.zernikedPSF){
+            psf_f_crlbMany.updatePhase(phaseZer.computeCombination());
+        }
+        else{
+            psf_f_crlbMany.updatePhase(phaseNonZer.getPointerPhase());
+        }
         
         
         
@@ -277,11 +286,23 @@ public class DataPhase_ {
         //psfMany.updatePhase(phaseZer.computeCombination());
         
         psf_fMany=new PSFmany_float_(param,numberPSFperModel*numberModel);
-        psf_fMany.updatePhase(phaseZer.computeCombination());
+        if (param.zernikedPSF){
+            psf_fMany.updatePhase(phaseZer.computeCombination());
+        }
+        else{
+            psf_fMany.updatePhase(phaseNonZer.getPointerPhase());
+        }
         
         
         psf_f_crlbMany=new PSFmany_float_(param,11);//for CRLB computation: 5*5 matrix -> 11 elem to compute derivatives
-        psf_f_crlbMany.updatePhase(phaseZer.computeCombination());
+        if (param.zernikedPSF){
+            psf_f_crlbMany.updatePhase(phaseZer.computeCombination());
+        }
+        else{
+            psf_f_crlbMany.updatePhase(phaseNonZer.getPointerPhase());
+        }
+        
+        
         
         
         

@@ -177,6 +177,7 @@ public class PhaseParameters {
     
     
     public PhaseParameters(PhaseParameters paramInit){
+        this.zernikedPSF=paramInit.zernikedPSF;
         this.pathcalib=paramInit.pathcalib;
         this.sigmaGaussianKernel=paramInit.sigmaGaussianKernel;
         this.centerX=paramInit.centerX;
@@ -238,6 +239,7 @@ public class PhaseParameters {
     
     
     public PhaseParameters(int size, int sizeoutput,PhaseParameters paramInit){
+        this.zernikedPSF=paramInit.zernikedPSF;
         this.pathcalib=paramInit.pathcalib;
         this.sigmaGaussianKernel=paramInit.sigmaGaussianKernel;
         this.size=size;

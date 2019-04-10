@@ -494,7 +494,13 @@ public class ZOLA implements PlugIn  {
             
         }
         
-        
+           
+                
+        else if (command.startsWith("zola_scatterPlot")){
+            
+            scatterPlot();
+            
+        }
         else if (command.startsWith("zola_colorize")){
             
             colorizeHist();
@@ -800,13 +806,17 @@ public class ZOLA implements PlugIn  {
                     else{
                         gd.addMessage("Camera is SCMOS / problem with image sizes / ERROR will occur",fontBold);
                     }
-                    String sep=File.separator;
-                    String [] var=this.path_SCMOSvariance.split(sep);
-                    String [] off=this.path_SCMOSoffset.split(sep);
-                    String [] gain=this.path_SCMOSgain.split(sep);
-                    gd.addMessage("Offset file = "+off[var.length-1]);
-                    gd.addMessage("Variance file = "+var[var.length-1]);
-                    gd.addMessage("Gain file = "+gain[var.length-1]);
+//                    String sep=File.separator;
+//                    String [] var=this.path_SCMOSvariance.split(sep);
+//                    String [] off=this.path_SCMOSoffset.split(sep);
+//                    String [] gain=this.path_SCMOSgain.split(sep);
+//                    gd.addMessage("Offset file = "+off[var.length-1]);
+//                    gd.addMessage("Variance file = "+var[var.length-1]);
+//                    gd.addMessage("Gain file = "+gain[var.length-1]);
+                    
+                    gd.addMessage("Offset file = "+path_SCMOSvariance);
+                    gd.addMessage("Variance file = "+path_SCMOSoffset);
+                    gd.addMessage("Gain file = "+path_SCMOSgain);
                     
                 }
                 
@@ -1128,13 +1138,17 @@ public class ZOLA implements PlugIn  {
                     else{
                         gd.addMessage("Camera is SCMOS / problem with image sizes / ERROR will occur",fontBold);
                     }
-                    String sep=File.separator;
-                    String [] var=this.path_SCMOSvariance.split(sep);
-                    String [] off=this.path_SCMOSoffset.split(sep);
-                    String [] gain=this.path_SCMOSgain.split(sep);
-                    gd.addMessage("Offset file = "+off[var.length-1]);
-                    gd.addMessage("Variance file = "+var[var.length-1]);
-                    gd.addMessage("Gain file = "+gain[var.length-1]);
+//                    String sep=File.separator;
+//                    String [] var=this.path_SCMOSvariance.split(sep);
+//                    String [] off=this.path_SCMOSoffset.split(sep);
+//                    String [] gain=this.path_SCMOSgain.split(sep);
+//                    gd.addMessage("Offset file = "+off[var.length-1]);
+//                    gd.addMessage("Variance file = "+var[var.length-1]);
+//                    gd.addMessage("Gain file = "+gain[var.length-1]);
+                    
+                    gd.addMessage("Offset file = "+path_SCMOSvariance);
+                    gd.addMessage("Variance file = "+path_SCMOSoffset);
+                    gd.addMessage("Gain file = "+path_SCMOSgain);
                     
                 }
                 
@@ -1582,6 +1596,7 @@ public class ZOLA implements PlugIn  {
             
             
             
+            //String [] fieldZernike = {"pixel-based (prototype)","Zernike 15 coefs","Zernike 28 coefs","Zernike 45 coefs"};
             String [] fieldZernike = {"pixel-based (prototype)","Zernike 15 coefs","Zernike 28 coefs","Zernike 45 coefs"};
             int [] correspondingFieldZernike = {0,15,28,45};
             if (zernikeCoef>=fieldZernike.length){
@@ -1622,7 +1637,7 @@ public class ZOLA implements PlugIn  {
             
             gd.addNumericField("Photon number: ", photonNumber,0);
             gd.addNumericField("Background intensity: ", background,0);
-            gd.addCheckbox("Use_pupil_apodization factor (not selected by default)", withApoFactor);
+            gd.addCheckbox("Use_pupil_apodization factor", withApoFactor);
             gd.addChoice("Phase-based method", fieldZernike,  fieldZernike[zernikeCoef]);
             
             gd.addNumericField("Iteration #: ", iterationNumber, 0);
@@ -1814,7 +1829,8 @@ public class ZOLA implements PlugIn  {
             
             //classes.ImageShow.imshow(image,"image input");
             //String [] fieldZernike = {"6","10","15","21","28","36","45"};
-            String [] fieldZernike = {"pixel-based (prototype)","Zernike 15 coefs","Zernike 28 coefs","Zernike 45 coefs","Zernike 66 coefs"};
+            //String [] fieldZernike = {"pixel-based (prototype)","Zernike 15 coefs","Zernike 28 coefs","Zernike 45 coefs","Zernike 66 coefs"};
+            String [] fieldZernike = {"double-helix (prototype)","Zernike 15 coefs","Zernike 28 coefs","Zernike 45 coefs","Zernike 66 coefs"};
             int [] correspondingFieldZernike = {0,15,28,45,66};
             if (zernikeCoef>=fieldZernike.length){
                 zernikeCoef=fieldZernike.length-1;
@@ -1858,14 +1874,17 @@ public class ZOLA implements PlugIn  {
                     else{
                         gd.addMessage("Camera is SCMOS / problem with image sizes / ERROR will occur",fontBold);
                     }
-                    String sep=File.separator;
-                    String [] var=this.path_SCMOSvariance.split(sep);
-                    String [] off=this.path_SCMOSoffset.split(sep);
-                    String [] gain=this.path_SCMOSgain.split(sep);
-                    gd.addMessage("Offset file = "+off[var.length-1]);
-                    gd.addMessage("Variance file = "+var[var.length-1]);
-                    gd.addMessage("Gain file = "+gain[var.length-1]);
+//                    String sep=File.separator;
+//                    String [] var=this.path_SCMOSvariance.split(sep);
+//                    String [] off=this.path_SCMOSoffset.split(sep);
+//                    String [] gain=this.path_SCMOSgain.split(sep);
+//                    gd.addMessage("Offset file = "+off[var.length-1]);
+//                    gd.addMessage("Variance file = "+var[var.length-1]);
+//                    gd.addMessage("Gain file = "+gain[var.length-1]);
                     
+                    gd.addMessage("Offset file = "+path_SCMOSvariance);
+                    gd.addMessage("Variance file = "+path_SCMOSoffset);
+                    gd.addMessage("Gain file = "+path_SCMOSgain);
                 }
                 
             
@@ -1887,7 +1906,7 @@ public class ZOLA implements PlugIn  {
             
             gd.addNumericField("Patch_size: ", sizePatchPhaseRet, 0,6,"(pixels)");
             //gd.addSlider("Zernike_coefficient #", 0, 2*((int)Math.sqrt(nbImage)), (int)Math.sqrt(nbImage));
-            gd.addCheckbox("Use_pupil_apodization factor (not selected by default)", withApoFactor);
+            gd.addCheckbox("Use_pupil_apodization factor", withApoFactor);
             gd.addChoice("Zernike_coefficient number", fieldZernike,  fieldZernike[zernikeCoef]);
             //gd.addNumericField("Sigma_gaussian_blur", sigma,  2,6,"(pixels)");
             //gd.addNumericField("Zernike_coefficient #: ", zernikeCoef, 0);
@@ -2183,13 +2202,17 @@ public class ZOLA implements PlugIn  {
                     else{
                         gd.addMessage("Camera is SCMOS / problem with image sizes / ERROR will occur",fontBold);
                     }
-                    String sep=File.separator;
-                    String [] var=this.path_SCMOSvariance.split(sep);
-                    String [] off=this.path_SCMOSoffset.split(sep);
-                    String [] gain=this.path_SCMOSgain.split(sep);
-                    gd.addMessage("Offset file = "+off[var.length-1]);
-                    gd.addMessage("Variance file = "+var[var.length-1]);
-                    gd.addMessage("Gain file = "+gain[var.length-1]);
+//                    String sep=File.separator;
+//                    String [] var=this.path_SCMOSvariance.split(sep);
+//                    String [] off=this.path_SCMOSoffset.split(sep);
+//                    String [] gain=this.path_SCMOSgain.split(sep);
+//                    gd.addMessage("Offset file = "+off[var.length-1]);
+//                    gd.addMessage("Variance file = "+var[var.length-1]);
+//                    gd.addMessage("Gain file = "+gain[var.length-1]);
+                    
+                    gd.addMessage("Offset file = "+path_SCMOSvariance);
+                    gd.addMessage("Variance file = "+path_SCMOSoffset);
+                    gd.addMessage("Gain file = "+path_SCMOSgain);
                     
                 }
                 
@@ -2663,7 +2686,7 @@ public class ZOLA implements PlugIn  {
             }
         }
         
-        ZRendering.colorRendering(null,sl, 20,1,true);
+        ZRendering.colorRendering(null,sl, 20,0,true);
         processing=new Boolean(false);
         IJ.log("Drift correction removed");
     }
@@ -2754,7 +2777,7 @@ public class ZOLA implements PlugIn  {
             else{
                 new org.pasteur.imagej.process.cpu.DriftCorrection(sl,drift_pixelsizeNM, Integer.parseInt(binNumber[drift_bin]),drift_sub_image_sizeUm);
             }
-            ZRendering.colorRendering(null,sl, 20,1,true);
+            ZRendering.colorRendering(null,sl, 20,0,true);
             
             IJ.log("Please, export the localization table to save drift correction");
             
@@ -2854,7 +2877,7 @@ public class ZOLA implements PlugIn  {
                 DriftCorrectionFiducial dcb=new DriftCorrectionFiducial(sl,maxDistanceMergingPlan, maxDistanceMergingZ,concecutiveFrameThreshold,50,smoothingFrameNumber,path,path_DriftTable,offFrame);
                 sl=dcb.run();
                 
-                ZRendering.colorRendering(null,sl, 20,1,true);
+                ZRendering.colorRendering(null,sl, 20,0,true);
 
                 
             }
@@ -2911,7 +2934,7 @@ public class ZOLA implements PlugIn  {
                 Condensation cond=new Condensation(sl,maxDistanceMergingPlan, maxDistanceMergingZ,offFrame);
                 sl=cond.run();
                 
-                ZRendering.colorRendering(null,sl, 20,1,true);
+                ZRendering.colorRendering(null,sl, 20,0,true);
 
                 
             }
@@ -3057,7 +3080,7 @@ public class ZOLA implements PlugIn  {
                 nbtot+=nbafter;
                 
                 IJ.log("Localization number after filtering: "+nbafter+"/"+nbtot);
-                ZRendering.colorRendering(null,slb, 20,1,true);
+                ZRendering.colorRendering(null,slb, 20,0,true);
                 
                 maxDistanceMergingPlan=gd.getNextNumber();
 
@@ -3268,7 +3291,7 @@ public class ZOLA implements PlugIn  {
                 nbtot+=nbafter;
                 sl=slb;
                 IJ.log("Localization number after filtering: "+nbafter+"/"+nbtot);
-                ZRendering.colorRendering(null,sl, 20,1,true);
+                ZRendering.colorRendering(null,sl, 20,0,true);
 
                 
             }
@@ -3429,7 +3452,7 @@ public class ZOLA implements PlugIn  {
                     nbtot+=nbafter;
                     sl=slb;
                     IJ.log("Localization number after filtering: "+nbafter+"/"+nbtot);
-                    ZRendering.colorRendering(null,sl, 20,1,true);
+                    ZRendering.colorRendering(null,sl, 20,0,true);
                     
 
                 }
@@ -3570,7 +3593,7 @@ public class ZOLA implements PlugIn  {
     
     
     
-    void scatter(){
+    void scatterPlot(){
         
         if (sl!=null){
             
@@ -3585,6 +3608,15 @@ public class ZOLA implements PlugIn  {
             double x;
             double y;
             double z;
+            
+            
+            
+                
+                
+                
+                
+                
+                
 
             //maybe use Arrays.sort to be fast
             for (int i=0;i<sl.fl.size();i++){
@@ -3614,53 +3646,71 @@ public class ZOLA implements PlugIn  {
                     }
                 }
             }
-
-            GenericDialog gd = new GenericDialog("ZOLA: Render scatter plot");
-            Font font = gd.getFont();
-            Font fontBold= gd.getFont();
-            try{
-                fontBold=new Font(font.getName(),Font.BOLD,font.getSize());
-            }catch(Exception e){}
-
-            gd.addNumericField("Pixel size: ", sizeRendering,1,6,"(nm)");
             
-            gd.addNumericField("Min_X: ", Math.floor(minX),0,6,"(nm)");
-            gd.addNumericField("Max_X: ", Math.ceil(maxX),0,6,"(nm)");
-            gd.addNumericField("Min_Y: ", Math.floor(minY),0,6,"(nm)");
-            gd.addNumericField("Max_Y: ", Math.ceil(maxY),0,6,"(nm)");
-            gd.addNumericField("Min_Z: ", Math.floor(minZ),0,6,"(nm)");
-            gd.addNumericField("Max_Z: ", Math.ceil(maxZ),0,6,"(nm)");
-            
-            
-            gd.addCheckbox("3D_rendering :", is3Drendering);
-            gd.addCheckbox("Color_rendering :", isCOLORrendering);
-            gd.showDialog();
+            PLocalization p=null;
+            looper:for (int i=0;i<sl.fl.size();i++){
+                for (int j=0;j<sl.fl.get(i).loc.size();j++){
+                    p=sl.fl.get(i).loc.get(j);
+                    break looper;
+                }
+            }
+            if (p!=null){
+                int variableNumber=p.getNumberVariable();
+                String [] fieldVariable =new String[variableNumber];
+                
+                for (int i=0;i<variableNumber;i++){
+                    fieldVariable[i]=p.getLabel(i);
+                }
+                if (idVariable>=fieldVariable.length){
+                    idVariable=fieldVariable.length-1;
+                }
+                if (idVariable<0){
+                    idVariable=0;
+                }
 
-            if (!gd.wasCanceled()){
+                GenericDialog gd = new GenericDialog("ZOLA: Render scatter plot");
+                Font font = gd.getFont();
+                Font fontBold= gd.getFont();
+                try{
+                    fontBold=new Font(font.getName(),Font.BOLD,font.getSize());
+                }catch(Exception e){}
 
-                sizeRendering = (double)gd.getNextNumber();
-                minX = (double)gd.getNextNumber();
-                maxX = (double)gd.getNextNumber();
-                minY = (double)gd.getNextNumber();
-                maxY = (double)gd.getNextNumber();
-                minZ = (double)gd.getNextNumber();
-                maxZ = (double)gd.getNextNumber();
-                is3Drendering = (boolean)gd.getNextBoolean();
-                isCOLORrendering = (boolean)gd.getNextBoolean();
+                gd.addNumericField("Pixel size: ", sizeRendering,1,6,"(nm)");
+
+                gd.addChoice("Variable: ", fieldVariable,  fieldVariable[idVariable]);
+                
+                gd.addNumericField("Min_X: ", Math.floor(minX),0,6,"(nm)");
+                gd.addNumericField("Max_X: ", Math.ceil(maxX),0,6,"(nm)");
+                gd.addNumericField("Min_Y: ", Math.floor(minY),0,6,"(nm)");
+                gd.addNumericField("Max_Y: ", Math.ceil(maxY),0,6,"(nm)");
+                gd.addNumericField("Min_Z: ", Math.floor(minZ),0,6,"(nm)");
+                gd.addNumericField("Max_Z: ", Math.ceil(maxZ),0,6,"(nm)");
+                
+                
+
+                gd.showDialog();
+
+                if (!gd.wasCanceled()){
+
+                    sizeRendering = (double)gd.getNextNumber();
+                    idVariable=gd.getNextChoiceIndex();
+                    minX = (double)gd.getNextNumber();
+                    maxX = (double)gd.getNextNumber();
+                    minY = (double)gd.getNextNumber();
+                    maxY = (double)gd.getNextNumber();
+                    minZ = (double)gd.getNextNumber();
+                    maxZ = (double)gd.getNextNumber();
+                }
+                else{
+                    return;
+                }
+
+                ZRendering.scatter3D(sl,sizeRendering,minX,maxX,minY,maxY,minZ,maxZ,idVariable);
+                
             }
             else{
-                return;
+                IJ.log("please import a localization table first");
             }
-
-            if (is3Drendering){
-                ZRendering.scatter3D(sl,sizeRendering,minX,maxX,minY,maxY,minZ,maxZ,isCOLORrendering);
-            }
-            else{
-                ZRendering.scatter2D(sl,sizeRendering,minX,maxX,minY,maxY,minZ,maxZ,isCOLORrendering);
-            }
-        }
-        else{
-            IJ.log("please import a localization table first");
         }
         
     }
@@ -3967,6 +4017,14 @@ public class ZOLA implements PlugIn  {
         
         if (sl!=null){
             
+            String [] lutstmp=ZRendering.getFijiLUTs();
+            
+            String [] luts = new String[lutstmp.length+1];
+            for (int i=0;i<lutstmp.length;i++){
+                luts[i+1]=lutstmp[i];
+            }
+            luts[0]=ZRendering.lut;
+            
             
             double minX=Double.POSITIVE_INFINITY;
             double maxX=Double.NEGATIVE_INFINITY;
@@ -4018,6 +4076,7 @@ public class ZOLA implements PlugIn  {
             
             gd.addNumericField("Pixel size: ", sizeRendering,1,6,"(nm)");
             
+            gd.addChoice("Lookup_table", luts,  luts[0]);
             
             gd.addCheckbox("Show_calibration_bar :", showLUT);
             
@@ -4033,10 +4092,11 @@ public class ZOLA implements PlugIn  {
             
             
             gd.showDialog();
-
+            String lut=ZRendering.lut;
             if (!gd.wasCanceled()){
 
                 sizeRendering = (double)gd.getNextNumber();
+                lut=gd.getNextChoice();
                 showLUT = (boolean)gd.getNextBoolean();
                 shiftrendering = (int)gd.getNextNumber();
                 minX = (double)gd.getNextNumber();
@@ -4057,7 +4117,8 @@ public class ZOLA implements PlugIn  {
             
             
             
-            ZRendering.colorRendering(null,sl,sizeRendering,minX,maxX,minY,maxY,minZ,maxZ,shiftrendering,showLUT);
+            
+            ZRendering.colorRendering(null,sl,sizeRendering,minX,maxX,minY,maxY,minZ,maxZ,shiftrendering,showLUT,lut);
             
             
         }
@@ -4065,6 +4126,123 @@ public class ZOLA implements PlugIn  {
             IJ.log("please import a localization table first");
         }
     }
+    
+    
+    
+//    
+//    void scatter(){
+//        
+//        if (sl!=null){
+//            
+//            String [] lutstmp=ZRendering.getFijiLUTs();
+//            
+//            String [] luts = new String[lutstmp.length+1];
+//            for (int i=0;i<lutstmp.length;i++){
+//                luts[i+1]=lutstmp[i];
+//            }
+//            luts[0]=ZRendering.lut;
+//            
+//            
+//            double minX=Double.POSITIVE_INFINITY;
+//            double maxX=Double.NEGATIVE_INFINITY;
+//
+//            double minY=Double.POSITIVE_INFINITY;
+//            double maxY=Double.NEGATIVE_INFINITY;
+//
+//            double minZ=Double.POSITIVE_INFINITY;
+//            double maxZ=Double.NEGATIVE_INFINITY;
+//            double x;
+//            double y;
+//            double z;
+//
+//            //maybe use Arrays.sort to be fast
+//            for (int i=0;i<sl.fl.size();i++){
+//                for (int j=0;j<sl.fl.get(i).loc.size();j++){
+//                    if (sl.fl.get(i).loc.get(j).exists){
+//                        x=sl.fl.get(i).loc.get(j).X;
+//                        y=sl.fl.get(i).loc.get(j).Y;
+//                        z=sl.fl.get(i).loc.get(j).Z;
+//                        if (x<minX){
+//                            minX=x;
+//                        }
+//                        if (y<minY){
+//                            minY=y;
+//                        }
+//                        if (x>maxX){
+//                            maxX=x;
+//                        }
+//                        if (y>maxY){
+//                            maxY=y;
+//                        }
+//                        if (z<minZ){
+//                            minZ=z;
+//                        }
+//                        if (z>maxZ){
+//                            maxZ=z;
+//                        }
+//                    }
+//                }
+//            }
+//            
+//            GenericDialog gd = new GenericDialog("ZOLA: Render color image");
+//            Font font = gd.getFont();
+//            Font fontBold= gd.getFont();
+//            try{
+//                fontBold=new Font(font.getName(),Font.BOLD,font.getSize());
+//            }catch(Exception e){}
+//            
+//            gd.addNumericField("Pixel size: ", sizeRendering,1,6,"(nm)");
+//            
+//            gd.addChoice("Lookup_table", luts,  luts[0]);
+//            
+//            gd.addCheckbox("Show_calibration_bar :", showLUT);
+//            
+//            gd.addNumericField("Shift_histogram: ", shiftrendering,0,6,"(pixels)");
+//            
+//            gd.addMessage("Optional parameters");
+//            gd.addNumericField("Min_X: ", Math.floor(minX),0,6,"(nm)");
+//            gd.addNumericField("Max_X: ", Math.ceil(maxX),0,6,"(nm)");
+//            gd.addNumericField("Min_Y: ", Math.floor(minY),0,6,"(nm)");
+//            gd.addNumericField("Max_Y: ", Math.ceil(maxY),0,6,"(nm)");
+//            gd.addNumericField("Min_Z: ", Math.floor(minZ),0,6,"(nm)");
+//            gd.addNumericField("Max_Z: ", Math.ceil(maxZ),0,6,"(nm)");
+//            
+//            
+//            gd.showDialog();
+//            String lut=ZRendering.lut;
+//            if (!gd.wasCanceled()){
+//
+//                sizeRendering = (double)gd.getNextNumber();
+//                lut=gd.getNextChoice();
+//                showLUT = (boolean)gd.getNextBoolean();
+//                shiftrendering = (int)gd.getNextNumber();
+//                minX = (double)gd.getNextNumber();
+//                maxX = (double)gd.getNextNumber();
+//                minY = (double)gd.getNextNumber();
+//                maxY = (double)gd.getNextNumber();
+//                minZ = (double)gd.getNextNumber();
+//                maxZ = (double)gd.getNextNumber();
+//                
+//            }
+//            else{
+//                return;
+//            }
+//            if (shiftrendering<0){
+//                shiftrendering=0;
+//                IJ.log("render shift should be at least 0");
+//            }
+//            
+//            
+//            
+//            
+//            ZRendering.colorRendering(null,sl,sizeRendering,minX,maxX,minY,maxY,minZ,maxZ,shiftrendering,showLUT,lut);
+//            
+//            
+//        }
+//        else{
+//            IJ.log("please import a localization table first");
+//        }
+//    }
     
     
     
@@ -4314,7 +4492,6 @@ public class ZOLA implements PlugIn  {
         
         
         
-        
         if (path_localization!=null){
             File f = new File(path_localization);
             if (f.exists()){
@@ -4331,7 +4508,7 @@ public class ZOLA implements PlugIn  {
                 }*/
                 
                 
-                ZRendering.colorRendering(null,sl, 20,1,true);
+                ZRendering.colorRendering(null,sl, 20,0,true);
 
 
                 IJ.log("localization table loaded");
@@ -4404,7 +4581,7 @@ public class ZOLA implements PlugIn  {
                 else{
                     sl.append(path_localization);
                 }
-                ZRendering.colorRendering(null,sl, 20,1,true);
+                ZRendering.colorRendering(null,sl, 20,0,true);
         
                 IJ.log("localization table appended");
             }
@@ -4472,7 +4649,7 @@ public class ZOLA implements PlugIn  {
                 else{
                     sl.fuse(path_localization);
                 }
-                ZRendering.colorRendering(null,sl, 20,1,true);
+                ZRendering.colorRendering(null,sl, 20,0,true);
         
                 IJ.log("localization table fused");
             }
@@ -6367,13 +6544,17 @@ public class ZOLA implements PlugIn  {
                     else{
                         gd.addMessage("Camera is SCMOS / problem with image sizes / ERROR will occur",fontBold);
                     }
-                    String sep=File.separator;
-                    String [] var=this.path_SCMOSvariance.split(sep);
-                    String [] off=this.path_SCMOSoffset.split(sep);
-                    String [] gain=this.path_SCMOSgain.split(sep);
-                    gd.addMessage("Offset file = "+off[var.length-1]);
-                    gd.addMessage("Variance file = "+var[var.length-1]);
-                    gd.addMessage("Gain file = "+gain[var.length-1]);
+//                    String sep=File.separator;
+//                    String [] var=this.path_SCMOSvariance.split(sep);
+//                    String [] off=this.path_SCMOSoffset.split(sep);
+//                    String [] gain=this.path_SCMOSgain.split(sep);
+//                    gd.addMessage("Offset file = "+off[var.length-1]);
+//                    gd.addMessage("Variance file = "+var[var.length-1]);
+//                    gd.addMessage("Gain file = "+gain[var.length-1]);
+                    
+                    gd.addMessage("Offset file = "+path_SCMOSvariance);
+                    gd.addMessage("Variance file = "+path_SCMOSoffset);
+                    gd.addMessage("Gain file = "+path_SCMOSgain);
                     
                 }
                 
@@ -6555,14 +6736,13 @@ public class ZOLA implements PlugIn  {
                         
                         
                         dp.free();
-                    
-                    
+                        
+                        
                         MyCudaStream.destroy();
                     }
                     else{
                         
                         IJ.log("CPU not yet implemented");
-                        
                         
                     }
                     
@@ -6772,7 +6952,8 @@ gd.addMessage("should have the same size as image to register !!");
         String path_widefield3="";
         int magnification=1;
         
-        double sigmaNM=100;
+        double sigmaNMxy=100;
+        double sigmaNMz=200;
         
         processing=new Boolean(true);
         
@@ -6797,7 +6978,8 @@ gd.addMessage("should have the same size as image to register !!");
         
         gd.addNumericField("Magnification:", magnification, 0,6,"");
         
-        gd.addNumericField("Sigma:", sigmaNM, 1,6,"(nm)");
+        gd.addNumericField("Sigma_XY:", sigmaNMxy, 1,6,"(nm)");
+        gd.addNumericField("Sigma_Z:", sigmaNMz, 1,6,"(nm)");
         
         
         gd.addMessage("Output registration parameters");
@@ -6864,7 +7046,8 @@ gd.addMessage("should have the same size as image to register !!");
 
             
             magnification = (int)gd.getNextNumber();
-            sigmaNM = (double)gd.getNextNumber();
+            sigmaNMxy = (double)gd.getNextNumber();
+            sigmaNMz = (double)gd.getNextNumber();
             path = gd.getNextString(); 
             
         }
@@ -6900,8 +7083,7 @@ gd.addMessage("should have the same size as image to register !!");
                 imp3 = new ImagePlus(path_widefield3);
             }catch(Exception e){}
         }
-        IJ.log("zstep"+zstep);
-        DualColorFusion dcf=new DualColorFusion(imp,sl1,path,xystep*1000,zstep*1000,magnification,sigmaNM,imp2,imp3);
+        DualColorFusion dcf=new DualColorFusion(imp,sl1,path,xystep*1000,zstep*1000,magnification,sigmaNMxy,sigmaNMz,imp2,imp3);
         dcf.run();
         IJ.log("Registration parameters saved");
         processing=new Boolean(false);
@@ -7047,6 +7229,117 @@ gd.addMessage("should have the same size as image to register !!");
         
         
         
+        if (sl==null){
+            IJ.log("please, import first a localization table");
+            
+        }
+        else{
+            
+            double ax=0;
+            double ay=0;
+            double az=0;
+            double cx=0;
+            double cy=0;
+            double cz=0;
+            double number=0;
+            double sumcrlbX=0;
+            double sumcrlbY=0;
+            double sumcrlbZ=0;
+            for (int i=0;i<sl.fl.size();i++){
+                for (int j=0;j<sl.fl.get(i).loc.size();j++){
+                    PLocalization p=sl.fl.get(i).loc.get(j);
+                    cx=p.crlb_X*p.crlb_X;
+                    cy=p.crlb_Y*p.crlb_Y;
+                    cz=p.crlb_Z*p.crlb_Z;
+                    number++;
+                    sumcrlbX+=(1/cx);
+                    sumcrlbY+=(1/cy);
+                    sumcrlbZ+=(1/cz);
+                }
+            }
+            IJ.log("number="+number);
+            double lambda=.1;
+            loop:for (int i=0;i<sl.fl.size();i++){
+                for (int j=0;j<sl.fl.get(i).loc.size();j++){
+                    PLocalization p=sl.fl.get(i).loc.get(j);
+                    ax=0;
+                    ay=0;
+                    az=0;
+                    for (int ii=0;ii<sl.fl.size();ii++){
+                        for (int jj=0;jj<sl.fl.get(ii).loc.size();jj++){
+                            PLocalization pp=sl.fl.get(ii).loc.get(jj);
+                            //IJ.log("px:"+(pp.X/(pp.crlb_X*pp.crlb_X)));
+                            ax+=pp.X/(pp.crlb_X*pp.crlb_X);
+                            ay+=pp.Y/(pp.crlb_Y*pp.crlb_Y);
+                            az+=pp.Z/(pp.crlb_Z*pp.crlb_Z);
+                        }
+                    }
+                    cx=p.crlb_X*p.crlb_X;
+                    cy=p.crlb_Y*p.crlb_Y;
+                    cz=p.crlb_Z*p.crlb_Z;
+                    
+                    p.drift_X=(lambda*ax+number*p.X/cx)/((number/cx)+lambda*sumcrlbX);
+                    
+                    IJ.log("v "+ax+"  "+sumcrlbX+"  "+p.X/cx+"  "+(1/cx)+"   "+p.X+"   "+(ax/sumcrlbX));
+                    
+                    //p.drift_X=(p.X/cx)/((1/cx));
+                    p.drift_Y=(lambda*ay+number*p.Y/cy)/((number/cy)+lambda*sumcrlbY);
+                    p.drift_Z=(lambda*az+number*p.Z/cz)/((number/cz)+lambda*sumcrlbZ);
+                    
+                }
+            }
+            
+            for (int i=0;i<sl.fl.size();i++){
+                for (int j=0;j<sl.fl.get(i).loc.size();j++){
+                    PLocalization p=sl.fl.get(i).loc.get(j);
+                    p.X=p.drift_X;
+                    p.Y=p.drift_Y;
+                    p.Z=p.drift_Z;
+                }
+            }
+            
+            ZRendering.colorRendering(null, sl, 20, 0, true);
+            
+            
+            
+        }
+        
+        
+        
+        
+        /*
+        Zernike z = new Zernike(128,50,36);
+        
+        ImageShow.imshow(z.Z);
+        
+        Zernike za1 = new Zernike(128,50,false);
+        
+        ImageShow.imshow(za1.Z);
+        
+        Zernike za2 = new Zernike(128,50,true);
+        
+        ImageShow.imshow(za2.Z);
+        */
+        /*ImagePlus imp = IJ.getImage();
+        int w=imp.getWidth();
+        int h=imp.getHeight();
+        double [][] p1 = new double [w][h];
+        double [][] p2 = new double [w][h];
+        double [][] p3 = new double [w][h];
+        double [][] p4 = new double [w][h];
+        ImageProcessor ip = imp.getProcessor();
+        for (int i=0;i<w;i++){
+            for (int ii=0;ii<h;ii++){
+                p1[i][ii]=ip.getPixelValue(i, ii);
+            }
+        }
+        FourierTransform ft = new FourierTransform();
+        
+        ft.fft(p1, p2, p3, p4);
+        ImageShow.imshow(p3);
+        ft.ifft(p3, p4, p1, p2);
+        ImageShow.imshow(p1);*/
+        
         
         /*
         
@@ -7189,7 +7482,7 @@ gd.addMessage("should have the same size as image to register !!");
         IJ.log("well done");
         */
         
-        
+        /*
         
         ImagePlus imp = IJ.getImage();
         
@@ -7259,7 +7552,7 @@ gd.addMessage("should have the same size as image to register !!");
             }
         }
         
-        
+        */
         
         
     }
@@ -7758,7 +8051,7 @@ gd.addMessage("should have the same size as image to register !!");
                 int height=imppb.getHeight();
                 
                 
-                IJ.log("rrec "+r+"  "+width);
+                
                 int startx=0;
                 int starty=0;
                 if (r!=null){
@@ -7912,7 +8205,6 @@ gd.addMessage("should have the same size as image to register !!");
                 }
                 
                 int select=imp.getCurrentSlice();
-                IJ.log("localization is applied only on frame "+select);
                 ImageProcessor ip = imp.getProcessor();
                 ImagePlus impTest=new ImagePlus("test",ip);
                 

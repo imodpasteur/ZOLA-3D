@@ -551,17 +551,18 @@ public class LocalizationAutoFocusPipeline_ {
                     }
                     Arrays.sort(array);
                     likelihood[u]=array[array.length/2];
+
                     //average
 //                    for (int uu=0;uu<focus_likelihood_list[u].size();uu++){
 //                        likelihood[u]+=focus_likelihood_list[u].get(uu);
 //                    }
 //                    likelihood[u]/=focus_likelihood_list[u].size();
 
+                if (likelihood[u]>maxi){
+                    maxi=likelihood[u];
+                }
 
-
-                    if (likelihood[u]>maxi){
-                        maxi=likelihood[u];
-                    }
+                    
                 }
             }
             
@@ -574,6 +575,9 @@ public class LocalizationAutoFocusPipeline_ {
                         minifocus=u;
                     }
                 }
+                
+               
+                
             }
             final_focus=focus[minifocus];
             
@@ -1153,9 +1157,9 @@ public class LocalizationAutoFocusPipeline_ {
                                                             double my_crlbx=(1000*loc[partNumber][threadNumber].getCRLBX());
                                                             double my_crlby=(1000*loc[partNumber][threadNumber].getCRLBY());
                                                             double my_crlbz=(1000*loc[partNumber][threadNumber].getCRLBZ());
-
                                                             
-                                                            if (my_Score<10){
+                                                            
+                                                            if (my_Score<4&&(my_crlbx<25)&&(my_crlby<25)&&(my_crlbz<50)){
                                                                 if (my_z>0){
                                                                     focus_likelihood_list[foc].add(my_Score);
                                                                 }
