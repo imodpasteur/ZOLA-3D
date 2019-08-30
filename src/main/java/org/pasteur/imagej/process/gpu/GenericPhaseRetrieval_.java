@@ -65,6 +65,9 @@ public class GenericPhaseRetrieval_ {
     
     int [][] phasePosit;// from x,y -> return position in phase vector
     
+    
+    GS_ gs;
+    
     public GenericPhaseRetrieval_(int sizeFFT,double xystep,double zstep,double wavelength,double noil,double na,InitBackgroundAndPhotonNumber paramImage,String path_calibration,double sigma,int axialside,boolean withApoFactor){
         this.sigma=sigma;
         this.image=paramImage.image;
@@ -92,7 +95,7 @@ public class GenericPhaseRetrieval_ {
         for (int i=0;i<dparam.param.sizeDisk;i++){
             phasePosit[dparam.param.disk2D[i][0]][dparam.param.disk2D[i][1]]=i;
         }
-        ImageShow.imshow(phasePosit);
+        
         registrationStack=new double [3][nbstack];
         this.paramImage=paramImage;
         center=image[0].length/2;
@@ -178,9 +181,15 @@ public class GenericPhaseRetrieval_ {
             
         }
         
-        
-        
-        
+        double [][][] stackGS = new double [image[0].length][image[0][0].length][image[0][0][0].length];
+        for (int i=0;i<image[0].length;i++){
+            for (int ii=0;ii<image[0][0].length;ii++){
+                for (int iii=0;iii<image[0][0][0].length;iii++){
+                    stackGS[i][ii][iii]=(image[0][i][ii][iii]-paramImage.B[0])/paramImage.A[0][i];
+                }
+            }
+        }
+        gs=new GS_(stackGS,dparam.param,axialside);
         
         this.path_calibration=path_calibration;
     }
@@ -347,8 +356,9 @@ public class GenericPhaseRetrieval_ {
         
         
         
-        double likelihood=initialization(iterations);
-        
+        initializationGS(50);
+        double likelihood=Double.POSITIVE_INFINITY;
+        //double likelihood=initialization2(10);
         
         
         IJ.log("calibration started");
@@ -450,8 +460,10 @@ public class GenericPhaseRetrieval_ {
     }
     
     
-    
     void showImageAndModel(){
+        showImageAndModel("input-model image");
+    }
+    void showImageAndModel(String figname){
         
         
         double [][][] modconcat = new double[image.length*image[0].length][image[0][0].length][image[0][0][0].length];
@@ -490,13 +502,17 @@ public class GenericPhaseRetrieval_ {
         //computeMeanAndVar(this.image,mod);
         ///////////////////////////////////////////////////////////////////////////
         
-        ImageShow.imshow(imageconcat,modconcat,"input/model image");
+        ImageShow.imshow(imageconcat,modconcat,""+figname);
         IJ.setMinAndMax(themin, themax);
         
         
     }
     
+    
     void showPhase(){
+        showPhase("Phase");
+    }
+    void showPhase(String namefig){
         
         double [][] ph=new double[dparam.param.size][dparam.param.size];
         for (int p=0;p<dparam.param.sizeDisk;p++){
@@ -508,7 +524,7 @@ public class GenericPhaseRetrieval_ {
         double themax=Double.NEGATIVE_INFINITY;
         for (int i=0;i<ph.length;i++){
             for (int ii=0;ii<ph[i].length;ii++){
-                ph[i][ii]=(float)((double)ph[i][ii]%(2.*Math.PI));
+                //ph[i][ii]=(float)((double)ph[i][ii]%(2.*Math.PI));
                 if (themin>ph[i][ii]){
                     themin=ph[i][ii];
                 }
@@ -517,7 +533,7 @@ public class GenericPhaseRetrieval_ {
                 }
             }
         }
-        ImageShow.imshow(ph,"phase");
+        ImageShow.imshow(ph,""+namefig);
         IJ.setMinAndMax(themin, themax);
     }
     
@@ -541,6 +557,58 @@ public class GenericPhaseRetrieval_ {
         return som;
     }
     
+    
+    void initializationGS(int iterations){
+        gs.run(iterations);
+        this.updateRegistrationStacks(nbstack);
+        
+        double [][] phase= gs.getPhase();
+        for (int i=0;i<dparam.param.disk2D.length;i++){
+            int j=dparam.param.disk2D[i][0];
+            int jj=dparam.param.disk2D[i][1];
+            phase[j][jj]=phase[j][jj]%(2*Math.PI);
+            
+            dparam.phaseNonZer.setValuePixel(i, phase[j][jj]);
+        }
+        dparam.psf_fMany.updatePhase(dparam.phaseZer.computeCombinationPlusOtherPhase(dparam.phaseNonZer.getPointerPhase()));
+        gs.free();
+        
+        
+        for (int u=0;u<iterations;u++){
+            this.updatePhotonBpoly(nbstack,2);
+            this.updatePhotonAeach(nbstack);
+            this.updateRegistrationStacks(nbstack);
+        }
+        showPhase("Gerchberg-Saxton initialization");
+        this.showImageAndModel("Gerchberg-Saxton initialization");
+        
+        
+        
+        
+        
+    }
+    
+    
+    double initialization2(int iterations){
+        
+        for (int u=0;u<iterations;u++){
+            int angleSplit=4+(int)(Math.random()*58);
+            int distSplit=20+(int)(Math.random()*10);
+            this.updatePhaseNonZernike(nbstack,angleSplit,distSplit);
+            this.updatePhotonBpoly(nbstack,2);
+            this.updatePhotonAeach(nbstack);
+            this.updateRegistrationStacks(nbstack);
+        }
+        showPhase("second step initialization");
+        this.showImageAndModel("second step initialization");
+        double likelihood = this.getLikelihood(nbstack);
+        
+        IJ.log("initialization 7/7");
+        
+        
+        
+        return likelihood;
+    }
     
     double initialization(int iterations){
         
@@ -578,12 +646,13 @@ public class GenericPhaseRetrieval_ {
         }
         for (int u=0;u<100;u++){
             int angleSplit=4+(int)(Math.random()*3);
-            int distSplit=2+(int)(Math.random()*3);
+            int distSplit=1;//2+(int)(Math.random()*3);
             this.updatePhaseNonZernike(1,angleSplit,distSplit);
             this.updateRegistrationStacks(1);
             
         }
         
+        IJ.log("z"+registrationStack[2][0]);
         
         
         IJ.log("initialization 2/7");
@@ -592,11 +661,10 @@ public class GenericPhaseRetrieval_ {
         
         for (int u=0;u<20;u++){
             int angleSplit=4+(int)(Math.random()*12);
-            int distSplit=2+(int)(Math.random()*12);
+            int distSplit=1;//2+(int)(Math.random()*12);
             this.updatePhaseNonZernike(1,angleSplit,distSplit);
             this.updateRegistrationStacks(1);
         }
-        
         
         
         IJ.log("initialization 3/7");
@@ -605,7 +673,7 @@ public class GenericPhaseRetrieval_ {
         
         for (int u=0;u<20;u++){
             int angleSplit=4+(int)(Math.random()*15);
-            int distSplit=2+(int)(Math.random()*15);
+            int distSplit=1;//2+(int)(Math.random()*15);
             this.updatePhaseNonZernike(1,angleSplit,distSplit);
             this.updateRegistrationStacks(1);
         }
@@ -616,8 +684,6 @@ public class GenericPhaseRetrieval_ {
         this.updatePhotonBpoly(1,2);
         this.updatePhotonAeach(1);
         
-        
-        IJ.log("initialization 4/7");
         
         for (int u=0;u<15;u++){
             int angleSplit=4+(int)(Math.random()*20);
@@ -628,9 +694,8 @@ public class GenericPhaseRetrieval_ {
         
         this.updatePhotonBpoly(1,2);
         this.updatePhotonAeach(1);
+        IJ.log("z"+registrationStack[2][0]);
         
-        
-        IJ.log("initialization 5/7");
         showPhase();
         this.showImageAndModel();
         
@@ -646,7 +711,6 @@ public class GenericPhaseRetrieval_ {
         this.updatePhotonAeach(1);
         
         
-        
         showPhase();
         this.showImageAndModel();
         
@@ -654,9 +718,8 @@ public class GenericPhaseRetrieval_ {
         this.updatePhotonAeach(nbstack);
         this.updateRegistrationStacks(nbstack);
         
-        IJ.log("initialization 6/7");
-        
-        for (int u=0;u<30;u++){
+        IJ.log("z"+registrationStack[2][0]);
+        for (int u=0;u<10;u++){
             int angleSplit=4+(int)(Math.random()*58);
             int distSplit=20+(int)(Math.random()*12);
             this.updatePhaseNonZernike(nbstack,angleSplit,distSplit);
@@ -664,7 +727,6 @@ public class GenericPhaseRetrieval_ {
             this.updatePhotonAeach(nbstack);
             this.updateRegistrationStacks(nbstack);
         }
-        
         showPhase();
         this.showImageAndModel();
         
@@ -796,7 +858,7 @@ public class GenericPhaseRetrieval_ {
                     lik1+=model3D[z].getLikelihood(methodLikelihood);
                 }
                 
-                IJ.log("lik1 "+lik1+"  "+getPhaseRegularization(p,save-h));
+                //IJ.log("lik1 "+lik1+"  "+getPhaseRegularization(p,save-h));
                 lik1+=lambda*getPhaseRegularization(p,save-h);
                 
 
@@ -1004,7 +1066,7 @@ public class GenericPhaseRetrieval_ {
                 }
                 
                 boolean found=false;
-                loop:for (double gamma=1;gamma>.02;gamma/=10){
+                loop:for (double gamma=1;gamma>.00002;gamma/=10){
                     
                     double lik=0;
                     for (int z=0;z<stackNumber;z++){
@@ -1028,12 +1090,16 @@ public class GenericPhaseRetrieval_ {
                         break loop;
                     }
                     else{
+                        //IJ.write("old / new "+lik2+"   "+lik+"   "+grad);
                         dparam.phaseNonZer.setValuesPhase(p, save);
                     }
                 }
                 if (!found){
                     dparam.psf_fMany.updatePhase(dparam.phaseZer.computeCombinationPlusOtherPhase(dparam.phaseNonZer.getPointerPhase()));
                     
+                    
+                }
+                else{
                     
                 }
             }

@@ -87,6 +87,7 @@ public class CRLB_ {
         
         //IJ.log("position "+position);
         
+        boolean computeSTD=false;
         
         if (matrixParameter==null){
             
@@ -100,6 +101,15 @@ public class CRLB_ {
                 int k=0;
                 double [][][] im = new double [nb][][];
                 
+                double [] std_PSFX = null;
+                double [] std_PSFY = null;
+                double [] std_PSFAVG = null;
+                if (computeSTD==true){
+                    std_PSFX = new double [nb];
+                    std_PSFY = new double [nb];
+                    std_PSFAVG = new double [nb];
+                }
+                
                 double [][][] im2=null;
                 
                 double meanCRLBX=0;
@@ -110,8 +120,35 @@ public class CRLB_ {
                     dp.psf.computePSF(0, 0,this.dp.param.Zfocus,u);
                     im[k]=dp.psf.getPSF();
                     
-                    
+                    if (computeSTD){
+                        double meanX=0;
+                        double meanY=0;
+                        double sum=0;
+                        for (int up1=0;up1<im[k].length;up1++){
+                            for (int up2=0;up2<im[k][up1].length;up2++){
+                                meanX+=up1*im[k][up1][up2];
+                                meanY+=up2*im[k][up1][up2];
+                                sum+=im[k][up1][up2];
+                            }
+                        }
+                        meanX/=sum;
+                        meanY/=sum;
 
+                        std_PSFX[k]=0;
+                        std_PSFY[k]=0;
+                        for (int up1=0;up1<im[k].length;up1++){
+                            for (int up2=0;up2<im[k][up1].length;up2++){
+                                std_PSFX[k]+=im[k][up1][up2]*(up1-meanX)*(up1-meanX);
+                                std_PSFY[k]+=im[k][up1][up2]*(up2-meanY)*(up2-meanY);
+
+                            }
+                        }
+                        std_PSFAVG[k]=std_PSFX[k]+std_PSFY[k];
+                        std_PSFX[k]=Math.sqrt(std_PSFX[k]/sum);
+                        std_PSFY[k]=Math.sqrt(std_PSFY[k]/sum);
+                        std_PSFAVG[k]=Math.sqrt(std_PSFAVG[k]/sum);
+                    }
+                    
                     double [] res=this.computeFisher(0, 0, u, .0005);
                     
                     xCRLB[k]=res[0];
@@ -163,6 +200,11 @@ public class CRLB_ {
                     this.plot(x_abs, xCRLB,"CRLB(X)","Z (µm)","sigma X (nm)");
                     this.plot(x_abs, yCRLB,"CRLB(Y)","Z (µm)","sigma Y (nm)");
                     this.plot(x_abs, zCRLB,"CRLB(Z)","Z (µm)","sigma Z (nm)");
+                    if (computeSTD){
+                        this.plot(x_abs, std_PSFX,"std(Z)","Z (µm)","std PSF X (pix)");
+                        this.plot(x_abs, std_PSFY,"std(Z)","Z (µm)","std PSF Y (pix)");
+                        this.plot(x_abs, std_PSFAVG,"std(Z)","Z (µm)","std PSF Average (pix)");
+                    }
                 }
 
             }

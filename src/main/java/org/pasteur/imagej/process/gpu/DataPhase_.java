@@ -806,6 +806,7 @@ public class DataPhase_ {
                 for (int i=0;i<msg.length;i++){
                     coefa[i]=i;
                     a[i]=Double.parseDouble((msg[i]));
+                    //a[i]=Math.random()*2*3.141592;
                     //IJ.log("load "+i+"  "+a[i]);
                 }
 
@@ -826,6 +827,7 @@ public class DataPhase_ {
                 double [] a = new double [nbCoefa];
                 for (int i=0;i<msg.length;i++){
                     a[i]=Double.parseDouble((msg[i]));
+                    
                     //IJ.log("load "+i+"  "+a[i]);
                 }
 

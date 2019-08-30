@@ -51,7 +51,8 @@ public class ConfigFile {
 "Plugins>ZOLA>Dual color, \"Color Registration\", org.pasteur.imagej.ZOLA(\"zola_colorRegistration\")\n",
     
         
-        "Plugins>ZOLA>Drift correction, \"3D Fiducial-markers\", org.pasteur.imagej.ZOLA(\"zola_driftCorrectionFiducialMarker\")\n",
+        "Plugins>ZOLA>Drift correction, \"3D Fiducial-markers\", org.pasteur.imagej.ZOLA(\"zola_driftCorrectionFiducialMarker\")\n"+
+        "Plugins>ZOLA>Drift correction, \"set Drift\", org.pasteur.imagej.ZOLA(\"zola_setDrift\")\n",
         
         "Plugins>ZOLA>additional tools>statistic, \"localization histogram\", org.pasteur.imagej.ZOLA(\"zola_stathisto\")\n"+
         "Plugins>ZOLA>additional tools>statistic, \"measure residence time\", org.pasteur.imagej.ZOLA(\"zola_statAttachTime1\")\n",
@@ -63,6 +64,7 @@ public class ConfigFile {
         "Plugins>ZOLA>Visualization, \"scatter_plot\", org.pasteur.imagej.ZOLA(\"zola_scatterPlot\")\n",
         
     "Plugins>ZOLA>dev, \"Multi-emitter localization\", org.pasteur.imagej.ZOLA(\"zola_multi-emitter localization\")\n" +
+"Plugins>ZOLA>dev, \"merge frames\", org.pasteur.imagej.ZOLA(\"zola_mergeframe\")\n" +
 "Plugins>ZOLA>dev, \"test\", org.pasteur.imagej.ZOLA(\"zola_test\")\n" +
 "Plugins>ZOLA>dev>Simulation, \"Simulation\", org.pasteur.imagej.ZOLA(\"zola_simulation\")\n" +
 "Plugins>ZOLA>dev>Simulation, \"Simulation2beads\", org.pasteur.imagej.ZOLA(\"zola_simulation2beads\")\n" +
@@ -72,7 +74,9 @@ public class ConfigFile {
 "Plugins>ZOLA>dev, \"CRLBfromFileDualObj\", org.pasteur.imagej.ZOLA(\"zola_crlb_FromFileDualObj\")\n" +
 "Plugins>ZOLA>dev, \"Photon conversion wrong\", org.pasteur.imagej.ZOLA(\"zola_photonConversion\")\n"+
 "Plugins>ZOLA>dev>Resolution, \"points Measurment\", org.pasteur.imagej.ZOLA(\"zola_pointResolution\")\n" +
-"Plugins>ZOLA>dev>Resolution, \"filament Measurment\", org.pasteur.imagej.ZOLA(\"zola_filamentResolution\")"};
+"Plugins>ZOLA>dev>Resolution, \"filament Measurment\", org.pasteur.imagej.ZOLA(\"zola_filamentResolution\")\n" +
+"Plugins>ZOLA>dev>, \"RemoveLocalizations\", org.pasteur.imagej.ZOLA(\"zola_removeLocalizations\")\n" +
+"Plugins>ZOLA>dev>, \"Dec\", org.pasteur.imagej.ZOLA(\"zola_deconvolution\") "};
     
     
     static String [] message = {

@@ -991,9 +991,9 @@ public class ZRendering {
                     }
                     else{
                         RGB=new int[3];
-                        double red=rlut[(int)Math.ceil((1-angle)*256)-1];
-                        double green=glut[(int)Math.ceil((1-angle)*256)-1];
-                        double blue=blut[(int)Math.ceil((1-angle)*256)-1];
+                        double red=rlut[(int)Math.ceil((1-angle+.00000001)*255)-1];
+                        double green=glut[(int)Math.ceil((1-angle+.00000001)*255)-1];
+                        double blue=blut[(int)Math.ceil((1-angle+.00000001)*255)-1];
                         if (red<0){
                             red+=256;
                         }
@@ -1503,12 +1503,15 @@ public class ZRendering {
                     y=sl.fl.get(i).loc.get(j).Y;
                     xx=(int)((x-minX)/pixelsizeNM)+shift;
                     yy=(int)((y-minY)/pixelsizeNM)+shift;
-                    //IJ.log("z "+z);
-                    if ((xx-shift>=0)&&(yy-shift>=0)&&(xx+shift<width)&&(yy+shift<height)){
-                        for (int a=-shift,aa=0;a<=shift;a++,aa++){
-                            for (int b=-shift,bb=0;b<=shift;b++,bb++){
-                                if ((xx+a>=0)&&(xx+a<width)&&(yy+b>=0)&&(yy+b<height)){
-                                    ip[0].putPixelValue(xx+a, yy+b, ip[0].getPixelValue(xx+a, yy+b)+shifT[aa][bb]);
+                    z=sl.fl.get(i).loc.get(j).Z;
+                    if ((z>minZ)&&(z<maxZ)){
+                        //IJ.log("z "+z);
+                        if ((xx-shift>=0)&&(yy-shift>=0)&&(xx+shift<width)&&(yy+shift<height)){
+                            for (int a=-shift,aa=0;a<=shift;a++,aa++){
+                                for (int b=-shift,bb=0;b<=shift;b++,bb++){
+                                    if ((xx+a>=0)&&(xx+a<width)&&(yy+b>=0)&&(yy+b<height)){
+                                        ip[0].putPixelValue(xx+a, yy+b, ip[0].getPixelValue(xx+a, yy+b)+shifT[aa][bb]);
+                                    }
                                 }
                             }
                         }

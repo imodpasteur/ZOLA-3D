@@ -698,6 +698,52 @@ public class Zernike {
     
     
     
+    
+    
+    //angular radial transform
+    public double [][] getGL(double N,boolean iscomplex){
+        
+        double [][] image = new double [sizeImagePx][sizeImagePx];
+        
+        double centerX=((double)sizeImagePx)/2.-.5;
+        double centerY=((double)sizeImagePx)/2.-.5;
+        for (int i=0;i<sizeImagePx;i++){
+            for (int ii=0;ii<sizeImagePx;ii++){
+                double x=((double)(i-centerX)/radiusRing);
+                double y=((double)(ii-centerY)/radiusRing);
+                double theta=Math.atan2(y,x);
+                double rho=Math.sqrt(x*x+y*y);
+                
+                if (rho<1){
+                    for (double n=1;n<=N;n++){
+                        if ((rho>Math.sqrt((n-1)/N))&&(rho<Math.sqrt(n/N))){
+                            image[i][ii]=(2*n-1)*theta;
+                            IJ.log("n "+n);
+                        }
+                    }
+                    //IJ.log("im "+i+"  "+ii+"  "+image[i][ii]);
+                }
+            }
+        }
+        
+        
+        
+        
+        
+        
+        //ImageShow.imshow(image,"zernike "+n+"  "+m);
+        
+        
+        return image;
+        
+    }
+    
+    
+    
+    
+    
+    
+    
     //angular radial transform
     public double [][] getART(int n, int m,boolean iscomplex){
         
