@@ -79,7 +79,7 @@ public class ZernikePhaseRetrieval_ {
         //astuce for registration
         dparam.phaseZer.setMatAtPosit(dparam.psf.getPointerkx(),0);
         dparam.phaseZer.setMatAtPosit(dparam.psf.getPointerky(),1);
-        dparam.phaseZer.setMatAtPosit(dparam.psf.getPointerkz(),2);
+        dparam.phaseZer.setMatAtPosit(dparam.psf.getPointerkzOil(),2);
             
         
         registrationStack=new double [3][nbstack];
