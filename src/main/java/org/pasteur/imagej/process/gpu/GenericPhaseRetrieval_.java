@@ -83,7 +83,7 @@ public class GenericPhaseRetrieval_ {
         //astuce for registration
         dparam.phaseZer.setMatAtPosit(dparam.psf.getPointerkx(),0);
         dparam.phaseZer.setMatAtPosit(dparam.psf.getPointerky(),1);
-        dparam.phaseZer.setMatAtPosit(dparam.psf.getPointerkz(),2);
+        dparam.phaseZer.setMatAtPosit(dparam.psf.getPointerkzOil(),2);
             
         phasePosit=new int[dparam.param.size][dparam.param.size];
         for (int i=0;i<dparam.param.size;i++){

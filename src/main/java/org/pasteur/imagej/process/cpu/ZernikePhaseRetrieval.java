@@ -85,14 +85,18 @@ public class ZernikePhaseRetrieval {
         
         nbProcess=nbSlice;
         
-        dparam = new DataPhase(sizeFFT,image[0][0].length,0,xystep,zstep,wavelength,noil,na,1.0,zernikeCoefNumber,withApoFactor);
         
+        
+        dparam = new DataPhase(sizeFFT,image[0][0].length,0,xystep,zstep,wavelength,noil,na,1.0,zernikeCoefNumber,withApoFactor);
+        dparam.setNwat(dparam.param.noil);//ca ne change rien normalement car bille collée à lamelle
         dparam.param.Zfocus=0;
         dparam.phaseZer.setMatAtPosit(dparam.psf.getKxPointer(),0);
         dparam.phaseZer.setMatAtPosit(dparam.psf.getKyPointer(),1);
-        dparam.phaseZer.setMatAtPosit(dparam.psf.getKzPointer(),2);
-        dparam.setNwat(dparam.param.noil);//ca ne change rien normalement car bille collée à lamelle
+        dparam.phaseZer.setMatAtPosit(dparam.psf.getKzOilPointer(),2);
+        
         dparam.setMany(nbProcess);
+        
+        
         monitor1 = new Object[nbProcess];
         monitor0 = new Object();
         toBeblocked=new boolean [nbProcess];
@@ -188,7 +192,15 @@ public class ZernikePhaseRetrieval {
         //IJ.log("zstep "+dparam.param.zstep);
         
         this.phase_retrieve_zernike(nbIter);
-        
+        IJ.log("");
+        for (int z=0;z<this.nbstack;z++){
+            
+            IJ.log("registration bead_"+z+"(x) = "+this.registrationStack[0][z]+"  (µm)");
+            IJ.log("registration bead_"+z+"(y) = "+this.registrationStack[1][z]+"  (µm)");
+            IJ.log("registration bead_"+z+"(z) = "+this.registrationStack[2][z]+"  (µm)");
+            
+        }
+        IJ.log("");
         if (path_calibration.length()>2){
             dparam.save(path_calibration);
             IJ.log("calibration file saved");
@@ -363,6 +375,8 @@ public class ZernikePhaseRetrieval {
         }
         ImageShow.imshow(ph,"phase");
         IJ.setMinAndMax(themin, themax);
+        
+        
     }
     
     
@@ -476,15 +490,16 @@ public class ZernikePhaseRetrieval {
         
         IJ.log("initialization 1/6");
         
+        
         likelihood=init(likelihood,1, 3,6, -3, 3,1);
+        
         likelihood=init(likelihood,1, 6,10, -1, 1,1);
+        
         IJ.log("initialization 2/6");
         likelihood=init(likelihood,1, 10,15, -1, 1,1);
         likelihood=init(likelihood,1, 15,21, -1, 1,1);
         
         IJ.log("initialization 3/6");
-        
-        
         
         
         //ImageShow.imshow(model3D[0].getModel(),"model");
@@ -514,8 +529,6 @@ public class ZernikePhaseRetrieval {
             //IJ.log("likelihood "+likelihood);
             
         }
-        
-        
         
         
         loop1_2:for (int t=0;t<Math.min(3,iterations/2+1);t++){
@@ -589,7 +602,6 @@ public class ZernikePhaseRetrieval {
         for (int t=0;t<iterations/2;t++){
             this.updateRegistrationStacks(nbstack);
         }
-        
         
         
         loop1_4:for (int t=0;t<Math.min(6,iterations/2+1);t++){
@@ -1728,6 +1740,7 @@ public class ZernikePhaseRetrieval {
             this.monitor1=monitor1;
             this.mod=new double [dparam.param.sizeoutput][dparam.param.sizeoutput];
             this.idSlice=idSlice;
+            
         }
         
         

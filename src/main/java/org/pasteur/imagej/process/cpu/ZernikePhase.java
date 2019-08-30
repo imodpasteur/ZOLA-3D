@@ -182,6 +182,7 @@ public class ZernikePhase {
     
     
     public void computeCombination(){
+        
         if ((computeAll>=1)&&(computeAll<=nbMax)){//to compute faster...if only 1 element changed in a (as it is often the case)
             for (int i=0;i<nbMax;i++){
                 for (int ii=0;ii<this.nbDataPerImage;ii++){

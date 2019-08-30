@@ -226,7 +226,7 @@ public class PSF_double_ {
                         kz_is_imaginary[id]=1;
                     }
                     else{
-                        kz[id]=0;//2*Math.PI*Math.sqrt(Math.abs(left-right));
+                        kz[id]=0;//-2*Math.PI*Math.sqrt(Math.abs(left-right));
                         kz_is_imaginary[id]=0;
                     }
                     
@@ -248,8 +248,9 @@ public class PSF_double_ {
                         }
                     }
                     else{
-                        pupil[id]=1/(double)Math.sqrt(param.sizeDisk_cpu);//like that -> final sum=1 (unuseful actually because we normalize at the end)
+                        pupil[id]=1/(double)Math.sqrt(param.sizeDisk);//like that -> final sum=1 (unuseful actually because we normalize at the end)
                     }
+                    
                     
                     phase[id]=0;
                     
@@ -339,6 +340,7 @@ public class PSF_double_ {
         host_kx= Pointer.to(kx);
         host_ky= Pointer.to(ky);
         host_kz= Pointer.to(kz);
+        
         host_kz_oil= Pointer.to(kz_oil);
         host_kz_is_imaginary= Pointer.to(kz_is_imaginary);
         host_kz_oil_is_imaginary= Pointer.to(kz_oil_is_imaginary);
@@ -372,6 +374,7 @@ public class PSF_double_ {
         setHost2Device(device_ky,host_ky,param.sizeDisk,Sizeof.DOUBLE);
         setHost2Device(device_kz_oil,host_kz_oil,param.sizeDisk,Sizeof.DOUBLE);
         setHost2Device(device_kz,host_kz,param.sizeDisk,Sizeof.DOUBLE);
+        
         setHost2Device(device_kz_is_imaginary,host_kz_is_imaginary,param.sizeDisk,Sizeof.DOUBLE);
         setHost2Device(device_kz_oil_is_imaginary,host_kz_oil_is_imaginary,param.sizeDisk,Sizeof.DOUBLE);
         setHost2Device(device_sparseIndexOutput,host_sparseIndexOutput,sizeoutput2*sizeoutput2,Sizeof.INT);
@@ -1576,6 +1579,11 @@ public class PSF_double_ {
     public Pointer getPointerkz(){
         int cudaResult=JCuda.cudaStreamSynchronize(MyCudaStream.getCudaStream_t(param.stream));if (cudaResult != cudaError.cudaSuccess){IJ.log("ERROR synchro cuda PSF 1 "+cudaResult+"   "+param.stream);}
         return device_kz;
+    }
+    
+    public Pointer getPointerkzOil(){
+        int cudaResult=JCuda.cudaStreamSynchronize(MyCudaStream.getCudaStream_t(param.stream));if (cudaResult != cudaError.cudaSuccess){IJ.log("ERROR synchro cuda PSF 1 "+cudaResult+"   "+param.stream);}
+        return device_kz_oil;
     }
     
     

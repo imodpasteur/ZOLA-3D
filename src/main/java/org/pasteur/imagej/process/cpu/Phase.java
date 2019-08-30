@@ -92,8 +92,8 @@ public class Phase {
         double angle,dist,x,y;
         
         for (int i=0;i<nbDataPerImage;i++){
-            x=param.disk2D[i][0]-param.centerFourierImage;
-            y=param.disk2D[i][1]-param.centerFourierImage;
+            x=param.disk2D_cpu[i][0]-param.centerFourierImage;
+            y=param.disk2D_cpu[i][1]-param.centerFourierImage;
             if (x!=0){
                 angle=Math.atan2(y, x)+Math.PI;
             }

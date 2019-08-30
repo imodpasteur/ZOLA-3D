@@ -165,7 +165,8 @@ public class PSFPhase {
                         kz_is_imaginary[id]=1;
                     }
                     else{
-                        kz[id]=2*Math.PI*Math.sqrt(Math.abs(left-right));
+                        kz[id]=0;//2*Math.PI*Math.sqrt(Math.abs(left-right));
+                        //kz[id]=0;
                         kz_is_imaginary[id]=0;
                     }
                     
@@ -174,7 +175,9 @@ public class PSFPhase {
                         kz_oil_is_imaginary[id]=1;
                     }
                     else{
-                        kz_oil[id]=2*Math.PI*Math.sqrt(Math.abs(left_oil-right));
+                        kz_oil[id]=0;//2*Math.PI*Math.sqrt(Math.abs(left_oil-right));
+                        
+                        //kz_oil[id]=0;
                         kz_oil_is_imaginary[id]=0;
                     }
                     
@@ -183,10 +186,12 @@ public class PSFPhase {
                             pupil[id]=(float)(1/Math.pow(1-(right/left_oil),.25));//with apodization factor
                         }
                         else{
+                            IJ.log("apo problem");
                             pupil[id]=0;
                         }
                     }
                     else{
+                        
                         pupil[id]=1/(double)Math.sqrt(param.sizeDisk_cpu);//like that -> final sum=1 (unuseful actually because we normalize at the end)
                     }
                     
@@ -538,6 +543,11 @@ public class PSFPhase {
     
     public double [] getKzPointer(){
         return kz;
+    }
+    
+    
+    public double [] getKzOilPointer(){
+        return kz_oil;
     }
     
     public void imshowPhase(){

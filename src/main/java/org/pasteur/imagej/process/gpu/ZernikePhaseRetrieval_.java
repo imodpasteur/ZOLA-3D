@@ -203,9 +203,20 @@ public class ZernikePhaseRetrieval_ {
         //this.phase_retrieve_zernike_cross_validation(nbIter);
         
         this.phase_retrieve_zernike(nbIter);
-        
+        IJ.log("");
+        for (int z=0;z<this.nbstack;z++){
+            
+            IJ.log("registration bead_"+z+"(x) = "+this.registrationStack[0][z]+"  (µm)");
+            IJ.log("registration bead_"+z+"(y) = "+this.registrationStack[1][z]+"  (µm)");
+            IJ.log("registration bead_"+z+"(z) = "+this.registrationStack[2][z]+"  (µm)");
+            
+        }
+        IJ.log("");
         if (path_calibration.length()>2){
             dparam.save(path_calibration);
+            
+            
+            
             IJ.log("calibration file saved");
         }
         else{

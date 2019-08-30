@@ -2453,6 +2453,7 @@ public class ZOLA implements PlugIn  {
                         }
                         dp.setSizeoutput(sizePatch);
                         dp.setNwat(dp.param.noil);
+                        
                         dp.param.Zfocus=0;
                         xystep=dp.param.xystep;
                         IJ.log("Localization started");

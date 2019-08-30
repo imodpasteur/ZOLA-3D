@@ -171,7 +171,8 @@ public class PSFPhaseMany {
                         kz_is_imaginary[id]=1;
                     }
                     else{
-                        kz[id]=2*Math.PI*Math.sqrt(Math.abs(left-right));
+                        //kz[id]=2*Math.PI*Math.sqrt(Math.abs(left-right));
+                        kz[id]=0;
                         kz_is_imaginary[id]=0;
                     }
                     
@@ -180,7 +181,8 @@ public class PSFPhaseMany {
                         kz_oil_is_imaginary[id]=1;
                     }
                     else{
-                        kz_oil[id]=2*Math.PI*Math.sqrt(Math.abs(left_oil-right));
+                        //kz_oil[id]=2*Math.PI*Math.sqrt(Math.abs(left_oil-right));
+                        kz_oil[id]=0;
                         kz_oil_is_imaginary[id]=0;
                     }
                     
@@ -189,6 +191,7 @@ public class PSFPhaseMany {
                             pupil[id]=(double)(1/Math.pow(1-(right/left_oil),.25));//with apodization factor
                         }
                         else{
+                            
                             pupil[id]=0;
                         }
                     }
@@ -278,6 +281,19 @@ public class PSFPhaseMany {
 
         for (int i=0;i<param.sizeDisk_cpu;i++){
             mat[param.disk2D_cpu[i][0]][param.disk2D_cpu[i][1]]=phase[i];
+        }
+            
+        return mat;
+    }
+    
+    
+    
+    public double [][] getPupil(){
+        double [][] mat = new double [param.size_cpu][param.size_cpu];
+        
+
+        for (int i=0;i<param.sizeDisk_cpu;i++){
+            mat[param.disk2D_cpu[i][0]][param.disk2D_cpu[i][1]]=pupil[i];
         }
             
         return mat;

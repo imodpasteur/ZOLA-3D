@@ -81,12 +81,13 @@ public class GenericPhaseRetrieval {
         nbProcess=nbSlice;
         
         dparam = new DataPhase(sizeFFT,image[0][0].length,0,xystep,zstep,wavelength,noil,na,1.0,withApoFactor);
+        dparam.setNwat(dparam.param.noil);//ca ne change rien normalement car bille collée à lamelle
         dparam.param.zernikedPSF=false;
         dparam.param.Zfocus=0;
         dparam.phaseZer.setMatAtPosit(dparam.psf.getKxPointer(),0);
         dparam.phaseZer.setMatAtPosit(dparam.psf.getKyPointer(),1);
-        dparam.phaseZer.setMatAtPosit(dparam.psf.getKzPointer(),2);
-        dparam.setNwat(dparam.param.noil);//ca ne change rien normalement car bille collée à lamelle
+        dparam.phaseZer.setMatAtPosit(dparam.psf.getKzOilPointer(),2);
+        
         dparam.setMany(nbProcess);
         monitor1 = new Object[nbProcess];
         monitor0 = new Object();
@@ -1009,7 +1010,7 @@ public class GenericPhaseRetrieval {
         double lastLikelihood=-1;
         
        
-        for (int p=0;p<dparam.param.sizeDisk;p++){
+        for (int p=0;p<dparam.param.sizeDisk_cpu;p++){
             
             if (true){
                 

@@ -483,13 +483,13 @@ public class DataPhase {
                     sortie.println("zstep,"+param.zstep);
                     sortie.println("dimPhase,"+0);
                     sortie.println("orderPupil,"+0);
-                    sortie.println("size,"+param.size);
+                    sortie.println("size,"+param.size_cpu);
                     sortie.println("sizePix,"+param.xystep);
                     sortie.println("NA,"+param.na);
                     sortie.println("index,"+param.noil);
                     sortie.println("wavelength,"+param.wavelength);
                     sortie.println("sigmaGaussianKernel,"+param.sigmaGaussianKernel);
-                    sortie.println("sizeRingInPixel,"+param.sizeRadiusRingPixel);
+                    sortie.println("sizeRingInPixel,"+param.sizeRadiusRingPixel_cpu);
                     sortie.println("Result Phase Retrieval Zernike Decomposition");
                     sortie.println("position,"+0);
                     sortie.println("A,"+param.A);
@@ -691,7 +691,7 @@ public class DataPhase {
                 }
                 
                 this.phaseNonZer=new Phase(param);
-                IJ.log("nbCoef "+nbCoefa+"    "+sizeFFT+"  "+param.size+"  "+param.size_cpu);
+                IJ.log("nbCoef "+nbCoefa+"    "+sizeFFT+"  "+param.size_cpu+"  "+param.size_cpu);
                 IJ.log("nbCoefphaseNonZer "+phaseNonZer.phase.length+"  ");
                 phaseNonZer.setValuesPhase(a);
                 
@@ -716,7 +716,7 @@ public class DataPhase {
             //JSONObject obj = new JSONObject();
             obj.put("zstep",param.zstep);
             //obj.put("orderPupil",param.orderGaussianPupil);
-            obj.put("sizeFFT",param.size);
+            obj.put("sizeFFT",param.size_cpu);
             obj.put("sizePix",param.xystep);
             obj.put("NA",param.na);
             obj.put("index",param.noil);
