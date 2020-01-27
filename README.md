@@ -11,6 +11,7 @@ Example of reconstructed images can be downloaded [HERE](https://github.com/imod
 ## License
 
 GPLV3
+The plugin is distributed under the license GPLV3 on an "as is" basis, without warranties or conditions of any kind.
 
 ## Requirements
 
