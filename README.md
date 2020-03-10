@@ -17,7 +17,8 @@ The plugin is distributed under the license GPLV3 on an "as is" basis, without w
 ## Requirements
 
 
-To enable fast processing on GPU, Nvidia CUDA must be installed and included in the path. CUDA 8 is  compatible with our tools.
+To enable fast processing on GPU, Nvidia CUDA must be installed and included in the path. We recommand the use of CUDA 10.0 that is compatible with our tools. If you encounter problems with GPU installation or if you need to make ZOLA compatible with your cuda version, please, send us an email (benoit.lelandais@pasteur.fr).
+
 Check your version by executing `nvcc --version` in the terminal.
 
 Follow instructions on https://developer.nvidia.com/cuda-toolkit to install CUDA
