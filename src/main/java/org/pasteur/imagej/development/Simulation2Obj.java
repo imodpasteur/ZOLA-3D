@@ -59,11 +59,11 @@ public class Simulation2Obj {
         
         double [][] background=new double[patchSize][patchSize];
         
-        int cameraFlip=1;//  1 for cam 1   //   -1 for cam 2
+        int cameraFlip=-1;//  1 for cam 1   //   -1 for cam 2
         
         int nb=18;
         
-        double theposition=-.5;
+        double theposition=+.5;
         
         double [] zposition = new double [nb];
         zposition[0]=position+(theposition+.1)*cameraFlip;
@@ -197,7 +197,10 @@ public class Simulation2Obj {
                         for (int z=0;z<psf.length;z++){
                             for (int zz=0;zz<psf[z].length;zz++){
                                 if (k==9){
-                                    imFull[y][xshift[k]+dist[y]+z+decX][yshift[k]+zz+decY]+=(double)psfmany[z][zz]*photonNumber/2;
+                                    imFull[y][xshift[k]+dist[y]+z+decX][yshift[k]+dist[y]+zz+decY]+=(double)psfmany[z][zz]*photonNumber;
+                                }
+                                else if (k==8){
+                                    imFull[y][xshift[k]+z+decX][yshift[k]+dist[y]+zz+decY]+=(double)psfmany[z][zz]*photonNumber;
                                 }
                                 else{
                                     imFull[y][xshift[k]+z+decX][yshift[k]+zz+decY]+=(double)psfmany[z][zz]*photonNumber;

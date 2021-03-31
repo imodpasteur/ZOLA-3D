@@ -1342,6 +1342,7 @@ public class StackLocalization {
                 //firstline
                 loop1:for (int i=0;i<fl.size();i++){
                     for (int j=0;j<fl.get(i).loc.size();j++){
+                        
                         sortie.println(""+fl.get(i).loc.get(j).toStringName());
                         break loop1;
                     }
@@ -1350,7 +1351,9 @@ public class StackLocalization {
 
                 for (int i=0;i<fl.size();i++){
                     for (int j=0;j<fl.get(i).loc.size();j++){
-                        sortie.println(""+fl.get(i).loc.get(j).toString());
+                        if (fl.get(i).loc.get(j).exists){
+                            sortie.println(""+fl.get(i).loc.get(j).toString());
+                        }
                     }
                 }
 

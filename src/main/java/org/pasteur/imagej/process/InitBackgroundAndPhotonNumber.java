@@ -7,6 +7,7 @@ package org.pasteur.imagej.process;
 
 
 import java.util.ArrayList;
+import org.pasteur.imagej.utils.SCMOScamera;
 import org.pasteur.imagej.utils.ImageShow;
 import org.pasteur.imagej.utils.PolynomialFit;
 import ij.IJ;
@@ -75,7 +76,7 @@ public class InitBackgroundAndPhotonNumber {
         
     }
     
-    public InitBackgroundAndPhotonNumber(double [][][] image,float [] xpoints, float [] ypoints,int sizePatch,double [][] scmosvariance,double [][] scmosgain,double [][] scmosoffset,double [][] scmosvargain,double zstep){
+    public InitBackgroundAndPhotonNumber(double [][][] image,float [] xpoints, float [] ypoints,int sizePatch,SCMOScamera scmoscam,double zstep){
         
         
         width=image[0].length;
@@ -85,7 +86,7 @@ public class InitBackgroundAndPhotonNumber {
             for (int i=0;i<width;i++){
                 for (int ii=0;ii<height;ii++){
                     
-                    image[z][i][ii]=((image[z][i][ii]-scmosoffset[i][ii])/scmosgain[i][ii]);
+                    image[z][i][ii]=((image[z][i][ii]-scmoscam.scmosoffset[i][ii])/scmoscam.scmosgain[i][ii]);
                     
                     if (image[z][i][ii]<0){
                         image[z][i][ii]=0;
@@ -94,7 +95,7 @@ public class InitBackgroundAndPhotonNumber {
             }
             
         }
-        initBackgroundAndPhotonNumberMany(image,xpoints,ypoints,sizePatch,zstep,scmosvargain);
+        initBackgroundAndPhotonNumberMany(image,xpoints,ypoints,sizePatch,zstep,scmoscam.scmosvargain);
     }
     
     void initBackgroundAndPhotonNumberMany(double [][][] image,float [] xpoints, float [] ypoints,int sizePatch,double zstep,double [][] scmos){

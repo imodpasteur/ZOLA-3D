@@ -243,6 +243,30 @@ public class DataPhase_ {
         
     }
     
+    public void setManyPSF(int numberModel){
+        setManyPSF(numberModel,false);
+    }
+    public void setManyPSF(int numberModel,boolean scmosCamera){
+        
+        
+        psf_fMany=new PSFmany_float_(param,numberModel);
+        if (param.zernikedPSF){
+            psf_fMany.updatePhase(phaseZer.computeCombination());
+        }
+        else{
+            psf_fMany.updatePhase(phaseNonZer.getPointerPhase());
+        }
+        
+        
+        
+        
+        
+    }
+    
+    
+    
+    
+    
     
     //useful for single emitter fitting where numberPSF=numberModel
     public void setMany(int numberModel){
@@ -326,11 +350,14 @@ public class DataPhase_ {
         
         if (this.psf_fMany!=null){
             this.psf_fMany.setSizeoutput(sizeoutput);
+            
         }
         
         if (this.psf_f_crlbMany!=null){
             this.psf_f_crlbMany.setSizeoutput(sizeoutput);
+            
         }
+        
     }
     
     public void setNwat(double nwat){
@@ -349,7 +376,6 @@ public class DataPhase_ {
     
     public void free(){
         
-        
         if (this.modelMany!=null){
             this.modelMany.free();
             modelMany=null;
@@ -358,7 +384,6 @@ public class DataPhase_ {
         if (this.psf_fMany!=null){
             this.psf_fMany.free();
             psf_fMany=null;
-            
         }
         
         
@@ -368,15 +393,20 @@ public class DataPhase_ {
             this.psf_f_crlbMany.free();
             psf_f_crlbMany=null;
         }
-        if (phaseZer!=null)
+        if (phaseZer!=null){
             this.phaseZer.free();
-        if (phaseNonZer!=null)
+        }
+        if (phaseNonZer!=null){
             this.phaseNonZer.free();
+        }
         //this.pupilGauss.free();
         //this.pupilZer.free();
         
         //this.kzZer.free();
-        this.psf.free();
+        if (psf!=null){
+            this.psf.free();
+        }
+        
         //if (this.psfMany!=null){
         //    this.psfMany.free();
         //}
@@ -499,11 +529,11 @@ public class DataPhase_ {
             if (lin[0].startsWith("sigma")){
                 double sigmaGaussianKernel=Double.parseDouble(lin[1]);
                 
-                param = new PhaseParameters(sizeFFT,sizeFFT,order,xystep,zstep,wavelength,noil,na,1,sigmaGaussianKernel,false);
+                param = new PhaseParameters(path,sizeFFT,sizeFFT,order,xystep,zstep,wavelength,noil,na,1,sigmaGaussianKernel,false);
                 ligne=br.readLine();
             }
             else{
-                param = new PhaseParameters(sizeFFT,sizeFFT,order,xystep,zstep,wavelength,noil,na,1,1,false);
+                param = new PhaseParameters(path,sizeFFT,sizeFFT,order,xystep,zstep,wavelength,noil,na,1,1,false);
             }
             //IJ.log("sigGauss "+param.sigmaGaussianKernel);
             param.pathcalib=path;
@@ -749,7 +779,7 @@ public class DataPhase_ {
 
 
             JSONformat json= new JSONformat();
-
+            
             json.load(path);
             
             //JSONObject jsonObject = (JSONObject) obj;
@@ -786,10 +816,10 @@ public class DataPhase_ {
             
 
             if (zernikedPSF){
-                param = new PhaseParameters(sizeFFT,sizeFFT,order,xystep,zstep,wavelength,noil,na,1,sigmaGaussianKernel,withApoFactor);
+                param = new PhaseParameters(path,sizeFFT,sizeFFT,order,xystep,zstep,wavelength,noil,na,1,sigmaGaussianKernel,withApoFactor);
             }
             else{
-                param = new PhaseParameters(size,size,order,xystep,zstep,wavelength,noil,na,1,sigmaGaussianKernel,withApoFactor);
+                param = new PhaseParameters(path,size,size,order,xystep,zstep,wavelength,noil,na,1,sigmaGaussianKernel,withApoFactor);
             }
             param.zernikedPSF=zernikedPSF;
             psf=new PSF_double_(param);
@@ -870,12 +900,18 @@ public class DataPhase_ {
             if (param.zernikedPSF){
                 //JSONArray zernikelist = new JSONArray();
                 double [] zer = new double [phaseZer.numCoef];
+                int [] zer_n = new int[phaseZer.numCoef];
+                int [] zer_m = new int[phaseZer.numCoef];
                 for (int i=0;i<phaseZer.numCoef;i++){
                     //zernikelist.add(phaseZer.getA(i));
                     zer[i]=phaseZer.getA(i);
+                    zer_m[i]=phaseZer.zernike_m[i];
+                    zer_n[i]=phaseZer.zernike_n[i];
                     //IJ.log("save "+i+"  "+phaseZer.getA(i));
 
                 }
+                obj.put("azimuthal", zer_m);
+                obj.put("radial", zer_n);
                 obj.put("zernike", zer);
             }
             else{

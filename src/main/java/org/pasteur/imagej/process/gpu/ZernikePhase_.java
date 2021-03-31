@@ -90,8 +90,11 @@ public class ZernikePhase_{
     
     
     double [] Zvect;
+    //double [] Zvect;
     public int [] coef;
     double [] a;
+    public int [] zernike_n;
+    public int [] zernike_m;
     //double [][] A;
     double [] tmp;
     public int nbDataPerImage;
@@ -140,10 +143,12 @@ public class ZernikePhase_{
                 }
             }
         }
-        
         nbDataPerImage=param.sizeDisk;
         
         Zvect=new double [nbDataPerImage*numberOfCoef];
+        this.zernike_n=new int[numberOfCoef];
+        this.zernike_m=new int[numberOfCoef];
+        
         this.a=new double [numberOfCoef];
         //this.A=new double [dim][numberOfCoef];
         this.coef=new int [numberOfCoef];
@@ -157,6 +162,8 @@ public class ZernikePhase_{
                     a[id]=0;
                     this.complexity[id]=z.complexity[rz];
                     this.coef[id]=rz;
+                    this.zernike_n[id]=z.poly[rz][0];
+                    this.zernike_m[id]=z.poly[rz][1];
                     for (int i=0;i<nbDataPerImage;i++){
                         Zvect[id*nbDataPerImage+i]=z.Z[rz][param.disk2D[i][0]][param.disk2D[i][1]];
                     }
@@ -171,6 +178,8 @@ public class ZernikePhase_{
                     a[id]=0;
                     this.complexity[id]=z.complexity[rz];
                     this.coef[id]=rz;
+                    this.zernike_n[id]=z.poly[rz][0];
+                    this.zernike_m[id]=z.poly[rz][1];
                     for (int i=0;i<nbDataPerImage;i++){
                         Zvect[id*nbDataPerImage+i]=z.Z[rz][param.disk2D[i][0]][param.disk2D[i][1]];
                     }
@@ -184,6 +193,8 @@ public class ZernikePhase_{
                 a[rz]=0;
                 this.coef[rz]=rz;
                 this.complexity[rz]=z.complexity[rz];
+                this.zernike_n[rz]=z.poly[rz][0];
+                this.zernike_m[rz]=z.poly[rz][1];
                 for (int i=0;i<nbDataPerImage;i++){
                     Zvect[rz*nbDataPerImage+i]=z.Z[rz][param.disk2D[i][0]][param.disk2D[i][1]];
                 }
@@ -235,6 +246,8 @@ public class ZernikePhase_{
         this.a=new double [numberOfCoef];
         this.coef=new int [numberOfCoef];
         this.complexity=new int [numberOfCoef];
+        this.zernike_n=new int[numberOfCoef];
+        this.zernike_m=new int[numberOfCoef];
         for (int rz=0,id=0;id<numberOfCoef;rz++){
             if (rz==coef[id]){
 //                for (int or=0;or<dim;or++){
@@ -243,6 +256,8 @@ public class ZernikePhase_{
                 a[id]=0;
                 this.coef[id]=coef[id];
                 this.complexity[id]=z.complexity[rz];
+                this.zernike_n[id]=z.poly[rz][0];
+                this.zernike_m[id]=z.poly[rz][1];
                 for (int i=0;i<nbDataPerImage;i++){
                     Zvect[id*nbDataPerImage+i]=z.Z[rz][param.disk2D[i][0]][param.disk2D[i][1]];
                 }
@@ -809,7 +824,7 @@ public class ZernikePhase_{
         
         }   
         else{
-            IJ.log("error wrong posit setA Zernike function");
+            IJ.log("error wrong posit setA Zernike function : 0 < "+posit+" < "+numCoef+"  ?");
         }
     }
     

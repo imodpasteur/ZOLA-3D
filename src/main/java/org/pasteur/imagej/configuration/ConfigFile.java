@@ -31,10 +31,16 @@ public class ConfigFile {
     
     
     static String [] option = {
-            
+        
+        "Plugins>ZOLA>  Camera setup>, \"photon count estimation\", org.pasteur.imagej.ZOLA(\"zola_photonCountEstimation\")\n",
         
         "Plugins>ZOLA>additional tools, \"Best PSF model optimization\", org.pasteur.imagej.ZOLA(\"zola_phaseoptim\")\n",
         
+        
+                
+        
+        
+        "Plugins>ZOLA>additional tools>Simulation, \"imageFromTable\", org.pasteur.imagej.ZOLA(\"zola_imageFromTable\")\n" +
         "Plugins>ZOLA>additional tools>Simulation>PSF generator, \"Initialisation\", org.pasteur.imagej.ZOLA(\"zola_getModels_GPUalloc\")\n" +
 "Plugins>ZOLA>additional tools>Simulation>PSF generator, \"computation\", org.pasteur.imagej.ZOLA(\"zola_getModels_GPUcomput\")\n" +
 "Plugins>ZOLA>additional tools>Simulation>PSF generator, \"freeMemory\", org.pasteur.imagej.ZOLA(\"zola_getModels_GPUfree\")\n",
@@ -61,14 +67,21 @@ public class ConfigFile {
         "Plugins>ZOLA>additional tools>wobble correction, \"correction\", org.pasteur.imagej.ZOLA(\"zola_wobblecorrection\")\n",
         
         "Plugins>ZOLA>Visualization, \"frame color coding\", org.pasteur.imagej.ZOLA(\"zola_timeRendering\")\n"+
+        "Plugins>ZOLA>Visualization, \"Multiple_ROI\", org.pasteur.imagej.ZOLA(\"zola_multipleROIRendering\")\n"+
+        "Plugins>ZOLA>Visualization, \"localMaxima\", org.pasteur.imagej.ZOLA(\"zola_localMaxima\")\n"+
+            "Plugins>ZOLA>Visualization, \"split_4_FRC-FSC\", org.pasteur.imagej.ZOLA(\"zola_plot4FRC_FSC\")\n"+
         "Plugins>ZOLA>Visualization, \"scatter_plot\", org.pasteur.imagej.ZOLA(\"zola_scatterPlot\")\n",
         
     "Plugins>ZOLA>dev, \"Multi-emitter localization\", org.pasteur.imagej.ZOLA(\"zola_multi-emitter localization\")\n" +
 "Plugins>ZOLA>dev, \"merge frames\", org.pasteur.imagej.ZOLA(\"zola_mergeframe\")\n" +
 "Plugins>ZOLA>dev, \"test\", org.pasteur.imagej.ZOLA(\"zola_test\")\n" +
+"Plugins>ZOLA>dev, \"test2\", org.pasteur.imagej.ZOLA(\"zola_test2\")\n" +
+"Plugins>ZOLA>dev, \"test3\", org.pasteur.imagej.ZOLA(\"zola_test3\")\n" +
+"Plugins>ZOLA>dev, \"test4\", org.pasteur.imagej.ZOLA(\"zola_test4\")\n" +
 "Plugins>ZOLA>dev>Simulation, \"Simulation\", org.pasteur.imagej.ZOLA(\"zola_simulation\")\n" +
 "Plugins>ZOLA>dev>Simulation, \"Simulation2beads\", org.pasteur.imagej.ZOLA(\"zola_simulation2beads\")\n" +
 "Plugins>ZOLA>dev>Simulation, \"SimulationOverlappingBeads\", org.pasteur.imagej.ZOLA(\"zola_simulationOverlappingBeads\")\n" +
+"Plugins>ZOLA>dev>Simulation, \"SimulationOneBead\", org.pasteur.imagej.ZOLA(\"zola_simulationOneBead\")\n" +
 "Plugins>ZOLA>dev>Simulation, \"addPoissonNoise\", org.pasteur.imagej.ZOLA(\"zola_addPoissonNoise\")\n" +
 "Plugins>ZOLA>dev, \"CRLBfromFile\", org.pasteur.imagej.ZOLA(\"zola_crlb_FromFile\")\n" +
 "Plugins>ZOLA>dev, \"CRLBfromFileDualObj\", org.pasteur.imagej.ZOLA(\"zola_crlb_FromFileDualObj\")\n" +
@@ -76,10 +89,13 @@ public class ConfigFile {
 "Plugins>ZOLA>dev>Resolution, \"points Measurment\", org.pasteur.imagej.ZOLA(\"zola_pointResolution\")\n" +
 "Plugins>ZOLA>dev>Resolution, \"filament Measurment\", org.pasteur.imagej.ZOLA(\"zola_filamentResolution\")\n" +
 "Plugins>ZOLA>dev>, \"RemoveLocalizations\", org.pasteur.imagej.ZOLA(\"zola_removeLocalizations\")\n" +
+"Plugins>ZOLA>dev>, \"NPC detection\", org.pasteur.imagej.ZOLA(\"zola_NPCdetection\")\n" +
+"Plugins>ZOLA>dev>, \"CRLB_3D\", org.pasteur.imagej.ZOLA(\"zola_crlb_3D\")\n" +
 "Plugins>ZOLA>dev>, \"Dec\", org.pasteur.imagej.ZOLA(\"zola_deconvolution\") "};
     
     
     static String [] message = {
+        "Photon_count_estimation :",
         "Phase_optimization :",
         "PSF_simulation :",
         "Dual_cam_localization (beta) :",

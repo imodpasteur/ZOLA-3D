@@ -21,6 +21,7 @@ public class Zernike {
     public int [][] poly;
     public int [] complexity;//sum of rang and index (abs(m)+abs(n))
     public double [][][] Z;
+    
     double [] W;
     public Zernike(int sizeImagePx, double radiusRing,int polyNumber){
         this.radiusRing=radiusRing;

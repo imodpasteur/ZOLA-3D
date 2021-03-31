@@ -101,11 +101,7 @@ public class LocalizationAutoFocusPipeline_ {
     int dpnumber;
     
     int idLoc=0;
-    
-    double [][] scmosvariance;
-    double [][] scmosgain;
-    double [][] scmosoffset;
-    double [][] scmosvargain;
+    SCMOScamera scmoscam;
     boolean isSCMOS;
     
     public LocalizationAutoFocusPipeline_(DataPhase_ dp,double axialRange,int photonThreshold,int nbPart,int nbThread,int sizePatch,double adu, double gain,double offset,boolean show){
@@ -121,14 +117,12 @@ public class LocalizationAutoFocusPipeline_ {
         
     }
     
-    public LocalizationAutoFocusPipeline_(DataPhase_ dp,double axialRange,int photonThreshold,int nbPart,int nbThread,int sizePatch,double [][] scmosvariance,double [][] scmosgain,double [][] scmosoffset,double [][] scmosvargain,boolean show){
+    public LocalizationAutoFocusPipeline_(DataPhase_ dp,double axialRange,int photonThreshold,int nbPart,int nbThread,int sizePatch,SCMOScamera scmoscam,boolean show){
         
         isSCMOS=true;
         
-        this.scmosvariance=scmosvariance;
-        this.scmosoffset=scmosoffset;
-        this.scmosgain=scmosgain;
-        this.scmosvargain=scmosvargain;
+        this.scmoscam=scmoscam;
+        
         
         DataPhase_ [] ddp=new DataPhase_[1];
         ddp[0]=dp;
@@ -705,13 +699,13 @@ public class LocalizationAutoFocusPipeline_ {
         
         int maxRead=1000;//variable to block the program if the number of opened images is too big and use too much memory
         
-        Predetection_ predGPU;
+        Predetection_cross_ predGPU;
         PreDetectionThread(ImagePlus imp){
             
             this.imp=imp;
             
             //init with param of the first camera because predetection uses only one cam
-            predGPU=new Predetection_(sizeImage,dp[0],minZ, maxZ, stepZ,thresholdCrossCorrelation);
+            predGPU=new Predetection_cross_(sizeImage,dp[0],minZ, maxZ, stepZ,thresholdCrossCorrelation);
             psfPredetection=predGPU.getPSFNonNormalized();
             rangePredetection=predGPU.getRange();
             
@@ -788,7 +782,7 @@ public class LocalizationAutoFocusPipeline_ {
                             image[z-1][ii][iii]=ip.getPixelValue(jj, jjj);
 
                             if (isSCMOS){
-                                image[z-1][ii][iii]=((image[z-1][ii][iii]-scmosoffset[ii][iii])/scmosgain[ii][iii])+scmosvargain[0][0];//here I add constant value for predetection for scmosvargain
+                                image[z-1][ii][iii]=((image[z-1][ii][iii]-scmoscam.scmosoffset[ii][iii])/scmoscam.scmosgain[ii][iii])+scmoscam.scmosvargain[0][0];//here I add constant value for predetection for scmosvargain
                             }
                             else{
                                 image[z-1][ii][iii]=image[z-1][ii][iii]*rescale_slope+rescale_intercept;
@@ -824,7 +818,7 @@ public class LocalizationAutoFocusPipeline_ {
                             for (int iii=0,jjj=yinit;iii<height;iii++,jjj++){
                                 image[z-1][ii][iii]=ip.getPixelValue(jj, jjj);
                                 //do it again but not with constant value now for scmosvargain
-                                image[z-1][ii][iii]=((image[z-1][ii][iii]-scmosoffset[ii][iii])/scmosgain[ii][iii])+scmosvargain[ii][iii];
+                                image[z-1][ii][iii]=((image[z-1][ii][iii]-scmoscam.scmosoffset[ii][iii])/scmoscam.scmosgain[ii][iii])+scmoscam.scmosvargain[ii][iii];
                                 
                             }
                         }
@@ -1012,7 +1006,7 @@ public class LocalizationAutoFocusPipeline_ {
                                         
                                         patch[0][i*sizePatch+ii]=image[imageNumber][maxs[2]+j][maxs[3]+jj];
                                         if (isSCMOS){
-                                            patchscmos[0][i*sizePatch+ii]=scmosvargain[maxs[2]+j][maxs[3]+jj];
+                                            patchscmos[0][i*sizePatch+ii]=scmoscam.scmosvargain[maxs[2]+j][maxs[3]+jj];
                                         }
                                         
                                     //}

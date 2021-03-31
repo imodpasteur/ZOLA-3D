@@ -554,7 +554,7 @@ public class Predetection {
                                         }
                                         
                                         double topY=0;
-                                        if ((j>1)&&(r<resultConvolution[0][0].length-1)){
+                                        if ((j>1)&&(j<resultConvolution[0][0].length-1)){
                                             topY=topOfParabola(-1.*xystep,resultConvolution[r][i][j-1],0,resultConvolution[r][i][j],1.*xystep,resultConvolution[r][i][j+1]);
                                         }
                                         

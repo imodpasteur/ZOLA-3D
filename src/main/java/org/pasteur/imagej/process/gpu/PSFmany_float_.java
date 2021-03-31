@@ -49,6 +49,10 @@ public class PSFmany_float_ {
     Pointer device_ones;
     Pointer device_sumRes;
     
+    
+    //Pointer device_tmp_to_delete;
+    
+    
     Pointer device_position;
     Pointer host_position;
     int currentPosition=0;
@@ -547,10 +551,12 @@ public class PSFmany_float_ {
         device_phase = new Pointer();
         device_pupil = new Pointer();
         
+        
+        
+        
         this.device_position=new Pointer();
-        
         int cudaResult = JCuda.cudaMalloc(device_position, 4*this.numberPSF * Sizeof.FLOAT);if (cudaResult != cudaError.cudaSuccess){success=false;IJ.log("ERROR malloc cuda");return false;}
-        
+
         cudaResult = JCuda.cudaMalloc(device_phase, param.sizeDisk * Sizeof.FLOAT);
         if (cudaResult != cudaError.cudaSuccess)
         {
@@ -599,6 +605,17 @@ public class PSFmany_float_ {
         {
             success=false;IJ.log("ERROR malloc cuda");return  false;
         }
+        
+        
+        
+        //device_tmp_to_delete=new Pointer();
+        //cudaResult = JCuda.cudaMalloc(device_tmp_to_delete, 500000000 * Sizeof.FLOAT);
+        //if (cudaResult != cudaError.cudaSuccess)
+        //{
+        //    success=false;IJ.log("ERROR malloc cuda");return  false;
+        //}
+        //cudaMemcpyAsync(device_tmp_to_delete, Pointer.to(new float [500000000]), 500000000*Sizeof.FLOAT, cudaMemcpyHostToDevice,MyCudaStream.getCudaStream_t(param.stream));
+        
 //        device_kz_right = new Pointer();
 //        cudaResult = JCuda.cudaMalloc(device_kz_right, param.sizeDisk * Sizeof.FLOAT);
 //        if (cudaResult != cudaError.cudaSuccess)
@@ -1393,6 +1410,9 @@ public class PSFmany_float_ {
         
         //IJ.log("free PSF called");
         
+        
+        //JCuda.cudaFree(device_tmp_to_delete);
+        //IJ.log("WARNING in PSFmany_float_.java --> device to delete");
         JCuda.cudaFree(device_phase);
         
         JCuda.cudaFree(device_pupil);
@@ -1579,17 +1599,8 @@ public class PSFmany_float_ {
     
     
     
-    
-     
-     
     public void computePSF(double [] x, double [] y, double [] zoil, double [] z){
         
-        
-        int cudaResult=JCuda.cudaStreamSynchronize(MyCudaStream.getCudaStream_t(param.stream));if (cudaResult != cudaError.cudaSuccess){IJ.log("ERROR synchro cuda gaussianKernel Set Image "+cudaResult+"  "+param.stream);}
-        
-        
-        cudaResult=JCuda.cudaMemsetAsync(device_fftdata, 0, this.numberPSF*sizepow*2 * Sizeof.FLOAT, MyCudaStream.getCudaStream_t(param.stream));
-        if (cudaResult != cudaError.cudaSuccess){IJ.log("ERROR mem set 0");}
         for (int i=0;i<x.length;i++){
             this.position[i]=(float)x[i];
             this.position[i+numberPSF]=(float)y[i];
@@ -1598,9 +1609,27 @@ public class PSFmany_float_ {
             
         }
         
-        
+        cudaResult=JCuda.cudaStreamSynchronize(MyCudaStream.getCudaStream_t(param.stream));if (cudaResult != cudaError.cudaSuccess){IJ.log("ERROR synchro cuda gaussianKernel Set Image "+cudaResult+"  "+param.stream);}
         
         setHost2Device(device_position,host_position,4*numberPSF,Sizeof.FLOAT);
+        
+        computePSF(this.device_position,this.numberPSF);
+    }
+        
+        
+     
+     
+    public void computePSF(Pointer device_position,int numberPSF){
+        
+        
+        cudaResult=JCuda.cudaStreamSynchronize(MyCudaStream.getCudaStream_t(param.stream));if (cudaResult != cudaError.cudaSuccess){IJ.log("ERROR synchro cuda gaussianKernel Set Image "+cudaResult+"  "+param.stream);}
+        
+        
+        cudaResult=JCuda.cudaMemsetAsync(device_fftdata, 0, this.numberPSF*sizepow*2 * Sizeof.FLOAT, MyCudaStream.getCudaStream_t(param.stream));
+        if (cudaResult != cudaError.cudaSuccess){IJ.log("ERROR mem set 0");}
+        
+        
+        
         
         MyVecDouble.computePSF_phaseNManywithOil_f(custream, param.sizeDisk*numberPSF,param.sizeDisk,this.sizepow*2, device_kx, device_ky, device_kz,device_kz_is_imaginary, device_kz_oil, device_kz_oil_is_imaginary, device_pupil, device_phase, device_position,device_sparseIndexEvenDisk,device_sparseIndexOddDisk,device_fftdata,numberPSF);
         
@@ -1628,7 +1657,7 @@ public class PSFmany_float_ {
         
         
         
-        MyVecDouble.mulMany_f(custream, sizeoutput2*sizeoutput2*2*this.numberPSF, sizeoutput2*sizeoutput2*2, device_psfFFT, device_psfFFT, device_gaussian2bleSize);
+        MyVecDouble.mulMany_f(custream, sizeoutput2*sizeoutput2*2*numberPSF, sizeoutput2*sizeoutput2*2, device_psfFFT, device_psfFFT, device_gaussian2bleSize);
         
         
         
@@ -1639,7 +1668,7 @@ public class PSFmany_float_ {
         
         //MyVecDouble.computePSF_signalNsqrtMany_f(custream, sizeoutput1*sizeoutput1*this.numberPSF,sizeoutput1*sizeoutput1, device_psf, device_psfFFT, sizeoutput2*sizeoutput2,device_sparseIndexEvenShift2DOutput1,device_sparseIndexOddShift2DOutput1);
        
-        MyVecDouble.computePSF_signalNsqrtMany_fcrop(custream, sizeoutput1*sizeoutput1*this.numberPSF,sizeoutput1*sizeoutput1,sizeoutput2*sizeoutput2, device_psf, device_psfFFT, sizeoutput2*sizeoutput2,device_sparseIndexEvenShift2DOutput1,device_sparseIndexOddShift2DOutput1);
+        MyVecDouble.computePSF_signalNsqrtMany_fcrop(custream, sizeoutput1*sizeoutput1*numberPSF,sizeoutput1*sizeoutput1,sizeoutput2*sizeoutput2, device_psf, device_psfFFT, sizeoutput2*sizeoutput2,device_sparseIndexEvenShift2DOutput1,device_sparseIndexOddShift2DOutput1);
        
         
         cudaResult=jcuda.jcublas.JCublas2.cublasSgemv(handlecublas,CUBLAS_OP_T,sizeoutput1*sizeoutput1,numberPSF,device_alpha,device_psf,sizeoutput1*sizeoutput1,device_ones,1,device_beta,device_sumRes,1);
@@ -1652,6 +1681,7 @@ public class PSFmany_float_ {
         MyVecDouble.divScalarMany_f(custream,sizeoutput1*sizeoutput1*numberPSF,sizeoutput1*sizeoutput1, device_psf ,device_psf_double , device_psf,device_sumRes);
         
         cudaResult=JCuda.cudaStreamSynchronize(MyCudaStream.getCudaStream_t(param.stream));if (cudaResult != cudaError.cudaSuccess){IJ.log("ERROR synchro cuda gaussianKernel Set Image "+cudaResult);}
+        
         
         
         

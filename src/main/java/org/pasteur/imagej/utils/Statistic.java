@@ -156,6 +156,7 @@ public class Statistic {
         double ymin=Double.POSITIVE_INFINITY;
         double ymax=0;
         for (int i=0;i<x.length;i++){
+            IJ.write(""+x[i]+" "+y[i]);
             if (x[i]<xmin){
                 xmin=x[i];
             }

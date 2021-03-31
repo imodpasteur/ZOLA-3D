@@ -35,12 +35,19 @@ public class Modelmany_double_ {
     
     
     
+    boolean withModelOffset=false;
+    Pointer device_modelOffset;//used for overlapping emitters
+    Pointer host_modelOffset;
+    double [] modelOffset;
+    
     
             
     
     Pointer device_subwindow;
     Pointer host_subwindow;
     double [] subwindow;
+    
+    
     
     
     
@@ -157,7 +164,7 @@ public class Modelmany_double_ {
     //single emitter fitting constructor
     Modelmany_double_(PSFmany_float_ psfMany_f,PSFmany_float_ psfMany_f_crlb,PhaseParameters param,int numberModel,boolean isSCMOS){
         
-        modelmany_double_(psfMany_f,psfMany_f_crlb,param,numberModel,1,isSCMOS);
+        modelmany_double_(psfMany_f,psfMany_f_crlb,param,numberModel,1,isSCMOS,false);
         
       
     }
@@ -165,14 +172,36 @@ public class Modelmany_double_ {
     //multi emitter fitting constructor
     Modelmany_double_(PSFmany_float_ psfMany_f,PSFmany_float_ psfMany_f_crlb,PhaseParameters param,int numberModel,int numberPSFperModel,boolean isSCMOS){
         
-        modelmany_double_(psfMany_f,psfMany_f_crlb,param,numberModel,numberPSFperModel,isSCMOS);
+        modelmany_double_(psfMany_f,psfMany_f_crlb,param,numberModel,numberPSFperModel,isSCMOS,false);
         
       
     }
     
     
-    void modelmany_double_(PSFmany_float_ psfMany_f,PSFmany_float_ psfMany_f_crlb,PhaseParameters param,int numberModel,int numberPSFperModel,boolean isSCMOS){
+    
+    //single emitter fitting constructor
+    Modelmany_double_(PSFmany_float_ psfMany_f,PSFmany_float_ psfMany_f_crlb,PhaseParameters param,int numberModel,boolean isSCMOS,boolean withModelOffset){
         
+        modelmany_double_(psfMany_f,psfMany_f_crlb,param,numberModel,1,isSCMOS,withModelOffset);
+        
+      
+    }
+    
+    //multi emitter fitting constructor
+    Modelmany_double_(PSFmany_float_ psfMany_f,PSFmany_float_ psfMany_f_crlb,PhaseParameters param,int numberModel,int numberPSFperModel,boolean isSCMOS,boolean withModelOffset){
+        
+        modelmany_double_(psfMany_f,psfMany_f_crlb,param,numberModel,numberPSFperModel,isSCMOS,withModelOffset);
+        
+      
+    }
+    
+    
+    
+    
+    
+    void modelmany_double_(PSFmany_float_ psfMany_f,PSFmany_float_ psfMany_f_crlb,PhaseParameters param,int numberModel,int numberPSFperModel,boolean isSCMOS,boolean withModelOffset){
+        
+        this.withModelOffset=withModelOffset;
         
         this.isSCMOS=isSCMOS;
         
@@ -251,7 +280,12 @@ public class Modelmany_double_ {
         AandB = new double [numberModel*numberPSFperModel*2];
         host_likelihoodResult = Pointer.to(likelihoodResult);
         
-        
+        if (this.withModelOffset){
+            modelOffset=new double [sizeImage*sizeImage*numberModel];
+            host_modelOffset=Pointer.to(subwindow);
+            device_modelOffset = new Pointer();
+            cudaMalloc(device_modelOffset, sizeImage*sizeImage*numberModel * Sizeof.DOUBLE);
+        }
         
         
         subwindow=new double [sizeImage*sizeImage*numberModel];
@@ -386,9 +420,11 @@ public class Modelmany_double_ {
     }
     
     
-    
-    
     public int setSubWindow(double [] subwindow){
+        return setSubWindow(subwindow,null);
+    }
+    
+    public int setSubWindow(double [] subwindow,double [] modelOffset){
         
         if (sizeImage*sizeImage!=subwindow.length){
             IJ.log("error in image dimension (localizationMany class)   "+subwindow.length+"   "+(sizeImage*sizeImage));
@@ -409,6 +445,11 @@ public class Modelmany_double_ {
             for (int i=0;i<subwindow.length;i++){
                 this.subwindow[id*subwindow.length+i]=subwindow[i];
             }
+            if (this.withModelOffset){
+                for (int i=0;i<subwindow.length;i++){
+                    this.modelOffset[id*subwindow.length+i]=modelOffset[i];
+                }
+            }
         }
         
         
@@ -422,6 +463,15 @@ public class Modelmany_double_ {
     
     
     public int setSubWindowScmos(double [] subwindow,double [] subwindowSCMOS){
+        
+        return setSubWindowScmos(subwindow,subwindowSCMOS,null);
+        
+    }
+    
+    
+    
+    
+    public int setSubWindowScmos(double [] subwindow,double [] subwindowSCMOS,double [] modelOffset){
         
         if (sizeImage*sizeImage!=subwindow.length){
             IJ.log("error in image dimension (localizationMany class)   "+subwindow.length+"   "+(sizeImage*sizeImage));
@@ -441,6 +491,7 @@ public class Modelmany_double_ {
             freePosit.remove(0);
             for (int i=0;i<subwindow.length;i++){
                 this.subwindow[id*subwindow.length+i]=subwindow[i];
+                
                 if (isSCMOS){
                     this.subwindowSCMOS[id*subwindowSCMOS.length+i]=subwindowSCMOS[i];
                 }
@@ -448,13 +499,16 @@ public class Modelmany_double_ {
                     IJ.log("ERROR... you should not call setSubWindowScmos function if isSCMOS==false");
                 }
             }
+            if (this.withModelOffset){
+                for (int i=0;i<subwindow.length;i++){
+                    this.modelOffset[id*subwindow.length+i]=modelOffset[i];
+                }
+            }
         }
         
         
         return id;
     }
-    
-    
     
     
     
@@ -498,6 +552,10 @@ public class Modelmany_double_ {
                 cudaResult=cudaMemcpyAsync(device_subwindowSCMOS, host_subwindowSCMOS, sizeImage*sizeImage*numberModel*Sizeof.DOUBLE, cudaMemcpyHostToDevice, MyCudaStream.getCudaStream_t(param.stream));if (cudaResult != cudaError.cudaSuccess){IJ.log("ERROR mem cpy subwindow");}
             
             }
+            if (this.withModelOffset){
+                cudaResult=cudaMemcpyAsync(device_modelOffset, host_modelOffset, sizeImage*sizeImage*numberModel*Sizeof.DOUBLE, cudaMemcpyHostToDevice, MyCudaStream.getCudaStream_t(param.stream));if (cudaResult != cudaError.cudaSuccess){IJ.log("ERROR mem cpy subwindow");}
+            
+            }
             
             newImageSet=false;
         }
@@ -523,6 +581,9 @@ public class Modelmany_double_ {
             else{
                 MyVecDouble.addPhotonsAndBackgroundMany(custream, sizeImage*sizeImage*numberModel, sizeImage*sizeImage, device_model, device_psf, device_AandB);
             }
+            if (this.withModelOffset){
+                MyVecDouble.add(custream, sizeImage*sizeImage*numberModel, device_model, device_model, device_modelOffset);
+            }
         }
         else{
             if (isSCMOS){
@@ -537,7 +598,10 @@ public class Modelmany_double_ {
             //psfMany_f.imshow(sizeImage*sizeImage*numberModel*numberPSFperModel, sizeImage, device_tmpLong, "psfLong", "DOUBLE");
             
             jcuda.jcublas.JCublas2.cublasDgemv(handlecublas,CUBLAS_OP_N,sizeImage*sizeImage*numberModel,numberPSFperModel,device_alpha,device_tmpLong,sizeImage*sizeImage*numberModel,device_ones,1,device_beta,device_model,1);
-        
+            
+            if (this.withModelOffset){
+                MyVecDouble.add(custream, sizeImage*sizeImage*numberModel, device_model, device_model, device_modelOffset);
+            }
             //psfMany_f.imshow(sizeImage*sizeImage*numberModel, sizeImage, device_model, "model", "DOUBLE");
             //IJ.log("here convert device_tmpLong to device_model");
         }

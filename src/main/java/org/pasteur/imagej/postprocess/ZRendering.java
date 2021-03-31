@@ -37,8 +37,8 @@ import ij.process.LUT;
  */
 public class ZRendering {
     
-    public static String nameHistPlot="3D histogram";
-    public static String nameScatterPlot="3D scatter plot";
+    public static String nameHistPlot="histogram";
+    public static String nameScatterPlot="scatter plot";
     
     private static String pathLutFolder=IJ.getDirectory("startup")+"luts"+File.separator;
     public static String lut="ZOLA.lut";
@@ -311,7 +311,7 @@ public class ZRendering {
                 }
             }
         }
-        ImagePlus imp = new ImagePlus("2D scatter plot "+pixelsizeNM+"nm per px",ip);
+        ImagePlus imp = new ImagePlus("2D scatter plot ",ip);
         imp.show();
         if (color){
             try{
@@ -483,7 +483,7 @@ public class ZRendering {
         for (int t=0;t<depth;t++){
             ims.addSlice("z="+(((double)t)*pixelsizeNM), ip[t]);
         }
-        ImagePlus imp = new ImagePlus(""+nameScatterPlot+" "+pixelsizeNM+"nm per px",ims);
+        ImagePlus imp = new ImagePlus(""+nameScatterPlot+" ",ims);
         imp.show();
         try{
             Thread.sleep(200);
@@ -1021,7 +1021,7 @@ public class ZRendering {
         }
         
         if (imp==null){
-            imp = new ImagePlus("2D color histogram "+pixelsizeNM+"nm per px",ip);
+            imp = new ImagePlus("2D color histogram ",ip);
             imp.show();
         }
         else{
@@ -1428,12 +1428,8 @@ public class ZRendering {
         
     
         
-    
-    public static ImagePlus hist2D(StackLocalization sl,double pixelsizeNM,double minX, double maxX, double minY, double maxY,double minZ, double maxZ,int shift)  {
-        return hist2D(sl,pixelsizeNM,minX, maxX, minY, maxY,minZ, maxZ,shift,"");
-    }
         
-    public static ImagePlus hist2D(StackLocalization sl,double pixelsizeNM,double minX, double maxX, double minY, double maxY,double minZ, double maxZ,int shift,String title)  {
+    public static ImagePlus hist2D(StackLocalization sl,double pixelsizeNM,double minX, double maxX, double minY, double maxY,double minZ, double maxZ,int shift)  {
         if (maxZ-minZ<pixelsizeNM){
             maxZ=minZ+pixelsizeNM;
         }
@@ -1523,7 +1519,164 @@ public class ZRendering {
         for (int t=0;t<depth;t++){
             ims.addSlice(ip[t]);
         }
-        ImagePlus imp = new ImagePlus("2D histogram "+title+" "+pixelsizeNM+"nm per px",ims);
+        ImagePlus imp = new ImagePlus(""+nameHistPlot+"",ims);
+        imp.show();
+        IJ.run("Set Scale...", "distance=1 known="+pixelsizeNM+" unit=nm");
+        return imp;
+        
+    }
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    public static ImagePlus hist2Dgaussian(StackLocalization sl,double pixelsizeNM) {
+        
+        ZRendering.makeLUT();
+        
+        double minX=Double.POSITIVE_INFINITY;
+        double maxX=Double.NEGATIVE_INFINITY;
+        
+        double minY=Double.POSITIVE_INFINITY;
+        double maxY=Double.NEGATIVE_INFINITY;
+        
+        double minZ=Double.POSITIVE_INFINITY;
+        double maxZ=Double.NEGATIVE_INFINITY;
+        
+        double x;
+        double y;
+        double z;
+        
+        //maybe use Arrays.sort to be fast
+        for (int i=0;i<sl.fl.size();i++){
+            for (int j=0;j<sl.fl.get(i).loc.size();j++){
+                if (sl.fl.get(i).loc.get(j).exists){
+                    x=sl.fl.get(i).loc.get(j).X;
+                    y=sl.fl.get(i).loc.get(j).Y;
+                    z=sl.fl.get(i).loc.get(j).Z;
+                    if (x<minX){
+                        minX=x;
+                    }
+                    if (y<minY){
+                        minY=y;
+                    }
+                    if (x>maxX){
+                        maxX=x;
+                    }
+                    if (y>maxY){
+                        maxY=y;
+                    }
+                    if (z<minZ){
+                        minZ=z;
+                    }
+                    if (z>maxZ){
+                        maxZ=z;
+                    }
+                }
+            }
+        }
+        return hist2Dgaussian(sl,pixelsizeNM,minX,maxX,minY,maxY,minZ,maxZ);
+        
+    }
+        
+    
+        
+    
+    public static ImagePlus hist2Dgaussian(StackLocalization sl,double pixelsizeNM,double minX, double maxX, double minY, double maxY,double minZ, double maxZ)  {
+        
+        if (maxZ-minZ<pixelsizeNM){
+            maxZ=minZ+pixelsizeNM;
+        }
+        if (maxY-minY<pixelsizeNM){
+            maxY=minY+pixelsizeNM;
+        }
+        if (maxX-minX<pixelsizeNM){
+            maxX=minX+pixelsizeNM;
+        }
+        double binColor=255;
+        int width=(int)Math.ceil((maxX-minX)/pixelsizeNM);
+        int height=(int)Math.ceil((maxY-minY)/pixelsizeNM);
+        int depth=1;
+        
+        
+        
+        double x;
+        double y;
+        double z;
+        
+        width=Math.max(width, 1);
+        height=Math.max(height, 1);
+        
+        //IJ.log("depth "+depth+"  "+minZ+"  "+maxZ);
+        
+        
+        ImageStack ims = new ImageStack(width,height);
+        
+        ImageProcessor [] ip = new FloatProcessor[depth];
+        for (int t=0;t<depth;t++){
+            ip[t]= new FloatProcessor(width,height);
+//            for (int u=0;u<width;u++){
+//                for (int uu=0;uu<height;uu++){
+//                    ip[t].putPixelValue(u, uu, 0);
+//                }
+//            }
+        }
+        
+        
+        
+        double cste=1/(2*Math.PI);
+        int xx,yy,shiftA,shiftAA;
+        double decx,decy;
+        double sx,sy;//sigma value
+        for (int i=0;i<sl.fl.size();i++){
+            for (int j=0;j<sl.fl.get(i).loc.size();j++){
+                if (sl.fl.get(i).loc.get(j).exists){
+                    x=((sl.fl.get(i).loc.get(j).X-minX)/pixelsizeNM);
+                    y=((sl.fl.get(i).loc.get(j).Y-minY)/pixelsizeNM);
+                    xx=(int)x;
+                    yy=(int)y;
+                    z=sl.fl.get(i).loc.get(j).Z;
+                    sx=sl.fl.get(i).loc.get(j).crlb_X;
+                    sy=sl.fl.get(i).loc.get(j).crlb_Y;
+                    if (sx<=0){
+                        sx=.1;
+                    }
+                    if (sy<=0){
+                        sy=.1;
+                    }
+                    double leftGauss=cste/(sx*sy);
+                    decx=(x-xx)*pixelsizeNM;
+                    decy=(y-yy)*pixelsizeNM;
+                    
+                    shiftA=(int)Math.ceil(2*sx/pixelsizeNM);
+                    shiftAA=(int)Math.ceil(2*sy/pixelsizeNM);
+                    if ((z>minZ)&&(z<maxZ)){
+                        //IJ.log("z "+z);
+                        for (int a=-shiftA;a<=shiftA;a++){
+                            for (int aa=-shiftAA;aa<=shiftAA;aa++){
+                                if ((xx+a>=0)&&(xx+a<width)&&(yy+aa>=0)&&(yy+aa<height)){
+                                    ip[0].putPixelValue(xx+a, yy+aa, ip[0].getPixelValue(xx+a, yy+aa)+leftGauss*Math.exp(-.5*(((a*pixelsizeNM+decx)*(a*pixelsizeNM+decx)/(sx*sx)) + ((aa*pixelsizeNM+decy)*(aa*pixelsizeNM+decy)/(sy*sy)) )));
+                                }
+                            }
+
+                        }
+                    }
+                    
+                }
+            }
+        }
+        
+        
+        for (int t=0;t<depth;t++){
+            ims.addSlice(ip[t]);
+        }
+        ImagePlus imp = new ImagePlus(""+ZRendering.nameHistPlot+"",ims);
         imp.show();
         IJ.run("Set Scale...", "distance=1 known="+pixelsizeNM+" unit=nm");
         return imp;
@@ -1709,7 +1862,181 @@ public class ZRendering {
         for (int t=0;t<depth;t++){
             ims.addSlice("z="+(((double)t)*pixelsizeZNM), ip[t]);
         }
-        ImagePlus imp = new ImagePlus(""+ZRendering.nameHistPlot+" "+pixelsizeXYNM+"nm per px",ims);
+        ImagePlus imp = new ImagePlus(""+ZRendering.nameHistPlot+"",ims);
+        imp.show();
+        IJ.run("Set Scale...", "distance=1 known="+pixelsizeXYNM+" unit=nm");
+        if (pixelsizeXYNM!=pixelsizeZNM){
+            IJ.log("WARNING:  X/Y pixel size="+pixelsizeXYNM+"  //  Z pixel size="+pixelsizeZNM);
+        }
+        return imp;
+        
+    }
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    public static ImagePlus hist3Dgaussian(StackLocalization sl,double pixelsizeNM) {
+        
+        double minX=Double.POSITIVE_INFINITY;
+        double maxX=Double.NEGATIVE_INFINITY;
+        
+        double minY=Double.POSITIVE_INFINITY;
+        double maxY=Double.NEGATIVE_INFINITY;
+        
+        double minZ=Double.POSITIVE_INFINITY;
+        double maxZ=Double.NEGATIVE_INFINITY;
+        
+        double x;
+        double y;
+        double z;
+        
+        //maybe use Arrays.sort to be fast
+        for (int i=0;i<sl.fl.size();i++){
+            for (int j=0;j<sl.fl.get(i).loc.size();j++){
+                if (sl.fl.get(i).loc.get(j).exists){
+                    x=sl.fl.get(i).loc.get(j).X;
+                    y=sl.fl.get(i).loc.get(j).Y;
+                    z=sl.fl.get(i).loc.get(j).Z;
+                    if (x<minX){
+                        minX=x;
+                    }
+                    if (y<minY){
+                        minY=y;
+                    }
+                    if (x>maxX){
+                        maxX=x;
+                    }
+                    if (y>maxY){
+                        maxY=y;
+                    }
+                    if (z<minZ){
+                        minZ=z;
+                    }
+                    if (z>maxZ){
+                        maxZ=z;
+                    }
+                }
+            }
+        }
+        return hist3Dgaussian(sl,pixelsizeNM,minX,maxX,minY,maxY,minZ,maxZ);
+        
+        
+    }
+        
+        
+        
+        
+    public static ImagePlus hist3Dgaussian(StackLocalization sl,double pixelsizeNM,double minX, double maxX, double minY, double maxY,double minZ, double maxZ)  {
+        return hist3Dgaussian(sl,pixelsizeNM,pixelsizeNM,minX,maxX,minY,maxY,minZ,maxZ);
+    }
+    
+    
+    
+    
+        
+    public static ImagePlus hist3Dgaussian(StackLocalization sl,double pixelsizeXYNM,double pixelsizeZNM,double minX, double maxX, double minY, double maxY,double minZ, double maxZ)  {
+        if (maxZ-minZ<pixelsizeZNM){
+            maxZ=minZ+pixelsizeZNM;
+        }
+        if (maxY-minY<pixelsizeXYNM){
+            maxY=minY+pixelsizeXYNM;
+        }
+        if (maxX-minX<pixelsizeXYNM){
+            maxX=minX+pixelsizeXYNM;
+        }
+        double binColor=255;
+        int width=(int)Math.ceil((maxX-minX)/pixelsizeXYNM);
+        int height=(int)Math.ceil((maxY-minY)/pixelsizeXYNM);
+        int depth=(int)Math.ceil((maxZ-minZ)/pixelsizeZNM);
+        
+        
+        
+        
+        double x;
+        double y;
+        double z;
+        
+        width=Math.max(width, 1);
+        height=Math.max(height, 1);
+        depth=Math.max(depth, 1);
+        
+        //IJ.log("depth "+depth+"  "+minZ+"  "+maxZ);
+        
+        
+        
+        
+        ImageStack ims = new ImageStack(width,height);
+        
+        ImageProcessor [] ip = new FloatProcessor[depth];
+        for (int t=0;t<depth;t++){
+            ip[t]= new FloatProcessor(width,height);
+//            for (int u=0;u<width;u++){
+//                for (int uu=0;uu<height;uu++){
+//                    ip[t].putPixelValue(u, uu, 0);
+//                }
+//            }
+        }
+        double cste=1/Math.pow(2*Math.PI,1.5);
+        int xx,yy,zz,shiftA,shiftAA,shiftAAA;
+        double decx,decy,decz;
+        double sx,sy,sz;//sigma value
+        
+        for (int i=0;i<sl.fl.size();i++){
+            for (int j=0;j<sl.fl.get(i).loc.size();j++){
+                if (sl.fl.get(i).loc.get(j).exists){
+                    x=((sl.fl.get(i).loc.get(j).X-minX)/pixelsizeXYNM);
+                    y=((sl.fl.get(i).loc.get(j).Y-minY)/pixelsizeXYNM);
+                    z=((sl.fl.get(i).loc.get(j).Z-minZ)/pixelsizeZNM);
+                    
+                    xx=(int)x;
+                    yy=(int)y;
+                    zz=(int)z;
+                    sx=sl.fl.get(i).loc.get(j).crlb_X;
+                    sy=sl.fl.get(i).loc.get(j).crlb_Y;
+                    sz=sl.fl.get(i).loc.get(j).crlb_Z;
+                    
+                    if (sx<=0){
+                        sx=.1;
+                    }
+                    if (sy<=0){
+                        sy=.1;
+                    }
+                    if (sz<=0){
+                        sz=.1;
+                    }
+                    double leftGauss=cste/(sx*sy*sz);
+                    decx=(x-xx)*pixelsizeXYNM;
+                    decy=(y-yy)*pixelsizeXYNM;
+                    decz=(z-zz)*pixelsizeZNM;
+                    //IJ.log("z "+z);
+                    shiftA=(int)Math.ceil(2*sx/pixelsizeXYNM);
+                    shiftAA=(int)Math.ceil(2*sy/pixelsizeXYNM);
+                    shiftAAA=(int)Math.ceil(2*sz/pixelsizeZNM);
+                    for (int a=-shiftA;a<=shiftA;a++){
+                        for (int aa=-shiftAA;aa<=shiftAA;aa++){
+                            for (int aaa=-shiftAAA;aaa<=shiftAAA;aaa++){
+                                if ((zz+aaa>=0)&&(zz+aaa<ip.length)&&(xx+a>=0)&&(xx+a<width)&&(yy+aa>=0)&&(yy+aa<height)){
+                                    ip[zz+aaa].putPixelValue(xx+a, yy+aa, ip[zz+aaa].getPixelValue(xx+a, yy+aa)+leftGauss*Math.exp(-.5*(((a*pixelsizeXYNM+decx)*(a*pixelsizeXYNM+decx)/(sx*sx)) + ((aa*pixelsizeXYNM+decy)*(aa*pixelsizeXYNM+decy)/(sy*sy)) + ((aaa*pixelsizeXYNM+decz)*(aaa*pixelsizeXYNM+decz)/(sz*sz)))));
+                                }
+                            }
+                        }
+                        
+                    }
+                    
+                    
+                    
+                }
+            }
+        }
+        for (int t=0;t<depth;t++){
+            ims.addSlice("z="+(((double)t)*pixelsizeZNM), ip[t]);
+        }
+        ImagePlus imp = new ImagePlus(""+ZRendering.nameHistPlot+"",ims);
         imp.show();
         IJ.run("Set Scale...", "distance=1 known="+pixelsizeXYNM+" unit=nm");
         if (pixelsizeXYNM!=pixelsizeZNM){
@@ -1772,6 +2099,51 @@ public class ZRendering {
             ims.addSlice(ip[t]);
         }
         ImagePlus impout = new ImagePlus("colorized 3D histogram",ims);
+        impout.show();
+        
+    }
+    
+    
+    
+    
+    
+    
+    
+    
+    public static void localMaxima(ImagePlus imp){
+        
+        int width=imp.getWidth();
+        int height=imp.getHeight();
+        int depth=imp.getNSlices();
+        ImageStack ims = new ImageStack(width,height);
+        FloatProcessor [] ip = new FloatProcessor[depth];
+        double maxi;
+        for (int t=0;t<depth;t++){
+            imp.setSlice(t+1);
+            ImageProcessor ipin=imp.getProcessor();
+            ip[t]= new FloatProcessor(width,height);
+            for (int u=1;u<width-1;u++){
+                for (int uu=1;uu<height-1;uu++){
+                    
+                    maxi=Double.NEGATIVE_INFINITY;
+                    
+                    for (int a=-1;a<=1;a++){
+                        for (int aa=-1;aa<=1;aa++){
+                            if (ipin.getPixelValue(u+a, uu+aa)>maxi){
+                                maxi=ipin.getPixelValue(u+a, uu+aa);
+                            }
+                        }
+                    }
+                    if (maxi==ipin.getPixelValue(u, uu)){
+                        ip[t].putPixelValue(u, uu, maxi);
+                    }
+                    
+                    
+                }
+            }
+            ims.addSlice(ip[t]);
+        }
+        ImagePlus impout = new ImagePlus("local maxima image",ims);
         impout.show();
         
     }

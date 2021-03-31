@@ -64,10 +64,10 @@ public class SimulationOverlappingBeads {
         double [][] background=new double[patchSize][patchSize];
         
         int cameraFlip=-1;//  1 for cam 1   //   -1 for cam 2
-        double beadFocus=0;//position of the current bead;
+        double beadFocus=-0.25;//position of the current bead;
         int nb=18;
         
-        double theposition=-.5;
+        double theposition=.5;
         
         
         double [] zposition = new double [nb];
@@ -201,7 +201,7 @@ public class SimulationOverlappingBeads {
                         double angle=random.nextDouble()*2.*Math.PI;
                         double xx=radius*Math.cos(angle);
                         double yy=radius*Math.sin(angle);
-                        double zum=(axialRange/2.)*random.nextDouble();
+                        double zum=(axialRange)*(random.nextDouble()-.5);
                         double rx=Math.floor(xx/this.dp.param.xystep);
                         double ry=Math.floor(yy/this.dp.param.xystep);
                         double px=xx-rx*this.dp.param.xystep;
@@ -223,7 +223,7 @@ public class SimulationOverlappingBeads {
                                 if (k==9){
                                     double xp=xshift[k]+rx+z+decX;
                                     double yp=yshift[k]+ry+zz+decY;
-                                    imFull[y][xshift[k]+(int)rx+z+decX][yshift[k]+(int)ry+zz+decY]+=(double)psf[z][zz]*photonNumber/2;
+                                    imFull[y][xshift[k]+(int)rx+z+decX][yshift[k]+(int)ry+zz+decY]+=(double)psf[z][zz]*photonNumber/4;
                                 }
                                 else if (k==8){
                                     imFull[y][xshift[k]+z+decX][yshift[k]+zz+decY]+=(double)psf[z][zz]*photonNumber;

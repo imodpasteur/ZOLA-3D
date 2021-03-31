@@ -19,6 +19,8 @@ import java.util.Arrays;
 import java.util.Comparator;
 import java.util.ArrayList;
 import ij.plugin.GaussianBlur3D;
+import org.pasteur.imagej.process.cpu.SearchPSFcenter;
+import org.pasteur.imagej.process.cpu.DataPhase;
 /**
  *
  * @author benoit
@@ -38,6 +40,7 @@ public class DualColorFusion {
     
     double pixsize;//nm
     int magnification=2;
+    double magnificationZ;
     int magnificationConvolution=1;
     ImagePlus im1;
     ImagePlus im2;
@@ -72,8 +75,8 @@ public class DualColorFusion {
     int way=0;
     double sigmaGaussianXY;//nm
     double sigmaGaussianZ;//nm
-    
-    //constructor to compute registration
+    DataPhase dp;
+    //construtor to compute registration
     public DualColorFusion(StackLocalization sl1,StackLocalization sl2,String pathRes,double maxDistanceMergingXY, int order){
         
         this.order=order;
@@ -110,7 +113,38 @@ public class DualColorFusion {
         this.sl2=sl2;
         this.pixsize=pixSize;
         this.magnification=magnification;
+        this.magnificationZ=magnification*pixSize/zstep;
         way=2;
+        this.zstep= zstep;
+        
+        this.pathRes=pathRes;
+    }
+    
+    
+    //constructor to compute registration with widefield
+    public DualColorFusion(ImagePlus im1,StackLocalization sl2,String pathRes,double pixSize,double zstep, int magnification,DataPhase dp,ImagePlus im2,ImagePlus im3){
+        this.dp=dp;
+        this.sigmaGaussianXY=-1;
+        this.sigmaGaussianZ=-1;
+        this.im1=im1;
+        this.im2=im2;
+        this.im3=im3;
+        
+        
+        if ((im2!=null)&&(im1.getWidth()!=im2.getWidth())&&(im1.getHeight()!=im2.getHeight())&&(im1.getNSlices()!=im2.getNSlices())&&(im1.getNFrames()!=im2.getNFrames())){
+            IJ.log("WARNING: dimensions of widefield image 1 and 2 do not match");
+            this.im2=null;
+        }
+        if ((im3!=null)&&(im1.getWidth()!=im3.getWidth())&&(im1.getHeight()!=im3.getHeight())&&(im1.getNSlices()!=im3.getNSlices())&&(im1.getNFrames()!=im3.getNFrames())){
+            IJ.log("WARNING: dimensions of widefield image 1 and 3 do not match");
+            this.im3=null;
+        }
+        
+        this.sl2=sl2;
+        this.pixsize=pixSize;
+        this.magnification=magnification;
+        this.magnificationZ=magnification*pixSize/zstep;
+        way=3;
         this.zstep= zstep;
         
         this.pathRes=pathRes;
@@ -127,11 +161,15 @@ public class DualColorFusion {
     
     
     public void run(){
+IJ.log("way "+way);
         if (way==1){
             run1();
         }
         else if (way==2){
             run2();
+        }
+        else if (way==3){
+            run3();
         }
         else{
             run0();
@@ -194,18 +232,18 @@ public class DualColorFusion {
         int sizeFFTY=(int)Math.pow(2,(int)(Math.ceil(Math.log(height*magnificationConvolution*2)/Math.log(2))));
         
         float [][][] image =new float [sizeFFTZ][sizeFFTX][sizeFFTY];//*2 for padding
-        float [][][] imagewidefield1 =new float [nbImage*magnification][width*magnification][height*magnification];//*2 for padding
+        float [][][] imagewidefield1 =new float [(int)Math.ceil(nbImage*magnificationZ)][width*magnification][height*magnification];//*2 for padding
         float [][][] imagewidefield2 =null;
         float [][][] imagewidefield3 =null;
         ImageStack ims2=null;
         if (im2!=null){
-            imagewidefield2 =new float [nbImage*magnification][width*magnification][height*magnification];//*2 for padding
+            imagewidefield2 =new float [(int)Math.ceil(nbImage*magnificationZ)][width*magnification][height*magnification];//*2 for padding
             ims2= im2.getStack();
         }
         
         ImageStack ims3=null;
         if (im3!=null){
-            imagewidefield3 =new float [nbImage*magnification][width*magnification][height*magnification];//*2 for padding
+            imagewidefield3 =new float [(int)Math.ceil(nbImage*magnificationZ)][width*magnification][height*magnification];//*2 for padding
             ims3= im3.getStack();
         }
         
@@ -243,15 +281,15 @@ public class DualColorFusion {
                             }
                         }
                     }
-                    for (int u=0;u<magnification;u++){
+                    for (int u=0;u<magnificationZ;u++){
                         for (int uu=0;uu<magnification;uu++){
                             for (int uuu=0;uuu<magnification;uuu++){
-                                imagewidefield1[i*magnification+u][ii*magnification+uu][iii*magnification+uuu]=ip.getPixelValue(jj, jjj);
+                                imagewidefield1[(int)(i*magnificationZ)+u][ii*magnification+uu][iii*magnification+uuu]=ip.getPixelValue(jj, jjj);
                                 if (im2!=null){
-                                    imagewidefield2[i*magnification+u][ii*magnification+uu][iii*magnification+uuu]=ip2.getPixelValue(jj, jjj);
+                                    imagewidefield2[(int)(i*magnificationZ)+u][ii*magnification+uu][iii*magnification+uuu]=ip2.getPixelValue(jj, jjj);
                                 }
                                 if (im3!=null){
-                                    imagewidefield3[i*magnification+u][ii*magnification+uu][iii*magnification+uuu]=ip3.getPixelValue(jj, jjj);
+                                    imagewidefield3[(int)(i*magnificationZ)+u][ii*magnification+uu][iii*magnification+uuu]=ip3.getPixelValue(jj, jjj);
                                 }
                             }
                         }
@@ -308,6 +346,11 @@ public class DualColorFusion {
         
         float [][][] image_ =new float [sizeFFTZ][sizeFFTX][sizeFFTY];
         
+        
+        
+                    
+                    
+                    
         ImagePlus imp=org.pasteur.imagej.postprocess.ZRendering.hist3D(sl2, pixsize/(double)magnificationConvolution, zstep/(double)magnificationConvolution, minX, maxX, minY, maxY, minZ, maxZ, 0);
         
         for (int i=0;i<sizeFFTZ/2;i++){
@@ -363,11 +406,12 @@ public class DualColorFusion {
         
         //org.pasteur.imagej.utils.ImageShow.imshow(image,"image");//////////////////////////////////:*****************************
         //org.pasteur.imagej.utils.ImageShow.imshow(image_,"image_");//////////////////////////////////:*****************************
-        
+        ImageShow.imshow(image_,"image_");
         ft.fft(image_, tmp1,tmp4, tmp5);
         IJ.showProgress(.4);
         IJ.log("image SR FFT ok");
-        
+        ImageShow.imshow(tmp3,"tmp3");
+        ImageShow.imshow(tmp4,"tmp4 a");
         for (int ii=0;ii<sizeFFTZ;ii++){
             for (int iii=0;iii<sizeFFTX;iii++){
                 for (int iiii=0;iiii<sizeFFTY;iiii++){
@@ -377,10 +421,10 @@ public class DualColorFusion {
             }
         }
         IJ.showProgress(.5);
-        
+        ImageShow.imshow(tmp4,"tmp4 b");
         IJ.log("gaussian blur ok");
         
-        
+        ImageShow.imshow(image,"image");
         
         ft.fft(image, tmp1,tmp2, tmp3);
         IJ.log("image LR FFT ok");
@@ -405,7 +449,7 @@ public class DualColorFusion {
         IJ.showProgress(.8);
         ft.shift3D(tmp2,tmp1);
         IJ.log("image 1 IFFT");
-        
+        ImageShow.imshow(tmp1,"resConv");
         //org.pasteur.imagej.utils.ImageShow.imshow(tmp1,"conv");//////////////////////////////////:*****************************
         IJ.showProgress(.9);
         LocalMaxima ml = new LocalMaxima(tmp1);
@@ -445,15 +489,432 @@ public class DualColorFusion {
         IJ.log("max Z: "+nbImage*zstep);
         
         ImageShow.imshow(imagewidefield1,"wf");
-        ImagePlus impfinal=org.pasteur.imagej.postprocess.ZRendering.hist3D(sl2, pixsize/magnification, zstep/magnification, 0, width*pixsize, 0, height*pixsize, 0, nbImage*zstep, 0);
+        ImagePlus impfinal=org.pasteur.imagej.postprocess.ZRendering.hist3D(sl2, pixsize/magnification, zstep/magnificationZ, 0, width*pixsize, 0, height*pixsize, 0, nbImage*zstep, 0);
         impfinal.setTitle("hr");
         try{Thread.sleep(500);}catch(Exception e){} 
         IJ.run("Merge Channels...", "c1=wf c2=hr keep create");
         
         if (im2!=null){
             ImageShow.imshow(imagewidefield2,"wf");
-            ImagePlus impfinal2=org.pasteur.imagej.postprocess.ZRendering.hist3D(sl2, pixsize/magnification, zstep/magnification, 0, width*pixsize, 0, height*pixsize, 0, nbImage*zstep, 0);
+            ImagePlus impfinal2=org.pasteur.imagej.postprocess.ZRendering.hist3D(sl2, pixsize/magnification, zstep/magnificationZ, 0, width*pixsize, 0, height*pixsize, 0, nbImage*zstep, 0);
             impfinal2.setTitle("hr");
+            if (im3!=null){
+                ImageShow.imshow(imagewidefield3,"wfb");
+                try{Thread.sleep(500);}catch(Exception e){}
+                IJ.run("Merge Channels...", "c2=wf c1=hr c3=wfb keep create");
+            }
+            else{
+                try{Thread.sleep(500);}catch(Exception e){}
+                IJ.run("Merge Channels...", "c2=wf c1=hr keep create");
+            }
+            
+        }
+        IJ.showProgress(1);
+        
+        
+        
+        
+        
+        
+        
+        /*
+        ImageShow.imshow(imagewidefield1,"wf2");
+        ImagePlus impfinalblur=org.pasteur.imagej.postprocess.ZRendering.hist3D(sl2, pixsize/magnification, zstep/magnification, 0, width*pixsize, 0, height*pixsize, 0, nbImage*zstep, 0);
+        IJ.log("sx"+(sigmaGaussianXY/(pixsize/magnification)));
+        GaussianBlur3D.blur(impfinalblur, sigmaGaussianXY/(pixsize/magnification), sigmaGaussianXY/(pixsize/magnification), sigmaGaussianZ/(zstep/magnification));
+        
+        try{Thread.sleep(200);}catch(Exception e){}
+        impfinalblur.setTitle("hr2");
+        try{Thread.sleep(500);}catch(Exception e){}
+        IJ.run("Merge Channels...", "c1=wf2 c2=hr2 create");
+        
+        if (im2!=null){
+            ImageShow.imshow(imagewidefield2,"wf2");
+            ImagePlus impfinal2=org.pasteur.imagej.postprocess.ZRendering.hist3D(sl2, pixsize/magnification, zstep/magnification, 0, width*pixsize, 0, height*pixsize, 0, nbImage*zstep, 0);
+            impfinal2.setTitle("hr2");
+            if (im3!=null){
+                ImageShow.imshow(imagewidefield3,"wfb2");
+                try{Thread.sleep(500);}catch(Exception e){}
+                IJ.run("Merge Channels...", "c2=wf2 c1=hr2 c3=wfb2 create");
+            }
+            else{
+                try{Thread.sleep(500);}catch(Exception e){}
+                IJ.run("Merge Channels...", "c2=wf2 c1=hr2 create");
+            }
+            
+        }
+        IJ.showProgress(1);*/
+        
+    }
+                
+                
+                
+                
+                
+                
+                
+                
+    //registration to image
+    public void run3(){
+        
+        
+        int shiftRender=1;
+        
+        boolean stacked=true;
+        int nbImage=im1.getNSlices();
+        if (nbImage==1){
+            nbImage=im1.getNFrames();
+            stacked=false;
+        }
+        if (nbImage==1){
+            IJ.log("WARNING, you should provide a stack with more than 1 image");
+        }
+        ImageStack ims= im1.getStack();
+        
+        int width=im1.getWidth();
+        int height=im1.getHeight();
+        
+        int sizeFFTZ=(int)Math.pow(2,(int)(Math.ceil(Math.log(nbImage*magnificationConvolution*2)/Math.log(2))));
+        int sizeFFTX=(int)Math.pow(2,(int)(Math.ceil(Math.log(width*magnificationConvolution*2)/Math.log(2))));
+        int sizeFFTY=(int)Math.pow(2,(int)(Math.ceil(Math.log(height*magnificationConvolution*2)/Math.log(2))));
+        
+        float [][][] image =new float [sizeFFTZ][sizeFFTX][sizeFFTY];//*2 for padding
+        float [][][] imagewidefield1 =new float [(int)Math.ceil(nbImage*magnificationZ)][width*magnification][height*magnification];//*2 for padding
+        float [][][] imagewidefield2 =null;
+        float [][][] imagewidefield3 =null;
+        ImageStack ims2=null;
+        if (im2!=null){
+            imagewidefield2 =new float [(int)Math.ceil(nbImage*magnificationZ)][width*magnification][height*magnification];//*2 for padding
+            ims2= im2.getStack();
+        }
+        
+        ImageStack ims3=null;
+        if (im3!=null){
+            imagewidefield3 =new float [(int)Math.ceil(nbImage*magnificationZ)][width*magnification][height*magnification];//*2 for padding
+            ims3= im3.getStack();
+        }
+        
+        for (int i=0;i<nbImage;i++){
+            ImageProcessor ip;
+            ImageProcessor ip2=null;
+            ImageProcessor ip3=null;
+            if (stacked){
+                ip = ims.getProcessor(i+1);
+                if (im2!=null){
+                    ip2 = ims2.getProcessor(i+1);
+                }
+                if (im3!=null){
+                    ip3 = ims3.getProcessor(i+1);
+                }
+            }
+            else{
+                im1.setSlice(i+1);
+                ip = im1.getProcessor();
+                if (im2!=null){
+                    im2.setSlice(i+1);
+                    ip2 = im2.getProcessor();
+                }
+                if (im3!=null){
+                    im3.setSlice(i+1);
+                    ip3 = im3.getProcessor();
+                }
+            }
+            for (int ii=0,jj=0;ii<width;ii++,jj++){
+                for (int iii=0,jjj=0;iii<height;iii++,jjj++){
+                    for (int u=0;u<magnificationConvolution;u++){
+                        for (int uu=0;uu<magnificationConvolution;uu++){
+                            for (int uuu=0;uuu<magnificationConvolution;uuu++){
+                                image[i*magnificationConvolution+nbImage*magnificationConvolution/2+u][ii*magnificationConvolution+width*magnificationConvolution/2+uu][iii*magnificationConvolution+height*magnificationConvolution/2+uuu]=ip.getPixelValue(jj, jjj);
+                            }
+                        }
+                    }
+                    for (int u=0;u<(int)Math.ceil(magnificationZ);u++){
+                        if (((int)(i*magnificationZ)+u<imagewidefield1.length)){
+                            for (int uu=0;uu<magnification;uu++){
+                                for (int uuu=0;uuu<magnification;uuu++){
+                                    imagewidefield1[(int)(i*magnificationZ)+u][ii*magnification+uu][iii*magnification+uuu]=ip.getPixelValue(jj, jjj);
+                                    if (im2!=null){
+                                        imagewidefield2[(int)(i*magnificationZ)+u][ii*magnification+uu][iii*magnification+uuu]=ip2.getPixelValue(jj, jjj);
+                                    }
+                                    if (im3!=null){
+                                        imagewidefield3[(int)(i*magnificationZ)+u][ii*magnification+uu][iii*magnification+uuu]=ip3.getPixelValue(jj, jjj);
+                                    }
+                                }
+                            }
+                        }
+                    }
+                    
+                }
+            }
+        }
+        
+        IJ.showProgress(.1);
+        
+        double minX=Double.POSITIVE_INFINITY;
+        double maxX=Double.NEGATIVE_INFINITY;
+        
+        double minY=Double.POSITIVE_INFINITY;
+        double maxY=Double.NEGATIVE_INFINITY;
+        
+        double minZ=Double.POSITIVE_INFINITY;
+        double maxZ=Double.NEGATIVE_INFINITY;
+        
+        double x;
+        double y;
+        double z;
+        
+        //maybe use Arrays.sort to be fast
+        for (int i=0;i<sl2.fl.size();i++){
+            for (int j=0;j<sl2.fl.get(i).loc.size();j++){
+                if (sl2.fl.get(i).loc.get(j).exists){
+                    x=sl2.fl.get(i).loc.get(j).X;
+                    y=sl2.fl.get(i).loc.get(j).Y;
+                    z=sl2.fl.get(i).loc.get(j).Z;
+                    if (x<minX){
+                        minX=x;
+                    }
+                    if (y<minY){
+                        minY=y;
+                    }
+                    if (x>maxX){
+                        maxX=x;
+                    }
+                    if (y>maxY){
+                        maxY=y;
+                    }
+                    if (z<minZ){
+                        minZ=z;
+                    }
+                    if (z>maxZ){
+                        maxZ=z;
+                    }
+                }
+            }
+        }
+        
+        
+        float [][][] image_ =new float [sizeFFTZ][sizeFFTX][sizeFFTY];
+        float [][][] filter_ =new float [sizeFFTZ][sizeFFTX][sizeFFTY];
+        
+        
+        //////////////////////////////////////////////BEGIN CONVOLVE PSF
+        
+        dp.psf.resetKz();
+        dp.setSizeoutput(128);
+        double axialRange=(maxZ-minZ)/1000;
+        SearchPSFcenter spsfc= new SearchPSFcenter(dp,axialRange);
+        double position=spsfc.getPosition();
+        
+        //IJ.log("position "+position);
+        
+        boolean computeSTD=false;
+        
+        
+            
+        int nb=(int)((axialRange)/((zstep/1000)/(double)magnificationConvolution))+1;
+        double [][][] im = new double [nb][][];
+        if (nb>0){
+            int k=0;
+            for (double u=-axialRange/2+position;k<nb;u+=zstep/1000,k++){
+                IJ.log("k "+k+"  "+axialRange+"  "+this.dp.param.Zfocus+"   "+u);
+                dp.psf.computePSF(0, 0,this.dp.param.Zfocus,u);
+                im[k]=dp.psf.getPSF();
+            }
+        }
+        
+        //////////////////////////////////////////////END CONVOLVE PSF            
+        
+                    
+                    
+        ImagePlus imp=org.pasteur.imagej.postprocess.ZRendering.hist3D(sl2, pixsize/(double)magnificationConvolution, zstep/(double)magnificationConvolution, minX, maxX, minY, maxY, minZ, maxZ, shiftRender);
+        
+        
+        //ImageShow.imshow(im);
+        
+        for (int i=0;i<sizeFFTZ/2;i++){
+            int idimage=i+1;
+            if (idimage<=imp.getNSlices()){
+                imp.setSlice(idimage);
+                ImageProcessor ip = imp.getProcessor();
+                for (int ii=0,jj=0;ii<sizeFFTX/2;ii++,jj++){
+                    for (int iii=0,jjj=0;iii<sizeFFTY/2;iii++,jjj++){
+                        if (jj<imp.getWidth()&&jjj<imp.getHeight()){
+                            image_[i+nbImage*magnificationConvolution/2][ii+width*magnificationConvolution/2][iii+height*magnificationConvolution/2]=ip.getPixelValue(jj, jjj);
+                            
+                        }
+                    }
+                }
+            }
+                
+        }
+        //do the same than Image_ but for "filter" !!!
+        
+        for (int i=sizeFFTZ/2-im.length/2,j=0;j<im.length;i++,j++){
+            for (int ii=sizeFFTX/2-im[j].length/2,jj=0;jj<im[j].length;ii++,jj++){
+                for (int iii=sizeFFTY/2-im[j][jj].length/2,jjj=0;jjj<im[j][jj].length;iii++,jjj++){
+                        filter_[i][ii][iii]=(float)im[j][jj][jjj];
+                }
+            }
+        }
+        
+        //ImageShow.imshow(image_,"image_");
+        //ImageShow.imshow(filter_,"filter_");
+        
+        float [][][] tmp1 =new float [sizeFFTZ][sizeFFTX][sizeFFTY];
+        float [][][] tmp2 =new float [sizeFFTZ][sizeFFTX][sizeFFTY];
+        float [][][] tmp3 =new float [sizeFFTZ][sizeFFTX][sizeFFTY];
+        float [][][] tmp4 =new float [sizeFFTZ][sizeFFTX][sizeFFTY];
+        float [][][] tmp5 =new float [sizeFFTZ][sizeFFTX][sizeFFTY];
+        float [][][] tmp6 =new float [sizeFFTZ][sizeFFTX][sizeFFTY];
+        float [][][] tmp7 =new float [sizeFFTZ][sizeFFTX][sizeFFTY];
+        
+        IJ.showProgress(.2);
+        IJ.log("images created");
+        
+//        double sigmaxy=sigmaGaussianXY/pixsize;
+//        double sigmaz=sigmaGaussianZ/pixsize;
+//        double sigmaFourierPowx=((1./(sigmaxy))*(double)sizeFFTX/(Math.PI*2.))*((1./(sigmaxy))*(double)sizeFFTX/(Math.PI*2.));
+//        double sigmaFourierPowy=((1./(sigmaxy))*(double)sizeFFTY/(Math.PI*2.))*((1./(sigmaxy))*(double)sizeFFTY/(Math.PI*2.));
+//        double sigmaFourierPowz=((1./(sigmaz))*(double)sizeFFTZ/(Math.PI*2.))*((1./(sigmaz))*(double)sizeFFTZ/(Math.PI*2.));
+//        
+//        for (int zzz=0;zzz<sizeFFTZ;zzz++){
+//            for (int xxx=0;xxx<sizeFFTX;xxx++){
+//                for (int yyy=0;yyy<sizeFFTY;yyy++){
+//                    
+//                    tmp2[zzz][xxx][yyy]=(float)Math.exp(-.5* ((xxx-sizeFFTX/2)*(xxx-sizeFFTX/2)/sigmaFourierPowx + (yyy-sizeFFTY/2)*(yyy-sizeFFTY/2)/sigmaFourierPowy +(zzz-sizeFFTZ/2)*(zzz-sizeFFTZ/2)/sigmaFourierPowz));
+//
+//                    
+//                }
+//            }
+//        }
+        FourierTransform ft = new FourierTransform();
+        
+        
+        
+        ft.shift3D(tmp2, tmp3);
+        
+        IJ.showProgress(.3);
+        
+        //org.pasteur.imagej.utils.ImageShow.imshow(image,"image");//////////////////////////////////:*****************************
+        //org.pasteur.imagej.utils.ImageShow.imshow(image_,"image_");//////////////////////////////////:*****************************
+        ft.fft(filter_, tmp1,tmp2, tmp3);
+        ft.fft(image_, tmp1,tmp4, tmp5);
+        IJ.showProgress(.4);
+        IJ.log("image SR FFT ok");
+        
+        for (int ii=0;ii<sizeFFTZ;ii++){
+            for (int iii=0;iii<sizeFFTX;iii++){
+                for (int iiii=0;iiii<sizeFFTY;iiii++){
+                    tmp6[ii][iii][iiii]=tmp4[ii][iii][iiii]*tmp2[ii][iii][iiii]-tmp3[ii][iii][iiii]*tmp5[ii][iii][iiii];
+                    tmp7[ii][iii][iiii]=tmp3[ii][iii][iiii]*tmp4[ii][iii][iiii]+tmp5[ii][iii][iiii]*tmp2[ii][iii][iiii];
+                }
+            }
+        }
+        IJ.showProgress(.5);
+        
+        IJ.log("psf blur ok");
+        
+        
+
+////////////////////////////////go back to conv:
+//        ft.ifft(tmp6, tmp7,tmp4, tmp5);
+//        IJ.showProgress(.8);
+//        ft.shift3D(tmp4,tmp5);
+//        ImageShow.imshow(tmp5,"convolved");
+///////////////////////////////        
+        
+        ft.fft(image, tmp1,tmp2, tmp3);
+        IJ.log("image LR FFT ok");
+        
+        
+        IJ.showProgress(.6);
+        //here, we convolve with HR for registration !!!!!
+        for (int ii=0;ii<sizeFFTZ;ii++){
+            for (int iii=0;iii<sizeFFTX;iii++){
+                for (int iiii=0;iiii<sizeFFTY;iiii++){
+                    image[ii][iii][iiii]=tmp2[ii][iii][iiii]*tmp6[ii][iii][iiii]+tmp3[ii][iii][iiii]*tmp7[ii][iii][iiii];
+                    image_[ii][iii][iiii]=tmp3[ii][iii][iiii]*tmp6[ii][iii][iiii]-tmp2[ii][iii][iiii]*tmp7[ii][iii][iiii];
+                    
+                    
+                    
+                }
+            }
+        }
+        IJ.showProgress(.7);
+        
+        ft.ifft(image, image_,tmp2, tmp1);
+        IJ.showProgress(.8);
+        ft.shift3D(tmp2,tmp1);
+        IJ.log("image 1 IFFT");
+        
+        //ImageShow.imshow(tmp2,"resConv");
+        
+        //org.pasteur.imagej.utils.ImageShow.imshow(tmp1,"conv");//////////////////////////////////:*****************************
+        IJ.showProgress(.9);
+        LocalMaxima ml = new LocalMaxima(tmp2);
+        ml.run(.95);
+        
+        double xs=ml.getShiftXinPix()/magnificationConvolution*pixsize+minX;
+        double ys=ml.getShiftYinPix()/magnificationConvolution*pixsize+minY;
+        double zs=ml.getShiftZinPix()/magnificationConvolution*zstep+minZ;
+        
+        IJ.log("shift: "+xs+"  "+ys+"  "+zs+"  XS:"+ml.getShiftXinPix()/magnificationConvolution+"  minX:"+minX);
+        
+        for (int i=0;i<sl2.fl.size();i++){
+            for (int ii=0;ii<sl2.fl.get(i).loc.size();ii++){
+                PLocalization p = sl2.fl.get(i).loc.get(ii);
+                p.X-=xs;
+                p.Y-=ys;
+                p.Z-=zs;
+            }
+        }
+        
+        //imp.close();
+        
+        
+        sl2.saveCSV(pathRes);
+        IJ.log("localization table registered saved:"+pathRes);
+        IJ.log("To render the image with the same size as widefield image, please set the parameters as follow:");
+        
+        IJ.log("Pixel size: "+ pixsize);
+        IJ.log("Axial pixel size: "+ zstep);
+        IJ.log("shift histogram: "+ 0);
+        IJ.log("3d rendering: ");
+        IJ.log("min X: "+0);
+        IJ.log("max X: "+width*pixsize);
+        IJ.log("min Y: "+0);
+        IJ.log("max Y: "+height*pixsize);
+        IJ.log("min Z: "+0);
+        IJ.log("max Z: "+nbImage*zstep);
+        
+        ImageShow.imshow(imagewidefield1,"wf");
+        double maxWF=Double.NEGATIVE_INFINITY;
+        for (int i=0;i<imagewidefield1.length;i++){
+            for (int ii=0;ii<imagewidefield1[i].length;ii++){
+                for (int iii=0;iii<imagewidefield1[i][ii].length;iii++){
+                    if (imagewidefield1[i][ii][iii]>maxWF){
+                        maxWF=imagewidefield1[i][ii][iii];
+                    }
+                }
+            }
+        }
+        IJ.setMinAndMax(0, maxWF);
+        
+        
+        ImagePlus impfinal=org.pasteur.imagej.postprocess.ZRendering.hist3D(sl2, pixsize/magnification, zstep/magnificationZ, 0, width*pixsize, 0, height*pixsize, 0, nbImage*zstep, shiftRender);
+        IJ.makeRectangle(shiftRender, shiftRender, impfinal.getWidth()-shiftRender-1, impfinal.getHeight()-shiftRender-1);
+        IJ.run("Duplicate...", "title=hr duplicate range="+shiftRender+"-"+(impfinal.getNSlices()-shiftRender-1)+"");
+
+
+        
+        try{Thread.sleep(500);}catch(Exception e){} 
+        IJ.run("Merge Channels...", "c1=wf c2=hr keep create");
+        
+        if (im2!=null){
+            ImageShow.imshow(imagewidefield2,"wf");
+            ImagePlus impfinal2=org.pasteur.imagej.postprocess.ZRendering.hist3D(sl2, pixsize/magnification, zstep/magnificationZ, 0, width*pixsize, 0, height*pixsize, 0, nbImage*zstep, shiftRender);
+            IJ.makeRectangle(shiftRender, shiftRender, impfinal.getWidth()-shiftRender-1, impfinal.getHeight()-shiftRender-1);
+            IJ.run("Duplicate...", "title=hr duplicate range="+shiftRender+"-"+(impfinal.getNSlices()-shiftRender-1)+"");
             if (im3!=null){
                 ImageShow.imshow(imagewidefield3,"wfb");
                 try{Thread.sleep(500);}catch(Exception e){}
@@ -512,6 +973,9 @@ public class DualColorFusion {
         sl1fuse=new StackLocalization();
         sl2fuse=new StackLocalization();
         
+        
+        org.pasteur.imagej.postprocess.RegistrationCrossCorrel reg = new org.pasteur.imagej.postprocess.RegistrationCrossCorrel(sl1,sl2,120);
+        double [] lateralShift=reg.getShift();
         
         
         
@@ -628,6 +1092,8 @@ public class DualColorFusion {
             
             
             int shift=(int)Math.ceil(maxDistanceMergingXY/sizePix);
+            int latshiftX=(int)Math.ceil(lateralShift[0]/sizePix);
+            int latshiftY=(int)Math.ceil(lateralShift[1]/sizePix);
             
             int posX1,posY1,posX2,posY2;
             double distance,distZ,xx,yy,zz;
@@ -669,16 +1135,16 @@ public class DualColorFusion {
                     int idPartFound=-1;
                     if ((sl2.fl.get(id2).loc.get(j).X>=0)&&(sl2.fl.get(id2).loc.get(j).Y>=0)){
                         //search in the matrix the closest
-                        for (int u=posX2-shift;u<=posX2+shift;u++){
-                            for (int v=posY2-shift;v<=posY2+shift;v++){
+                        for (int u=posX2-shift-latshiftX;u<=posX2+shift-latshiftX;u++){
+                            for (int v=posY2-shift-latshiftY;v<=posY2+shift-latshiftY;v++){
                                 if ((u>=0)&&(v>=0)&&(u<width)&&(v<height)){
                                     if (idLoc[u][v]!=-1){
                                         if (idPartFound==-1){
                                             //new particle
 
 
-                                            xx=((sl2.fl.get(id2).loc.get(j).X) - (sl1.fl.get(id1).loc.get(idLoc[u][v]).X));
-                                            yy=((sl2.fl.get(id2).loc.get(j).Y) - (sl1.fl.get(id1).loc.get(idLoc[u][v]).Y));
+                                            xx=((sl2.fl.get(id2).loc.get(j).X)-lateralShift[0] - (sl1.fl.get(id1).loc.get(idLoc[u][v]).X));
+                                            yy=((sl2.fl.get(id2).loc.get(j).Y)-lateralShift[1] - (sl1.fl.get(id1).loc.get(idLoc[u][v]).Y));
                                             zz=((sl2.fl.get(id2).loc.get(j).Z) - (sl1.fl.get(id1).loc.get(idLoc[u][v]).Z));
                                             distZ=Math.sqrt(zz*zz);
                                             distance=Math.sqrt(xx*xx+yy*yy);
@@ -689,8 +1155,8 @@ public class DualColorFusion {
                                         }
                                         else{
                                             //not new -> compare distance
-                                            xx=((sl2.fl.get(id2).loc.get(j).X) - (sl1.fl.get(id1).loc.get(idLoc[u][v]).X));
-                                            yy=((sl2.fl.get(id2).loc.get(j).Y) - (sl1.fl.get(id1).loc.get(idLoc[u][v]).Y));
+                                            xx=((sl2.fl.get(id2).loc.get(j).X)-lateralShift[0] - (sl1.fl.get(id1).loc.get(idLoc[u][v]).X));
+                                            yy=((sl2.fl.get(id2).loc.get(j).Y)-lateralShift[1] - (sl1.fl.get(id1).loc.get(idLoc[u][v]).Y));
                                             zz=((sl2.fl.get(id2).loc.get(j).Z) - (sl1.fl.get(id1).loc.get(idLoc[u][v]).Z));
                                             distZ=Math.sqrt(zz*zz);
                                             distance=Math.sqrt(xx*xx+yy*yy);
@@ -890,9 +1356,10 @@ public class DualColorFusion {
         }
         
         
-        
-        ZRendering.hist2D(sl1fuse, 20, minX, maxX, minY, maxY, minZ, maxZ, 1,"camera1");
-        ZRendering.hist2D(sl2fuse, 20, minX, maxX, minY, maxY, minZ, maxZ, 1,"camera2");
+        ZRendering.nameHistPlot="camera1";
+        ZRendering.hist2D(sl1fuse, 20, minX, maxX, minY, maxY, minZ, maxZ, 1);
+        ZRendering.nameHistPlot="camera2";
+        ZRendering.hist2D(sl2fuse, 20, minX, maxX, minY, maxY, minZ, maxZ, 1);
         
         
         double [] axisBeforeXY = new double [(int)maxdistBeforeXY+1];

@@ -153,19 +153,23 @@ public class PSF_double_ {
     int sizeoutput1;
     int sizeoutput2;
     public PSF_double_(PhaseParameters param){
+        this.param=param;
         sizeoutput1=param.sizeoutput;
         sizeoutput2=param.sizeoutput*2;
         if (sizeoutput2>param.size){
             sizeoutput2=param.size;
         }
+        
+        int cudaResult=JCuda.cudaStreamSynchronize(MyCudaStream.getCudaStream_t(param.stream));if (cudaResult != cudaError.cudaSuccess){IJ.log("ERROR synchro cuda PSF 1 "+cudaResult+"   "+param.stream);}
+        
         gk = new GaussianKernel_(sizeoutput2,param.sizeoutput,param.sigmaGaussianKernel,param.stream);
         
-        this.param=param;
+        cudaResult=JCuda.cudaStreamSynchronize(MyCudaStream.getCudaStream_t(param.stream));if (cudaResult != cudaError.cudaSuccess){IJ.log("ERROR synchro cuda PSF 1 "+cudaResult+"   "+param.stream);}
+        
+        
     
         
         this.sizepow=param.size*param.size;
-        
-        int cudaResult=JCuda.cudaStreamSynchronize(MyCudaStream.getCudaStream_t(param.stream));if (cudaResult != cudaError.cudaSuccess){IJ.log("ERROR synchro cuda PSF 1 "+cudaResult+"   "+param.stream);}
         
         
         
@@ -680,12 +684,14 @@ public class PSF_double_ {
     
     
     void setHost2Device(Pointer device,Pointer host,int size,int sizeElement){
+        cudaResult=JCuda.cudaStreamSynchronize(MyCudaStream.getCudaStream_t(param.stream));if (cudaResult != cudaError.cudaSuccess){IJ.log("ERROR synchro cuda PSF computePSF() 0 "+cudaResult);}
+        
         int cudaResult = JCuda.cudaMemcpyAsync(device, host, size * sizeElement, cudaMemcpyKind.cudaMemcpyHostToDevice, MyCudaStream.getCudaStream_t(param.stream));
         if (cudaResult != cudaError.cudaSuccess)
         {
-            success=false;IJ.log("ERROR PSFPhaseJCudaFastDouble host2device cuda");return ;
+            success=false;IJ.log("ERROR PSFDouble host2device cuda");return ;
         }
-        //cudaResult=JCuda.cudaStreamSynchronize(MyCudaStream.getCudaStream_t(param.stream));if (cudaResult != cudaError.cudaSuccess){IJ.log("ERROR synchro cuda PSF computePSF() 0 "+cudaResult);}
+        cudaResult=JCuda.cudaStreamSynchronize(MyCudaStream.getCudaStream_t(param.stream));if (cudaResult != cudaError.cudaSuccess){IJ.log("ERROR synchro cuda PSF computePSF() 0 "+cudaResult);}
         
     }
     
@@ -858,14 +864,13 @@ public class PSF_double_ {
         
         
         
-        
         res2D = new double [sizeoutput2][sizeoutput2];
         res1D = new double [sizeoutput2*sizeoutput2];
         res = new double [sizeoutput2*sizeoutput2];
         gk.free();
         
         gk = new GaussianKernel_(sizeoutput2,sizeoutput,param.sigmaGaussianKernel,param.stream);
-        //gk = new GaussianKernel(sizeoutput2,1,param.stream);
+        
         
         matrix=new double[sizeoutput2*sizeoutput2];
         this.computeGaussianKernel(param.sigmaGaussianKernel);
@@ -1171,7 +1176,6 @@ public class PSF_double_ {
         
         JCuda.cudaFree(device_psfFFT);
         JCuda.cudaFree(device_psf);
-        //JCuda.cudaFree(device_psfsingle);
         JCuda.cudaFree(device_sparseIndexOutput);
         
         JCufft.cufftDestroy(plan);
@@ -1180,6 +1184,9 @@ public class PSF_double_ {
         plan2=null;
         gk.free();
         
+        
+        
+        //JCuda.cudaFree(device_psfsingle);
     }
     
     
@@ -1248,25 +1255,112 @@ public class PSF_double_ {
     }
     
     
-    public void imshow(int sizeTotal, int largersize,Pointer device,String title,String type){
+    public void imshow(int depth,int height,float [] im,String title){
+        int wh=im.length/depth;
+        ImageStack is = new ImageStack(wh/height,height);
+        for (int z=0;z<depth;z++){
+            ImageProcessor ip = new FloatProcessor(wh/height,height);
+            for (int i=0;i<wh/height;i++){
+                for (int ii=0;ii<height;ii++){
+
+
+                    //ip.putPixelValue(i, ii, i*largersize+ii);
+                    ip.putPixelValue(i, ii, (float)im[z*wh+i*height+ii]);
+                }
+            }
+            is.addSlice(ip);
+        }
+        
+        ImagePlus imp=new ImagePlus(""+title,is);
+        imp.show();
+    }
+    
+    public void imshow(int depth,int height,int [] im,String title){
+        int wh=im.length/depth;
+        ImageStack is = new ImageStack(wh/height,height);
+        for (int z=0;z<depth;z++){
+            ImageProcessor ip = new FloatProcessor(wh/height,height);
+            for (int i=0;i<wh/height;i++){
+                for (int ii=0;ii<height;ii++){
+
+
+                    //ip.putPixelValue(i, ii, i*largersize+ii);
+                    ip.putPixelValue(i, ii, (float)im[z*wh+i*height+ii]);
+                }
+            }
+            is.addSlice(ip);
+        }
+        
+        ImagePlus imp=new ImagePlus(""+title,is);
+        imp.show();
+    }
+    
+    public void imshow(int depth,int height,double [] im,String title){
+        int wh=im.length/depth;
+        IJ.log("height "+height+"  "+wh+"  "+im.length+"  "+depth);
+        
+        ImageStack is = new ImageStack(wh/height,height);
+        for (int z=0;z<depth;z++){
+            ImageProcessor ip = new FloatProcessor(wh/height,height);
+            for (int i=0;i<wh/height;i++){
+                for (int ii=0;ii<height;ii++){
+
+                    
+                    //ip.putPixelValue(i, ii, i*largersize+ii);
+                    ip.putPixelValue(i, ii, (float)im[z*wh+i*height+ii]);
+                }
+            }
+            is.addSlice(ip);
+        }
+        
+        ImagePlus imp=new ImagePlus(""+title,is);
+        imp.show();
+    }
+    
+    
+    public void imshow(int sizeTotal, int height,Pointer device,String title,String type){
         IJ.log("imshow is time consuming");
         if (type.startsWith("INT")){
             int [] vect = new int[sizeTotal];
             Pointer p =Pointer.to(vect);
             this.setDevice2Host(p,device,sizeTotal,Sizeof.INT);
-            this.imshow(largersize,vect, title);
+            this.imshow(height,vect, title);
         }
         else if (type.startsWith("DOUBLE")){
             double [] vect = new double[sizeTotal];
             Pointer p =Pointer.to(vect);
             this.setDevice2Host(p,device,sizeTotal,Sizeof.DOUBLE);
-            this.imshow(largersize,vect, title);
+            this.imshow(height,vect, title);
         }
         else if (type.startsWith("FLOAT")){
             float [] vect = new float[sizeTotal];
             Pointer p =Pointer.to(vect);
             this.setDevice2Host(p,device,sizeTotal,Sizeof.FLOAT);
-            this.imshow(largersize,vect, title);
+            this.imshow(height,vect, title);
+        }
+    }
+    
+    
+    
+    public void imshow(int sizeTotal, int depth, int height,Pointer device,String title,String type){
+        IJ.log("imshow is time consuming");
+        if (type.startsWith("INT")){
+            int [] vect = new int[sizeTotal];
+            Pointer p =Pointer.to(vect);
+            this.setDevice2Host(p,device,sizeTotal,Sizeof.INT);
+            this.imshow(depth,height,vect, title);
+        }
+        else if (type.startsWith("DOUBLE")){
+            double [] vect = new double[sizeTotal];
+            Pointer p =Pointer.to(vect);
+            this.setDevice2Host(p,device,sizeTotal,Sizeof.DOUBLE);
+            this.imshow(depth,height,vect, title);
+        }
+        else if (type.startsWith("FLOAT")){
+            float [] vect = new float[sizeTotal];
+            Pointer p =Pointer.to(vect);
+            this.setDevice2Host(p,device,sizeTotal,Sizeof.FLOAT);
+            this.imshow(depth,height,vect, title);
         }
     }
     

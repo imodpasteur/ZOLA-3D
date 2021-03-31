@@ -589,7 +589,7 @@ public class LocalizationMotionBlurPipeline_ {
         
         
         
-        Predetection_ predGPU;
+        Predetection_cross_ predGPU;
         
         
         PreDetectionThread(ImagePlus imp){
@@ -597,7 +597,7 @@ public class LocalizationMotionBlurPipeline_ {
             this.imp=imp;
             
             //init with param of the first camera because predetection uses only one cam
-            predGPU=new Predetection_(sizeImage,dp,minZ, maxZ, stepZ,thresholdCrossCorrelation);
+            predGPU=new Predetection_cross_(sizeImage,dp,minZ, maxZ, stepZ,thresholdCrossCorrelation);
             psfPredetection=predGPU.getPSFNonNormalized();
             rangePredetection=predGPU.getRange();
             int ssize=predGPU.getSizeImageCrossCorrel();

@@ -31,12 +31,12 @@ public class DualCamRegistration {
     String pathResFusion;
     
     double maxDistanceMergingXY;
-    double maxDistanceMergingZ;
+    double maxDistanceMergingZ=Double.MAX_VALUE;
     
     int [][] idLoc;
     
     
-    double sizePix=100;//nm
+    double sizePix=120;//nm
     
     
     double maxX=Double.NEGATIVE_INFINITY;
@@ -49,6 +49,7 @@ public class DualCamRegistration {
         
         this.sl1=sl1;
         this.sl2=sl2;
+        
         
         
         this.maxDistanceMergingXY=maxDistanceMergingXY;
@@ -64,7 +65,14 @@ public class DualCamRegistration {
     
     public void run(){
         
+        
+        
+        
         IJ.showProgress(0);
+        
+        
+        org.pasteur.imagej.postprocess.RegistrationCrossCorrel reg = new org.pasteur.imagej.postprocess.RegistrationCrossCorrel(sl1,sl2,(int)Math.ceil(sizePix));
+        double [] lateralShift=reg.getShift();
         
         sl1fuse=new StackLocalization();
         sl2fuse=new StackLocalization();
@@ -185,6 +193,8 @@ public class DualCamRegistration {
             
             
             int shift=(int)Math.ceil(maxDistanceMergingXY/sizePix);
+            int latshiftX=(int)Math.ceil(lateralShift[0]/sizePix);
+            int latshiftY=(int)Math.ceil(lateralShift[1]/sizePix);
             
             int posX1,posY1,posX2,posY2;
             double distance,distZ,xx,yy,zz;
@@ -226,28 +236,29 @@ public class DualCamRegistration {
                     int idPartFound=-1;
                     if ((sl2.fl.get(id2).loc.get(j).X>=0)&&(sl2.fl.get(id2).loc.get(j).Y>=0)){
                         //search in the matrix the closest
-                        for (int u=posX2-shift;u<=posX2+shift;u++){
-                            for (int v=posY2-shift;v<=posY2+shift;v++){
+                        for (int u=posX2-shift-latshiftX;u<=posX2+shift-latshiftX;u++){
+                            for (int v=posY2-shift-latshiftY;v<=posY2+shift-latshiftY;v++){
                                 if ((u>=0)&&(v>=0)&&(u<width)&&(v<height)){
                                     if (idLoc[u][v]!=-1){
                                         if (idPartFound==-1){
                                             //new particle
 
 
-                                            xx=((sl2.fl.get(id2).loc.get(j).X) - (sl1.fl.get(id1).loc.get(idLoc[u][v]).X));
-                                            yy=((sl2.fl.get(id2).loc.get(j).Y) - (sl1.fl.get(id1).loc.get(idLoc[u][v]).Y));
+                                            xx=((sl2.fl.get(id2).loc.get(j).X)-lateralShift[0] - (sl1.fl.get(id1).loc.get(idLoc[u][v]).X));
+                                            yy=((sl2.fl.get(id2).loc.get(j).Y)-lateralShift[1] - (sl1.fl.get(id1).loc.get(idLoc[u][v]).Y));
                                             zz=((sl2.fl.get(id2).loc.get(j).Z) - (sl1.fl.get(id1).loc.get(idLoc[u][v]).Z));
                                             distZ=Math.sqrt(zz*zz);
                                             distance=Math.sqrt(xx*xx+yy*yy);
                                             if ((distance<maxDistanceMergingXY)&&(distZ<maxDistanceMergingZ)){
+                                                
                                                 idPartFound=idLoc[u][v];
                                                 prevDistance=distance;
                                             }
                                         }
                                         else{
                                             //not new -> compare distance
-                                            xx=((sl2.fl.get(id2).loc.get(j).X) - (sl1.fl.get(id1).loc.get(idLoc[u][v]).X));
-                                            yy=((sl2.fl.get(id2).loc.get(j).Y) - (sl1.fl.get(id1).loc.get(idLoc[u][v]).Y));
+                                            xx=((sl2.fl.get(id2).loc.get(j).X)-lateralShift[0] - (sl1.fl.get(id1).loc.get(idLoc[u][v]).X));
+                                            yy=((sl2.fl.get(id2).loc.get(j).Y)-lateralShift[1] - (sl1.fl.get(id1).loc.get(idLoc[u][v]).Y));
                                             zz=((sl2.fl.get(id2).loc.get(j).Z) - (sl1.fl.get(id1).loc.get(idLoc[u][v]).Z));
                                             distZ=Math.sqrt(zz*zz);
                                             distance=Math.sqrt(xx*xx+yy*yy);
@@ -369,6 +380,22 @@ public class DualCamRegistration {
                 x2=sl2fuse.fl.get(i).loc.get(j).X;
                 y2=sl2fuse.fl.get(i).loc.get(j).Y;
                 z2=sl2fuse.fl.get(i).loc.get(j).Z;
+                
+                /*if (Math.abs(z1-z2)>100){//xu et al
+                    sl1fuse.fl.get(i).loc.get(j).exists=false;
+                }
+                
+                if (true){//xu et al
+                    cx1=sl1fuse.fl.get(i).loc.get(j).I;
+                    cy1=sl1fuse.fl.get(i).loc.get(j).I;
+                    cz1=sl1fuse.fl.get(i).loc.get(j).I;
+                    cx2=sl2fuse.fl.get(i).loc.get(j).I;
+                    cy2=sl2fuse.fl.get(i).loc.get(j).I;
+                    cz2=sl2fuse.fl.get(i).loc.get(j).I;
+                }
+                else*/
+                
+                
                 if ((sl1fuse.fl.get(i).loc.get(j).crlb_X>0)&&(sl1fuse.fl.get(i).loc.get(j).crlb_Y>0)&&(sl1fuse.fl.get(i).loc.get(j).crlb_Z>0)&&(sl2fuse.fl.get(i).loc.get(j).crlb_X>0)&&(sl2fuse.fl.get(i).loc.get(j).crlb_Y>0)&&(sl2fuse.fl.get(i).loc.get(j).crlb_Z>0)){
                     cx1=1/sl1fuse.fl.get(i).loc.get(j).crlb_X;
                     cx1=cx1*cx1;
@@ -501,6 +528,9 @@ public class DualCamRegistration {
         }
         else{
             PolynomialFit pf = new PolynomialFit(2,data1,data2);
+            pf.removeParameter(9);//remove Z^2 parameter
+            pf.removeParameter(8);//remove Y.Z component
+            pf.removeParameter(7);//remove X.Z component
             pf.run();
             pf.log();
             double [] v = new double [3];
@@ -547,8 +577,10 @@ public class DualCamRegistration {
             sl2fuse.save(pathRes2);
         }
         
-        ZRendering.hist2D(sl1fuse, 20, minX, maxX, minY, maxY, minZ, maxZ, 1,"camera1");
-        ZRendering.hist2D(sl2fuse, 20, minX, maxX, minY, maxY, minZ, maxZ, 1,"camera2");
+        ZRendering.nameHistPlot="camera1";
+        ZRendering.hist2D(sl1fuse, 20, minX, maxX, minY, maxY, minZ, maxZ, 1);
+        ZRendering.nameHistPlot="camera2";
+        ZRendering.hist2D(sl2fuse, 20, minX, maxX, minY, maxY, minZ, maxZ, 1);
         
         
         double [] axisBeforeXY = new double [(int)maxdistBeforeXY+1];

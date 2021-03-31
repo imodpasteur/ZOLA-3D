@@ -134,7 +134,12 @@ public class GenericPhaseOptimization_ {
         }*/
         
         if (path_result.length()>2){
-            dparam.save(path_result);
+            if (path_result.endsWith("json")||path_result.endsWith("csv")){
+                dparam.save(path_result);
+            }
+            else{
+                dparam.save(path_result+".json");
+            }
         }
         else{
             IJ.log("calibration file not saved...you should select a path to save it");
@@ -143,6 +148,191 @@ public class GenericPhaseOptimization_ {
     }
     
     private void phase_optim(int iterations,boolean init){
+        
+        
+        
+        double hdec=.05;
+        
+        
+        
+        
+        double lik=Double.POSITIVE_INFINITY;
+        
+        
+        
+        IJ.showProgress(.02);
+        
+        
+        
+
+
+        
+        IJ.log("optimization started");
+        
+        
+        
+        //RANDOM INIT
+        
+        
+        
+        
+        IJ.log("optimization started");
+        double [] bestPhase=new double [dparam.phaseNonZer.nbDataPerImage];
+        double [] bestPhasetmp=new double [dparam.phaseNonZer.nbDataPerImage];
+        
+        
+        //ImageShow.imshow(dparam.psf_fMany.getPhase(),"phase "+0);
+        int angleSplit=12;
+        int distSplit=5;
+            
+            
+        double likelihood=Double.POSITIVE_INFINITY;
+        for (int iter=0;iter<iterations;iter++){
+            
+            IJ.showProgress(((double)iter/(double)iterations));
+            
+            
+            
+            int splitNumber=angleSplit*distSplit;
+            
+            dparam.phaseNonZer.createSplits(angleSplit, distSplit);
+            
+            double [][] tmpPhase=new double [splitNumber][];
+            for (int i=0;i<splitNumber;i++){
+                tmpPhase[i]=dparam.phaseNonZer.getValuesPhase(i);
+            }
+            
+            for (int i=0;i<splitNumber;i++){
+                double random = Math.random()*2.*Math.PI;
+                for (int ii=0;ii<tmpPhase[i].length;ii++){
+                    tmpPhase[i][ii]=random;
+                }
+            }
+
+            for (int i=0;i<splitNumber;i++){
+                dparam.phaseNonZer.setValuesPhase(i, tmpPhase[i]);
+            }
+
+            dparam.psf_fMany.updatePhase(dparam.phaseNonZer.getPointerPhase());
+
+            lik=compute_sum_CRLB((float)hdec);
+
+            //bestPhasetmp=dparam.phaseNonZer.getValuesPhase(); 
+            
+
+
+            //dparam.phaseNonZer.setValuesPhase(bestPhasetmp);
+            //dparam.psf_fMany.updatePhase(dparam.phaseNonZer.getPointerPhase());
+            IJ.showProgress(1);
+
+
+            //pattern based
+            for (int t=0;t<50;t++){
+                angleSplit=12+(int)(Math.random()*3);
+                distSplit=5+(int)(Math.random()*3);
+                //dparam.phaseNonZer.createSplits(angleSplit, distSplit);
+                lik=this.updatePhaseGeneric(.05,angleSplit,distSplit);
+                
+                /*ImageShow.imshow(dparam.psf_fMany.getPhase(),"phase");
+                float [][][] im = new float [deltaZ.length][][];
+                for (int i=0;i<deltaZ.length;i++){
+                    im[i]=dparam.psf_fMany.getPSF(i*7);
+                }
+                ImageShow.imshow(im,"PSF"+iter);*/
+
+            }
+            //pixel based
+            for (int t=0;t<5;t++){
+
+
+                IJ.showProgress(((double)t/(double)iterations));
+
+
+                lik=this.updatePhaseGeneric(hdec);
+
+
+            }
+            
+            
+            ImageShow.imshow(dparam.psf_fMany.getPhase(),"phaseFinal");
+            float [][][] im = new float [deltaZ.length][][];
+            for (int i=0;i<deltaZ.length;i++){
+                im[i]=dparam.psf_fMany.getPSF(i*7);
+            }
+            ImageShow.imshow(im,"PSF_tmp"+iter);
+                
+                
+            if (lik<likelihood){
+                likelihood=lik;
+                
+                bestPhase=dparam.phaseNonZer.getValuesPhase(); 
+                
+            }
+            IJ.log("iter "+iter+"/"+iterations+"  lik="+lik+" best="+likelihood);
+            dparam.save(path_result+"_"+lik+"_.json");
+            
+            
+            
+        }
+        
+        
+        dparam.phaseNonZer.setValuesPhase(bestPhase);
+        dparam.psf_fMany.updatePhase(dparam.phaseNonZer.getPointerPhase());
+        
+        ImageShow.imshow(dparam.psf_fMany.getPhase(),"phaseFinal");
+        float [][][] im = new float [deltaZ.length][][];
+        for (int i=0;i<deltaZ.length;i++){
+            im[i]=dparam.psf_fMany.getPSF(i*7);
+        }
+        ImageShow.imshow(im,"PSF_Final");
+        
+        
+        IJ.log("finished");
+        
+        IJ.showProgress(1);
+        
+        //initPhasePistonOneValue(hdec);
+        /*for (int i=0;i<iterations;i++){
+            IJ.log("iter..."+(iterations-i));
+            this.updatePhasePistonOneValue(hdec);
+        }*/
+        
+        //ImageShow.imshow(dparam.psf_fMany.getPhase(),"phase after modif");
+        
+        
+        
+        double [][] crlb=this.compute_CRLB((float)hdec);
+        double [] xcrlb= new double [crlb.length];
+        double [] ycrlb= new double [crlb.length];
+        double [] zcrlb= new double [crlb.length];
+        
+        double meanX=0;
+        double meanY=0;
+        double meanZ=0;
+        
+        for (int i=0;i<crlb.length;i++){
+            xcrlb[i]=crlb[i][0];
+            ycrlb[i]=crlb[i][1];
+            zcrlb[i]=crlb[i][2];
+            meanX+=xcrlb[i];
+            meanY+=ycrlb[i];
+            meanZ+=zcrlb[i];
+        }
+        meanX/=(double)crlb.length;
+        meanY/=(double)crlb.length;
+        meanZ/=(double)crlb.length;
+        
+        //IJ.write(""+(deltaZ[deltaZ.length-1]-deltaZ[0])+" "+(deltaZ[1]-deltaZ[0])+" "+dparam.phaseZer.numCoef+" "+this.photonNumber+" "+this.background+" "+meanX+" "+meanY+" "+meanZ);
+        
+        //this.plot(deltaZ, xcrlb,"CRLB (X)","Z (µm)","CRLB (µm)");
+        //this.plot(deltaZ, ycrlb,"CRLB (Y)","Z (µm)","CRLB (µm)");
+        //this.plot(deltaZ, zcrlb,"CRLB (Z)","Z (µm)","CRLB (µm)");
+        
+        
+        
+    }
+    
+    private void phase_optim_old(int iterations,boolean init){
         
         
         
@@ -240,7 +430,6 @@ public class GenericPhaseOptimization_ {
         
         
     }
-    
     
     
     public void plot(double [] x, double [] y,String title,String xlabel,String ylabel){
@@ -604,7 +793,8 @@ public class GenericPhaseOptimization_ {
                         break loop;
                     }
                     else{
-                        dparam.phaseZer.setA(p, save);
+                        dparam.phaseNonZer.setValuePixel(p, save);
+                        dparam.psf_fMany.updatePhase(dparam.phaseNonZer.getPointerPhase());
                     }
                 }
                 if (!found){
@@ -777,51 +967,53 @@ public class GenericPhaseOptimization_ {
         double lastLikelihood=-1;
         
         
-        /*for (int u=0;u<10;u++){
+        /*for (int u=0;u<3;u++){
             double v=Math.random()*3;
             this.init(h, 4, 1, -v, v, v);
-
             ImageShow.imshow(dparam.psf_fMany.getPhase(),"phase");
             im = new float [deltaZ.length][][];
             for (int i=0;i<deltaZ.length;i++){
                 im[i]=dparam.psf_fMany.getPSF(i*7);
             }
             ImageShow.imshow(im,"PSF1_"+u);
-        }*/
-        
-        
-        for (int u=0;u<1;u++){
-            double v=Math.random()*5;
-            double angle=Math.random()*2*Math.PI;
-            double radius=Math.random();
-            double dist=Math.max(1,Math.random()+radius);
-            this.initRing(h, angle, dist, radius, -v, v, v);
-
-            ImageShow.imshow(dparam.psf_fMany.getPhase(),"phase");
-            im = new float [deltaZ.length][][];
-            for (int i=0;i<deltaZ.length;i++){
-                im[i]=dparam.psf_fMany.getPSF(i*7);
-            }
-            ImageShow.imshow(im,"PSF2_"+u);
+            
         }
         
         
+        //for (int u=0;u<1;u++){
+        //    double v=Math.random()*5;
+        //    double angle=Math.random()*2*Math.PI;
+        //    double radius=Math.random();
+        //    double dist=Math.max(1,Math.random()+radius);
+        //    this.initRing(h, angle, dist, radius, -v, v, v);
+        //    ImageShow.imshow(dparam.psf_fMany.getPhase(),"phase");
+        //    im = new float [deltaZ.length][][];
+        //    for (int i=0;i<deltaZ.length;i++){
+        //        im[i]=dparam.psf_fMany.getPSF(i*7);
+        //    }
+        //    ImageShow.imshow(im,"PSF2_"+u);
+        //}
         
-        /*for (int u=0;u<1;u++){
+        
+        
+        for (int u=0;u<3;u++){
             double v=Math.random()*5;
             this.init(h, 4, 1, -v, v, v);
-
             ImageShow.imshow(dparam.psf_fMany.getPhase(),"phase");
             im = new float [deltaZ.length][][];
             for (int i=0;i<deltaZ.length;i++){
                 im[i]=dparam.psf_fMany.getPSF(i*7);
             }
-            ImageShow.imshow(im,"PSF2_"+u);
+            ImageShow.imshow(im,"PSF2_");
+            
         }*/
         
         
         //INITIALISE checking differents values for each split
-        /*for (int u=0;u<5;u++){
+        int a=8;//angleSplit
+        int b=3;//distSplit
+        int splitNumber=a*b;
+        for (int u=0;u<5;u++){
             IJ.log("WARNING... HERE, we should check all combinations at the same time");
             dparam.phaseNonZer.createSplits(a, b);
             for (int p=0;p<splitNumber;p++){
@@ -863,7 +1055,7 @@ public class GenericPhaseOptimization_ {
         
         
         ImageShow.imshow(dparam.psf_fMany.getPhase(),"phase");
-        float [][][] im = new float [deltaZ.length][][];
+        im = new float [deltaZ.length][][];
         for (int i=0;i<deltaZ.length;i++){
             im[i]=dparam.psf_fMany.getPSF(i*7);
         }
@@ -960,7 +1152,7 @@ public class GenericPhaseOptimization_ {
             int angleSplit=4+(int)(Math.random()*58);
             int distSplit=20+(int)(Math.random()*12);
             this.updatePhaseGeneric(.001,angleSplit,distSplit);
-        }*/
+        }
         
         
         
@@ -1134,7 +1326,7 @@ public class GenericPhaseOptimization_ {
             
             for (int b=0,bb=0;b<splitNumber;b++,bb++){
                 int [] posit=dparam.phaseNonZer.getPositSplitPointer(b);
-                IJ.log("error here "+posit);
+                IJ.log("error here "+posit+"  "+b);
                 for (int u=0;u<posit.length;u++){
                     coco[i][posit[u]]+=valstep[id[bb]];
                 }
@@ -1242,6 +1434,67 @@ public class GenericPhaseOptimization_ {
         
         
         ////////////////begin modif to delete... max optim
+        double std=0;
+        float [][][] im = new float [deltaZ.length][][];
+        for (int i=0;i<deltaZ.length;i++){
+            im[i]=dparam.psf_fMany.getPSF(i*7);
+        }
+        
+        double stdcount=0;
+        for (int i=0;i<deltaZ.length;i++){
+            double count=0;
+            double moyX=0;
+            double moyY=0;
+            for (int ii=0;ii<im[i].length;ii++){
+                for (int iii=0;iii<im[i][ii].length;iii++){
+                    moyX+=im[i][ii][iii]*((double)(ii));
+                    moyY+=im[i][ii][iii]*((double)(iii));
+                    count+=im[i][ii][iii];
+                }
+            }
+            moyX/=count;
+            moyY/=count;
+            for (int ii=0;ii<im[i].length;ii++){
+                int sizeY=im[i][ii].length;
+                for (int iii=0;iii<im[i][ii].length;iii++){
+                    std+=im[i][ii][iii]*((double)(ii-moyX)*(double)(ii-moyX)+(double)(iii-moyY)*(double)(iii-moyY));
+                    stdcount+=im[i][ii][iii];
+                }
+            }
+        }
+        std/=stdcount;
+        std=Math.sqrt(std);
+        double lambda=0.001;
+        ////////////////end modif to delete
+        
+        
+        
+        //add X & Y
+        //som+=somX+somY;
+        
+        return som+std*lambda;
+    }
+    
+    
+    
+    double compute_sum_CRLB_save(float hdec){
+        double [][] crlb=compute_CRLB( hdec);
+        double som=0;
+        double somX=0;
+        double somY=0;
+        for (int i=0;i<crlb.length;i++){
+            som+=crlb[i][2];
+            somX+=crlb[i][0];
+            somY+=crlb[i][1];
+        }
+        
+        som/=(double)crlb.length;
+        somX/=(double)crlb.length;
+        somY/=(double)crlb.length;
+        
+        
+        
+        ////////////////begin modif to delete... max optim
         /*double max=Double.NEGATIVE_INFINITY;
         for (int i=0;i<crlbZ.length;i++){
             if (crlbZ[i][2]>max){
@@ -1258,6 +1511,12 @@ public class GenericPhaseOptimization_ {
         
         return som;
     }
+    
+    
+    
+    
+    
+    
     
     
     

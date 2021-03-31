@@ -91,7 +91,8 @@ public class Localization_ {
     int size;//third dimension of image : multiframes
     int width;//width of image
     int height;//height of image
-    double [] subwindow;// 4 dimensions in the vect: []nbParam ; size;width;height
+    //double [] subwindow;// 4 dimensions in the vect: []nbParam ; size;width;height
+    
     int totalsize;
     int iterMax;
     //for one cam
@@ -102,6 +103,7 @@ public class Localization_ {
     
     int [] id;//vector for each camera...WARNING... each size should also correspond to a different model
     
+    public int [] statut;
     
     double [][] modelPSF;
     
@@ -140,6 +142,7 @@ public class Localization_ {
         for (int i=0;i<nbParam;i++){
             zfocus[i]=dparam.param.Zfocus;
         }
+        statut = new int[nbParam];
         
     }
     
@@ -203,6 +206,7 @@ public class Localization_ {
             mA = new MinimizeThread[nbParam-1];
             mB = new MinimizeThread[nbParam-1];
         }
+        statut = new int[nbParam];
     }
     
     
@@ -325,9 +329,17 @@ public class Localization_ {
     
     
     public void setSubWindow(double [] subwindow){
-        
+        {if (nbParam==2){int ssssssx=5;statut[0]=ssssssx;statut[1]=ssssssx;}}
         id[0]=dparam[0].modelMany.setSubWindow(subwindow);
+        {if (nbParam==2){int ssssssx=6;statut[0]=ssssssx;statut[1]=ssssssx;}}
         
+    }
+    
+    
+    public void setSubWindow(double [] subwindow,double [] modelOffset){
+        {if (nbParam==2){int ssssssx=5;statut[0]=ssssssx;statut[1]=ssssssx;}}
+        id[0]=dparam[0].modelMany.setSubWindow(subwindow,modelOffset);
+        {if (nbParam==2){int ssssssx=6;statut[0]=ssssssx;statut[1]=ssssssx;}}
         
     }
     
@@ -336,11 +348,33 @@ public class Localization_ {
     
     
     public void setSubWindow(double [][] subwindow){
-        
+        {if (nbParam==2){int ssssssx=7;statut[0]=ssssssx;statut[1]=ssssssx;}}
         for (int u=0;u<subwindow.length;u++){
             //IJ.log("subWin "+id.length+"  "+subwindow.length+"  "+dparam.length+"  "+dparam[u].modelMany);
             id[u]=dparam[u].modelMany.setSubWindow(subwindow[u]);
         }
+        {if (nbParam==2){int ssssssx=8;statut[0]=ssssssx;statut[1]=ssssssx;}}
+        
+    }
+    
+    
+    public void setSubWindow(double [][] subwindow,double [][] modelOffset){
+        {if (nbParam==2){int ssssssx=7;statut[0]=ssssssx;statut[1]=ssssssx;}}
+        for (int u=0;u<subwindow.length;u++){
+            //IJ.log("subWin "+id.length+"  "+subwindow.length+"  "+dparam.length+"  "+dparam[u].modelMany);
+            id[u]=dparam[u].modelMany.setSubWindow(subwindow[u],modelOffset[u]);
+        }
+        {if (nbParam==2){int ssssssx=8;statut[0]=ssssssx;statut[1]=ssssssx;}}
+        
+    }
+    
+    
+    
+    
+    public void setSubWindowScmos(double [] subwindow,double [] subwindowSCMOS,double [] modelOffset){
+        
+        id[0]=dparam[0].modelMany.setSubWindowScmos(subwindow,subwindowSCMOS,modelOffset);
+        
         
         
     }
@@ -353,6 +387,16 @@ public class Localization_ {
         
     }
     
+    
+    public void setSubWindowScmos(double [][] subwindow,double [][] subwindowSCMOS,double [][] modelOffset){
+        
+        for (int u=0;u<subwindow.length;u++){
+            //IJ.log("subWin "+id.length+"  "+subwindow.length+"  "+dparam.length+"  "+dparam[u].modelMany);
+            id[u]=dparam[u].modelMany.setSubWindowScmos(subwindow[u],subwindowSCMOS[u],modelOffset[u]);
+        }
+        
+        
+    }
     
     public void setSubWindowScmos(double [][] subwindow,double [][] subwindowSCMOS){
         
@@ -372,8 +416,8 @@ public class Localization_ {
     public void finish1(){
         
         double lik=0;
+        {if (nbParam==2){int ssssssx=15;statut[0]=ssssssx;statut[1]=ssssssx;}}
         for (int s=0;s<this.size;s++){
-            
             
             if (nbProcess>=1){
                 for (int p=1;p<this.nbParam;p++){
@@ -401,7 +445,7 @@ public class Localization_ {
             else{
                 lik+=getLikelihood(0,thetaX,thetaY,thetaZ,thetaA[0][s],thetaB[0]);
             }
-            
+            {if (nbParam==2){int ssssssx=10;statut[0]=ssssssx;statut[1]=ssssssx;}}
             dparam[0].modelMany.getModel(id[0],modelPSF[0]);
             
             this.computeFisher(0,s, thetaX, thetaY, thetaZ, thetaA[0][s], thetaB[0], h);
@@ -412,12 +456,13 @@ public class Localization_ {
                 this.computeFisher(p,s, thetaX, thetaY, thetaZ, thetaA[p][s], thetaB[p], h);
                 
             }
+            {if (nbParam==2){int ssssssx=11;statut[0]=ssssssx;statut[1]=ssssssx;}}
         }
         
         likelihood=lik;
         
         this.computeCRLB();
-        
+        {if (nbParam==2){int ssssssx=12;statut[0]=ssssssx;statut[1]=ssssssx;}}
     }
     
     
@@ -426,12 +471,13 @@ public class Localization_ {
     public void finish2(){
         
         
-
+        {if (nbParam==2){int ssssssx=16;statut[0]=ssssssx;statut[1]=ssssssx;}}
         dparam[0].modelMany.freePosit(id[0]);
         for (int p=1;p<this.nbParam;p++){
             dparam[p].modelMany.freePosit(id[p]);
         }
-            
+        {if (nbParam==2){int ssssssx=17;statut[0]=ssssssx;statut[1]=ssssssx;}}
+
         
         
     }
@@ -442,7 +488,8 @@ public class Localization_ {
     
     
     public void finishWrongPSF(){
-        
+                {if (nbParam==2){int ssssssx=18;statut[0]=ssssssx;statut[1]=ssssssx;}}
+
         for (int s=0;s<this.size;s++){
             
             
@@ -452,7 +499,8 @@ public class Localization_ {
             }
             
         }
-        
+        {if (nbParam==2){int ssssssx=19;statut[0]=ssssssx;statut[1]=ssssssx;}}
+
     }
     
     
@@ -574,15 +622,16 @@ public class Localization_ {
     
     
     public boolean localize(){
-        
+        {if (nbParam==2){int ssssssx=20;statut[0]=ssssssx;statut[1]=ssssssx;}}
         boolean b=localizeWithoutFinishing();
+        {if (nbParam==2){int ssssssx=21;statut[0]=ssssssx;statut[1]=ssssssx;}}
         finish2();
+        {if (nbParam==2){int ssssssx=22;statut[0]=ssssssx;statut[1]=ssssssx;}}
         return b;
     }
     
     public boolean localizeWithoutFinishing(){
         
-                
         testPhotonNumber();
         
         for (int uu=0;uu<this.size;uu++){
@@ -619,7 +668,7 @@ public class Localization_ {
         //    IJ.log("start loop    cam:"+u+"  id:"+id[u]);
         //}
         
-        
+        {if (nbParam==2){int ssssssx=23;statut[0]=ssssssx;statut[1]=ssssssx;}}
         loop:for (int i=0;i<iterMax;i++){
             
             
@@ -701,6 +750,7 @@ public class Localization_ {
                     }
                 }
                 if (breaking){
+                    {if (nbParam==25){int ssssssx=5;statut[0]=ssssssx;statut[1]=ssssssx;}}
                     break4phCount=true;
                     IJ.log("breaked");
                 }
@@ -721,6 +771,8 @@ public class Localization_ {
             
             
             if (Double.isNaN(likelihood)){
+                {if (nbParam==26){int ssssssx=5;statut[0]=ssssssx;statut[1]=ssssssx;}}
+                IJ.log("nan likelihood");
                 this.finishWrongPSF();
                 return false;
             }
@@ -793,8 +845,9 @@ public class Localization_ {
                 //finally, shift according to the window position and reverse x & y
                 x2=-(x2-this.decX);
                 y2=-(y2-this.decY);
-                
+                {if (nbParam==2){int ssssssx=1;statut[0]=ssssssx;statut[1]=ssssssx;}}
                 lik=dparam[idParam].modelMany.getLikelihood(id[idParam], x2, y2,zfocus[idParam], z2, a, b);
+                {if (nbParam==2){int ssssssx=2;statut[0]=ssssssx;statut[1]=ssssssx;}}
             }
             
             
@@ -996,9 +1049,9 @@ public class Localization_ {
                 //finally, shift according to the window position and reverse x & y
                 x2=-(x2-this.decX);
                 y2=-(y2-this.decY);
-                
+                {if (nbParam==2){int ssssssx=3;statut[0]=ssssssx;statut[1]=ssssssx;}}
                 dparam[idParam].modelMany.computeFisherMatrix(id[idParam], x2, y2, dparam[idParam].param.Zfocus,z2, a, b, h,this.fisherMatrix[idParam][frame]);
-        
+                {if (nbParam==2){int ssssssx=4;statut[0]=ssssssx;statut[1]=ssssssx;}}
             }
             
             

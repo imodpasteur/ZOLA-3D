@@ -100,16 +100,19 @@ public class LocalizationPipeline_ {
     int dpnumber;
     
     int idLoc=0;
-    
-    double [][] scmosvariance;
-    double [][] scmosgain;
-    double [][] scmosoffset;
-    double [][] scmosvargain;
+    SCMOScamera scmoscam=null;
     boolean isSCMOS;
+    double adu=1;
+    double gain=1;
+    double offset=0;
     
     public LocalizationPipeline_(DataPhase_ dp,double axialRange,int photonThreshold,int nbPart,int nbThread,int sizePatch,String path_localization,double adu, double gain,double offset,boolean show){
         
         isSCMOS=false;
+        this.adu=adu;
+        this.gain=gain;
+        this.offset=offset;
+        
         this.rescale_slope=adu/gain;
         this.rescale_intercept=-offset*adu/gain;
         
@@ -120,14 +123,11 @@ public class LocalizationPipeline_ {
         
     }
     
-    public LocalizationPipeline_(DataPhase_ dp,double axialRange,int photonThreshold,int nbPart,int nbThread,int sizePatch,String path_localization,double [][] scmosvariance,double [][] scmosgain,double [][] scmosoffset,double [][] scmosvargain,boolean show){
+    public LocalizationPipeline_(DataPhase_ dp,double axialRange,int photonThreshold,int nbPart,int nbThread,int sizePatch,String path_localization,SCMOScamera scmoscam,boolean show){
         
         isSCMOS=true;
+        this.scmoscam=scmoscam;
         
-        this.scmosvariance=scmosvariance;
-        this.scmosoffset=scmosoffset;
-        this.scmosgain=scmosgain;
-        this.scmosvargain=scmosvargain;
         
         DataPhase_ [] ddp=new DataPhase_[1];
         ddp[0]=dp;
@@ -143,6 +143,7 @@ public class LocalizationPipeline_ {
     
     
     void localizationPipelineMany(DataPhase_ [] dp,double axialRange,int photonThreshold,int nbPart,int nbThread,int sizePatch,String path_localization,boolean show){
+        
         /*this.scmos=scmos;
         if (scmos!=null){
             isSCMOS=true;
@@ -155,8 +156,8 @@ public class LocalizationPipeline_ {
         this.rescale_intercept=rescale_intercept;*/
         
         //frameVariable.add("name");
-        
-        this.show=show;
+        //show=true;
+        this.show=true;
         this.photonThreshold=photonThreshold;
         this.sizePatch=sizePatch;
         this.axialRange=axialRange;
@@ -204,7 +205,7 @@ public class LocalizationPipeline_ {
             
             SearchPSFcenter_ spc = new SearchPSFcenter_(dp[i],axialRange);
             posit=spc.getPosition();
-            
+
             dp[i].param.ZfocusCenter=posit;
         }
         
@@ -453,8 +454,25 @@ public class LocalizationPipeline_ {
         IJ.log("elapsed time = "+((double)(timeEnd-timeBegin))/60000.+" min");
         IJ.log("localization number: "+this.idLoc);
         if (path_localization.length()>3){
-            this.save(path_localization, "Reconstruction\nCalibration path:"+dp[0].param.pathcalib+"\nLocalization path:"+path_localization+"\nReconstruction time:"+(((double)(timeEnd-timeBegin))/60000.)+" min\ndistance focus to coverslip:"+dp[0].param.Zfocus+"\nRefractive index medium:"+dp[0].param.nwat+"\nframe number:"+sliceNumber+"\nframe reconstructed:"+totNumberImageProcessed+"\nReconstruction aborted:"+IJ.escapePressed()+"\nlocalization number: "+this.idLoc+"\npatch size: "+sizePatch+"\n");
+            String ppath=path_localization;
+            int nn=(ppath.lastIndexOf("."));
+            if (nn>ppath.length()-5){
+                ppath=ppath.substring(0,nn);
+            }
+            ppath=ppath+"_ZolaProtocol.json";
+            //Protocol_localization.saveProtocolJSON(ppath);
+            if (!isSCMOS){      
+                Protocol_localization.saveProtocolJSON(ppath,dp[0].param.pathcalib, path_localization,(((double)(timeEnd-timeBegin))/60000.), dp[0].param.Zfocus,dp[0].param.nwat,sliceNumber,totNumberImageProcessed,IJ.escapePressed(),this.idLoc,sizePatch,this.isSCMOS,this.adu, this.gain,this.offset,"","","");
+            }
+            else{
+                Protocol_localization.saveProtocolJSON(ppath,dp[0].param.pathcalib, path_localization,(((double)(timeEnd-timeBegin))/60000.), dp[0].param.Zfocus,dp[0].param.nwat,sliceNumber,totNumberImageProcessed,IJ.escapePressed(),this.idLoc,sizePatch,this.isSCMOS,1, 1,0,this.scmoscam.path_SCMOSvariance,this.scmoscam.path_SCMOSgain,this.scmoscam.path_SCMOSoffset);
+
+            }
+            //Protocol_localization.saveProtocolJSON(ppath,dp[0].param.pathcalib, path_localization,(((double)(timeEnd-timeBegin))/60000.), dp[0].param.Zfocus,dp[0].param.nwat,sliceNumber,totNumberImageProcessed,IJ.escapePressed(),this.idLoc,sizePatch,this.isSCMOS,this.adu, this.gain,this.offset,this.scmoscam.path_SCMOSvariance,this.scmoscam.path_SCMOSgain,this.scmoscam.path_SCMOSoffset);
+            
+            //this.save(path_localization, "Reconstruction\nCalibration path:"+dp[0].param.pathcalib+"\nLocalization path:"+path_localization+"\nReconstruction time:"+(((double)(timeEnd-timeBegin))/60000.)+" min\ndistance focus to coverslip:"+dp[0].param.Zfocus+"\nRefractive index medium:"+dp[0].param.nwat+"\nframe number:"+sliceNumber+"\nframe reconstructed:"+totNumberImageProcessed+"\nReconstruction aborted:"+IJ.escapePressed()+"\nlocalization number: "+this.idLoc+"\npatch size: "+sizePatch+"\n");
         }
+        
         for (int up=0;up<nbPart;up++){
             for (int i=0;i<dp.length;i++){
                 for (int u=0;u<100;u++){
@@ -618,13 +636,13 @@ public class LocalizationPipeline_ {
         
         int maxRead=1000;//variable to block the program if the number of opened images is too big and use too much memory
         
-        Predetection_ predGPU;
+        Predetection_cross_ predGPU;
         PreDetectionThread(ImagePlus imp){
             
             this.imp=imp;
             
             //init with param of the first camera because predetection uses only one cam
-            predGPU=new Predetection_(sizeImage,dp[0],minZ, maxZ, stepZ,thresholdCrossCorrelation);
+            predGPU=new Predetection_cross_(sizeImage,dp[0],minZ, maxZ, stepZ,thresholdCrossCorrelation);
             psfPredetection=predGPU.getPSFNonNormalized();
             rangePredetection=predGPU.getRange();
             
@@ -704,7 +722,7 @@ public class LocalizationPipeline_ {
                             image[z-1][ii][iii]=ip.getPixelValue(jj, jjj);
 
                             if (isSCMOS){
-                                image[z-1][ii][iii]=((image[z-1][ii][iii]-scmosoffset[ii][iii])/scmosgain[ii][iii])+scmosvargain[0][0];//here I add constant value for predetection for scmosvargain
+                                image[z-1][ii][iii]=((image[z-1][ii][iii]-scmoscam.scmosoffset[ii][iii])/scmoscam.scmosgain[ii][iii])+scmoscam.scmosvargain[0][0];//here I add constant value for predetection for scmosvargain
                             }
                             else{
                                 image[z-1][ii][iii]=image[z-1][ii][iii]*rescale_slope+rescale_intercept;
@@ -740,7 +758,7 @@ public class LocalizationPipeline_ {
                             for (int iii=0,jjj=yinit;iii<height;iii++,jjj++){
                                 image[z-1][ii][iii]=ip.getPixelValue(jj, jjj);
                                 //do it again but not with constant value now for scmosvargain
-                                image[z-1][ii][iii]=((image[z-1][ii][iii]-scmosoffset[ii][iii])/scmosgain[ii][iii])+scmosvargain[ii][iii];
+                                image[z-1][ii][iii]=((image[z-1][ii][iii]-scmoscam.scmosoffset[ii][iii])/scmoscam.scmosgain[ii][iii])+scmoscam.scmosvargain[ii][iii];
                                 
                             }
                         }
@@ -758,6 +776,11 @@ public class LocalizationPipeline_ {
             predetectionFinished=true;
             predGPU.free();
         }
+        
+        
+        
+        
+        
         
         
         
@@ -931,7 +954,7 @@ public class LocalizationPipeline_ {
                                         
                                         patch[0][i*sizePatch+ii]=image[imageNumber][maxs[2]+j][maxs[3]+jj];
                                         if (isSCMOS){
-                                            patchscmos[0][i*sizePatch+ii]=scmosvargain[maxs[2]+j][maxs[3]+jj];
+                                            patchscmos[0][i*sizePatch+ii]=scmoscam.scmosvargain[maxs[2]+j][maxs[3]+jj];
                                         }
                                         
                                     //}
@@ -1285,7 +1308,7 @@ public class LocalizationPipeline_ {
                 }
                 else{
                     try{//IJ.log("j attends mon image "+partNumber+"    imInBuffer"+imageInBuffer.size());
-                        Thread.sleep(0);
+                        Thread.sleep(1);
                         
                     }
                     catch(Exception ee){
@@ -1497,7 +1520,7 @@ public class LocalizationPipeline_ {
     
     
         
-    public void save(String path,String content){
+    /*public void save(String path,String content){
         
         if (path!=null){
             try {
@@ -1527,7 +1550,11 @@ public class LocalizationPipeline_ {
             }
         }
         
-    }
+    }*/
+    
+    
+    
+    
     
     
 }

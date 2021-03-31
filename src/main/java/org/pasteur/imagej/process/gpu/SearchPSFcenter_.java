@@ -36,6 +36,7 @@ public class SearchPSFcenter_ {
     public double getPosition(){
         if (axialRange<=0){
             IJ.log("oops, axial range should be positive");
+            dp.free();
             return dp.param.Zfocus;
         }
         
@@ -47,6 +48,11 @@ public class SearchPSFcenter_ {
         double maxZ=zfocus+Math.abs(zfocus)+2*axialRange;
         double position;
         
+        if (dp.param.noil==dp.param.nwat){
+            dp.free();
+            //IJ.log("WARNING WARNING WARNING WARNING WARNING WARNING  ZFOCUS -1 !!! in searchPSFcenter_");
+            return zfocus;//-1;
+        }
         
         position=getMinPositionCRLB(minZ, maxZ, stepZ);
         

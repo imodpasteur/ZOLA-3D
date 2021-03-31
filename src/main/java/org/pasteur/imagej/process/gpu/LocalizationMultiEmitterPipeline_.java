@@ -574,13 +574,13 @@ public class LocalizationMultiEmitterPipeline_ {
         
         int maxRead=1000;//variable to block the program if the number of opened images is too big and use too much memory
         
-        Predetection_ predGPU;
+        Predetection_cross_ predGPU;
         PreDetectionThread(ImagePlus imp){
             
             this.imp=imp;
             
             //init with param of the first camera because predetection uses only one cam
-            predGPU=new Predetection_(sizeImage,dp,minZ, maxZ, stepZ,thresholdCrossCorrelation);
+            predGPU=new Predetection_cross_(sizeImage,dp,minZ, maxZ, stepZ,thresholdCrossCorrelation);
             psfPredetection=predGPU.getPSFNonNormalized();
             rangePredetection=predGPU.getRange();
             

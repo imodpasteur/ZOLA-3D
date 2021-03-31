@@ -172,6 +172,9 @@ public class FastFourierTransform {
     
     
     
+    
+    
+    
     public void setReal(double [][] rIn){
         
         for (int i=0;i<rIn.length;i++){
@@ -215,7 +218,86 @@ public class FastFourierTransform {
     
     
     
+    public void shiftInput(){
+        
+        if (this._2D){
+            real=this.shift2D(real);
+            imag=this.shift2D(imag);
+        }
+        else{
+            real=this.shift3D(real);
+            imag=this.shift3D(imag);
+        }
+        
+    }
     
+    public void shiftOutput(){
+        
+        if (this._2D){
+            realOut=this.shift2D(realOut);
+            imagOut=this.shift2D(imagOut);
+        }
+        else{
+            realOut=this.shift3D(realOut);
+            imagOut=this.shift3D(imagOut);
+        }
+        
+    }
+    
+    
+    private double[][][] shift2D(double[][][] matrix){
+        int w=matrix[0].length;
+        int h=matrix[0][0].length;
+        if ((w%2==0)&&(h%2==0)){
+            double [][][] res = new double [matrix.length][w][h];
+            for (int u=0;u<matrix.length;u++){
+
+                
+                for (int i=0;i<w;i++){
+                    for (int ii=0;ii<h;ii++){
+                        res[u][i][ii]=matrix[u][(i+w/2)%w][(ii+h/2)%h];
+                        //res[i][ii]=matrix[i][ii];
+                    }
+                }
+                
+                
+            }
+            return res;
+        }
+        else{
+            return null;
+        }
+    }
+    
+    
+    
+    
+    
+    
+    private double [][][] shift3D(double[][][] matrix){
+        int d=matrix.length;
+        int w=matrix[0].length;
+        int h=matrix[0][0].length;
+        if ((w%2==0)&&(h%2==0)&&(d%2==0)){
+            double [][][] res = new double [d][w][h];
+            
+
+            for (int i=0;i<d;i++){
+                for (int ii=0;ii<w;ii++){
+                    for (int iii=0;iii<h;iii++){
+                        res[i][ii][iii]=matrix[(i+d/2)%d][(ii+w/2)%w][(iii+h/2)%h];
+                    }
+                }
+            }
+                
+                
+            
+            return res;
+        }
+        else{
+            return null;
+        }
+    }
     
     
     

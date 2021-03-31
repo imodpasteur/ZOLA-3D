@@ -189,7 +189,7 @@ public class GenericPhase_ {
     //rad: [0:2*PI]      rho: [0:1]      radius: [0:1]
     public int createSplitsAs2Rings(double rad, double rho,double radius){
         
-        maxId=3;
+        maxId=2;
         
         
         
@@ -219,11 +219,8 @@ public class GenericPhase_ {
             if (dist1<radius*maxDist){
                 id[i]=0;
             }
-            else if (dist1<radius*maxDist){
+            else {
                 id[i]=1;
-            }
-            else{
-                id[i]=2;
             }
             //id[i]=rad_number*(int)(dist/(maxDist/(double)rho_number))+(int)(angle/(2*Math.PI/rad_number));
             
@@ -235,12 +232,14 @@ public class GenericPhase_ {
         for (int i=0;i<nbDataPerImage;i++){
             nb[id[i]]++;
         }
+        
         for (int i=0;i<maxId;i++){
             if (nb[i]!=0){
                 id_table[i]=new int[nb[i]];
                 phase_list[i]=new double[nb[i]];
             }
             else{
+                
                 id_table[i]=null;
                 phase_list[i]=null;
             }
@@ -354,7 +353,7 @@ public class GenericPhase_ {
            
         }   
         else{
-            IJ.log("error wrong posit setA Zernike function");
+            IJ.log("error wrong posit setvaluepixel function of Genericphase class");
         }
     }
     
@@ -365,7 +364,7 @@ public class GenericPhase_ {
         if ((posit>=0)&&(posit<nbDataPerImage)){
             return phase[posit];
         }
-        IJ.log("error position index in getValuePixel of PhaseJcudaFastDouble class");
+        IJ.log("error position index in getValuePixel of Genericphase class");
         return 0;
     }
     

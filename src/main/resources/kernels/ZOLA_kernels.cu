@@ -3,30 +3,120 @@
 //#include "cublas_v2.h"
 //#include "cublas.h"
  
-#include <thrust/sort.h>
+//#include <thrust/sort.h>
+
+
+//#include     "math.h"
+
+
+
+#define ACC 40.0
+#define BIGNO 1.0e10
+#define BIGNI 1.0e-10
 
 
 
 
+__device__ double bessi0( double x )
+/*------------------------------------------------------------*/
+/* PURPOSE: Evaluate modified Bessel function In(x) and n=0.  */
+/*------------------------------------------------------------*/
+{
+   double ax,ans;
+   double y;
 
-extern "C"
-__global__ void vec_test1(int n,float *d_A,int size) {
-	
-    //float sum = thrust::reduce(thrust::seq, d_A, d_A + size);
-	
-	//thrust::sort_by_key(thrust::device,d_A, d_A + size, index);
-	int idx = threadIdx.x + blockIdx.x * blockDim.x;
-	int idy = threadIdx.y + blockIdx.y * blockDim.y;
-	int id = idy * gridDim.x * blockDim.x + idx;
-	if (id ==0)
-    {
-		thrust::sort(thrust::seq,d_A, d_A + size);
-		printf("max side result = %f     %d\n", *(d_A+size-1),n);
-	}
 
-    
-
+   if ((ax=fabs(x)) < 3.75) {
+      y=x/3.75,y=y*y;
+      ans=1.0+y*(3.5156229+y*(3.0899424+y*(1.2067492
+         +y*(0.2659732+y*(0.360768e-1+y*0.45813e-2)))));
+   } else {
+      y=3.75/ax;
+      ans=(exp(ax)/sqrt(ax))*(0.39894228+y*(0.1328592e-1
+         +y*(0.225319e-2+y*(-0.157565e-2+y*(0.916281e-2
+         +y*(-0.2057706e-1+y*(0.2635537e-1+y*(-0.1647633e-1
+         +y*0.392377e-2))))))));
+   }
+   return ans;
 }
+
+
+
+
+__device__ double bessi1( double x)
+/*------------------------------------------------------------*/
+/* PURPOSE: Evaluate modified Bessel function In(x) and n=1.  */
+/*------------------------------------------------------------*/
+{
+   double ax,ans;
+   double y;
+
+
+   if ((ax=fabs(x)) < 3.75) {
+      y=x/3.75,y=y*y;
+      ans=ax*(0.5+y*(0.87890594+y*(0.51498869+y*(0.15084934
+         +y*(0.2658733e-1+y*(0.301532e-2+y*0.32411e-3))))));
+   } else {
+      y=3.75/ax;
+      ans=0.2282967e-1+y*(-0.2895312e-1+y*(0.1787654e-1
+         -y*0.420059e-2));
+      ans=0.39894228+y*(-0.3988024e-1+y*(-0.362018e-2
+         +y*(0.163801e-2+y*(-0.1031555e-1+y*ans))));
+      ans *= (exp(ax)/sqrt(ax));
+   }
+   return x < 0.0 ? -ans : ans;
+}
+
+
+
+
+__device__ double bessi( int n, double x)
+/*------------------------------------------------------------*/
+/* PURPOSE: Evaluate modified Bessel function In(x) for n >= 0*/
+/*------------------------------------------------------------*/
+{
+
+   int j;
+   double bi,bim,bip,tox,ans;
+    
+   //I added this line because when n is integer --> In(x)=I|n|(x)
+   n=abs(n);
+   
+   if (n<0)
+    return(0);
+   
+   if (n == 0)
+      return( bessi0(x) );
+   if (n == 1)
+      return( bessi1(x) );
+
+
+   if (x == 0.0)
+      return 0.0;
+   else {
+      tox=2.0/fabs(x);
+      bip=ans=0.0;
+      bi=1.0;
+      for (j=2*(n+(int) sqrt(ACC*n));j>0;j--) {
+         bim=bip+j*tox*bi;
+         bip=bi;
+         bi=bim;
+         if (fabs(bi) > BIGNO) {
+            ans *= BIGNI;
+            bi *= BIGNI;
+            bip *= BIGNI;
+         }
+         if (j == n) ans=bip;
+      }
+      ans *= bessi0(x)/bi;
+      return  x < 0.0 && n%2 == 1 ? -ans : ans;
+   }
+}
+
+
+
+
+
 
 
 
@@ -108,24 +198,6 @@ __global__ void vec_eraseNonLocalMaxima(int n, float *input,int *localMaxima)
 
 
 
-extern "C"
-__global__ void vec_sortRows(int n,float *d_A,int * index,int size) {
-	
-    //float sum = thrust::reduce(thrust::seq, d_A, d_A + size);
-	
-	//thrust::sort_by_key(thrust::device,d_A, d_A + size, index);
-	
-	int idx = threadIdx.x + blockIdx.x * blockDim.x;
-	int idy = threadIdx.y + blockIdx.y * blockDim.y;
-	int id = idy * gridDim.x * blockDim.x + idx;
-	if (id ==0)
-    {
-		thrust::stable_sort_by_key(thrust::seq,d_A, d_A + size, index,thrust::greater<float>());
-
-	}
-}
-
-
 
 
 extern "C"
@@ -170,6 +242,19 @@ __global__ void vec_sub (int n, double *result, double  *x, double  *y)
 
 
 extern "C"
+__global__ void vec_subFloat (int n, float *result, float  *x, float  *y)
+{
+    int idx = threadIdx.x + blockIdx.x * blockDim.x;
+	int idy = threadIdx.y + blockIdx.y * blockDim.y;
+	int id = idy * gridDim.x * blockDim.x + idx;
+    if (id < n)
+    {
+        result[id] = x[id] - y[id];
+    }
+}
+
+
+extern "C"
 __global__ void vec_mul (int n, double *result, double  *x, double  *y)
 {
     int idx = threadIdx.x + blockIdx.x * blockDim.x;
@@ -192,6 +277,38 @@ __global__ void vec_mul_fl (int n, float *result, float  *x, float  *y)
     if (id < n)
     {
         result[id] = x[id] * y[id];
+    }
+}
+
+
+
+
+
+extern "C"
+__global__ void vec_mul_fl_pow (int n, float *result, float  *x, float  *y_p,float power)
+{
+    int idx = threadIdx.x + blockIdx.x * blockDim.x;
+	int idy = threadIdx.y + blockIdx.y * blockDim.y;
+	int id = idy * gridDim.x * blockDim.x + idx;
+    if (id < n)
+    {
+        if (y_p[id]>0){
+            int count=0;
+            do{
+                result[id] = (float)(pow((double)y_p[id],(double)power) * (double)x[id]);
+                power/=2;
+                count++;
+            }while((isnan(result[id]))&&(count<20));
+            
+            if (isnan(result[id])){
+                result[id] = x[id];
+                //printf("NAN value %f\n",result[id]);
+            }
+        }
+        else{
+            result[id] = x[id];
+        }
+        
     }
 }
 
@@ -238,6 +355,18 @@ __global__ void vec_addScalar (int n, double *result, double  *x, double  y)
     }
 }
 
+extern "C"
+__global__ void vec_addScalarFloat (int n, float *result, float  *x, float  y)
+{
+    int idx = threadIdx.x + blockIdx.x * blockDim.x;
+	int idy = threadIdx.y + blockIdx.y * blockDim.y;
+	int id = idy * gridDim.x * blockDim.x + idx;
+    if (id < n)
+    {
+        result[id] = x[id] + y;
+    }
+}
+
 
 extern "C"
 __global__ void vec_subScalar (int n, double *result, double  *x, double  y)
@@ -254,6 +383,19 @@ __global__ void vec_subScalar (int n, double *result, double  *x, double  y)
 
 extern "C"
 __global__ void vec_mulScalar (int n, double *result, double  *x, double  y)
+{
+    int idx = threadIdx.x + blockIdx.x * blockDim.x;
+	int idy = threadIdx.y + blockIdx.y * blockDim.y;
+	int id = idy * gridDim.x * blockDim.x + idx;
+    if (id < n)
+    {
+        result[id] = x[id] * y;
+    }
+}
+
+
+extern "C"
+__global__ void vec_mulScalarFloat (int n, float *result, float  *x, float  y)
 {
     int idx = threadIdx.x + blockIdx.x * blockDim.x;
 	int idy = threadIdx.y + blockIdx.y * blockDim.y;
@@ -1445,6 +1587,398 @@ __global__ void vec_computePSF_phaseNMany (int n,int sizePart,int sizeTot, doubl
 
 
 
+
+
+//put psf into image
+//n=widthImage*heightImage
+extern "C"         
+__global__ void vec_computeModelAndLikelihood(int n,int widthImage,int heightImage,int widthPSF,int heightPSF, int numberPSF,double  *likelihood,double  *model,float  *image, float  *psf, float  *parameters,int index_x_parameter, int index_y_parameter,int index_photon_parameter,float  *background)
+{
+
+	int idx = threadIdx.x + blockIdx.x * blockDim.x;
+	int idy = threadIdx.y + blockIdx.y * blockDim.y;
+	int id = idy * gridDim.x * blockDim.x + idx;
+	
+	int x=id/heightImage;
+	int y=id%heightImage;
+	if (id < n)
+    {
+        int x_start,y_start;
+        int X,Y;
+        model[id]=(double)background[id];//we should put bckg here
+        for (int index_psf=0;index_psf<numberPSF;index_psf++){
+			x_start=parameters[index_x_parameter*numberPSF+index_psf];
+			X=x-x_start;
+			if ((X>=0)&&(X<widthPSF)){
+			    y_start=parameters[index_y_parameter*numberPSF+index_psf];
+			    Y=y-y_start;
+			    if ((Y>=0)&&(Y<heightPSF)){
+			        model[id]+=(double)psf[index_psf*widthPSF*heightPSF+X*heightPSF+Y]*(double)parameters[index_photon_parameter*numberPSF+index_psf];
+		        }
+		        
+		    }
+		}
+		
+		if (model[id]>0)
+			likelihood[id]=model[id]-(double)image[id]*log(model[id]);
+		else
+			likelihood[id]=0;
+
+    }
+
+
+
+}
+
+
+
+
+
+//put psf into image
+//n=widthImage*heightImage
+extern "C"         
+__global__ void vec_computeLikelihoodAndModelwithPhotonNumberAndBackground(int n, int numberPSF,double  *likelihood,float  *image,double  *model, float  *psf, float  *parameters,int index_photon_parameter,double *bckg)
+{
+
+	int idx = threadIdx.x + blockIdx.x * blockDim.x;
+	int idy = threadIdx.y + blockIdx.y * blockDim.y;
+	int id = idy * gridDim.x * blockDim.x + idx;
+	int index_psf=id/(n/numberPSF);
+	if (id < n)
+    {
+        //printf("%d    %d    %d \n",index_psf,(index_photon_parameter*numberPSF+index_psf));
+        model[id]=(double)psf[id]*(double)parameters[index_photon_parameter*numberPSF+index_psf]+bckg[id];
+        if (model[id]>0){
+		    likelihood[id]=model[id]-(double)image[id]*log(model[id]);
+	    }
+	    else{
+	        likelihood[id]=0;
+        }
+    }
+}
+
+
+
+//put psf into image
+//n=widthImage*heightImage
+extern "C"         
+__global__ void vec_computeModelwithPhotonNumber(int n, int numberPSF,double  *model, float  *psf, float  *parameters,int index_photon_parameter)
+{
+
+	int idx = threadIdx.x + blockIdx.x * blockDim.x;
+	int idy = threadIdx.y + blockIdx.y * blockDim.y;
+	int id = idy * gridDim.x * blockDim.x + idx;
+	int index_psf=id/(n/numberPSF);
+	if (id < n)
+    {
+        //printf("%d    %d    %d \n",index_psf,(index_photon_parameter*numberPSF+index_psf));
+        model[id]=(double)psf[id]*(double)parameters[index_photon_parameter*numberPSF+index_psf];
+		
+    }
+}
+
+
+
+
+
+//put psf into image
+//n=widthImage*heightImage
+extern "C"         
+__global__ void vec_subtractModelwithPhotonNumber(int n, int numberPSF,double  *modelsub,double  *model, float  *psf, float  *parameters,int index_photon_parameter)
+{
+
+	int idx = threadIdx.x + blockIdx.x * blockDim.x;
+	int idy = threadIdx.y + blockIdx.y * blockDim.y;
+	int id = idy * gridDim.x * blockDim.x + idx;
+	int index_psf=id/(n/numberPSF);
+	//int index_psf=id%numberPSF;
+	if (id < n)
+    {
+        
+        modelsub[id]=model[id]-((double)psf[id]*(double)parameters[index_photon_parameter*numberPSF+index_psf]);
+		     
+    }
+}
+
+
+
+
+
+
+//put psf into image
+//n=widthImage*heightImage
+extern "C"         
+__global__ void vec_partialModel(int n,double  *result,double  *a, double  *b, float  h)
+{
+
+	int idx = threadIdx.x + blockIdx.x * blockDim.x;
+	int idy = threadIdx.y + blockIdx.y * blockDim.y;
+	int id = idy * gridDim.x * blockDim.x + idx;
+	if (id < n)
+    {
+        
+        result[id]=(a[id]-b[id])/(double)(2*h);
+		     
+    }
+}
+
+
+
+
+
+
+//put psf into image
+//n=widthImage*heightImage
+extern "C"         
+__global__ void vec_chi2(long n,int numPixelsPSF,double  *result,double  *model, float  *image)
+{
+
+	int idx = threadIdx.x + blockIdx.x * blockDim.x;
+	int idy = threadIdx.y + blockIdx.y * blockDim.y;
+	int id = idy * gridDim.x * blockDim.x + idx;
+	if (id < n)
+    {
+        if (model[id]>0){
+            result[id]=(model[id]-(double)image[id])*(model[id]-(double)image[id])/(model[id]*(double)numPixelsPSF);
+        }
+        else{
+            result[id]=1./(double)numPixelsPSF;
+        }
+		     
+    }
+}
+
+
+
+
+
+//put psf into image
+//n=widthImage*heightImage
+extern "C"         
+__global__ void vec_computeFisherMatrix(int n,int psfsize_square, int numberPSF,float  *fisher,double  *model, double  *modelx,double  *modely,double  *modelz,double  *modelphoton)
+{
+
+	int idx = threadIdx.x + blockIdx.x * blockDim.x;
+	int idy = threadIdx.y + blockIdx.y * blockDim.y;
+	int id = idy * gridDim.x * blockDim.x + idx;
+	
+	if (id < n)
+    {
+        int idPSF=id/(psfsize_square*16);
+	    int xyf=id%(psfsize_square*16);
+	    int idFisher=xyf/psfsize_square;
+	    int idPixel=xyf%psfsize_square;
+	    int u=idFisher/4;
+	    int v=idFisher%4;
+	    int position=idPSF*psfsize_square+idPixel;
+	    //printf("id  %d    idPSF %d   xyf %d     uv %d %d    idPixel %d   position %d\n",id,idPSF,xyf,u,v,idPixel,position);
+	    if (model[position]>0){
+	    
+            fisher[id]=(float)(1/model[position]);
+            if (u==0){
+                fisher[id]*=(float)modelx[position];
+            }
+            else if (u==1){
+                fisher[id]*=(float)modely[position];
+            }
+            else if (u==2){
+                fisher[id]*=(float)modelz[position];
+            }
+            else if (u==3){
+                fisher[id]*=(float)modelphoton[position];
+            }
+            
+            if (v==0){
+                fisher[id]*=(float)modelx[position];
+            }
+            else if (v==1){
+                fisher[id]*=(float)modely[position];
+            }
+            else if (v==2){
+                fisher[id]*=(float)modelz[position];
+            }
+            else if (v==3){
+                fisher[id]*=(float)modelphoton[position];
+            }
+            
+            
+            
+        }
+        else{
+            fisher[id]=0;
+        }
+		     
+    }
+}
+
+
+
+
+
+//does the reverse of vec_computeModelAndLikelihood: put image in PSF stack (not useful)
+extern "C"         
+__global__ void vec_cropFromImage(int n,int widthPSF,int heightPSF, int numberPSF,double  *result,int widthImage,int heightImage, double  *image, float  *parameters,int index_x_parameter, int index_y_parameter)
+{
+
+	int idx = threadIdx.x + blockIdx.x * blockDim.x;
+	int idy = threadIdx.y + blockIdx.y * blockDim.y;
+	int id = idy * gridDim.x * blockDim.x + idx;
+	int index_psf=id%numberPSF;
+	int xy=id/numberPSF;
+	int x=xy/heightPSF;
+	int y=xy%heightPSF;
+	if (id < n)
+    {
+			int x_start=(int)parameters[index_x_parameter*numberPSF+index_psf];
+			int y_start=(int)parameters[index_y_parameter*numberPSF+index_psf];
+			int X=(x_start+x);
+			int Y=y_start+y;
+			//printf("%d  %d  / X%d   Y%d     x %d     y %d      xs%d     ys %d   xy %d     index_psf %d\n",id,(xy+index_psf*widthPSF*heightPSF),X,Y,x,y,x_start,y_start,xy,index_psf);
+			if ((X>=0)&&(Y>=0)&&(X<widthImage)&&(Y<heightImage)){
+			    result[xy+index_psf*widthPSF*heightPSF]=image[X*heightImage+Y];
+		    }
+		    else{
+		        result[xy+index_psf*widthPSF*heightPSF]=0;
+		    }
+			
+
+    }
+
+
+
+}
+
+
+
+
+
+//does the reverse of vec_computeModelAndLikelihood: put image in PSF stack (not useful)
+extern "C"         
+__global__ void vec_cropFromImageFloat(int n,int widthPSF,int heightPSF, int numberPSF,float  *result,int widthImage,int heightImage, float  *image, float  *parameters,int index_x_parameter, int index_y_parameter)
+{
+
+	int idx = threadIdx.x + blockIdx.x * blockDim.x;
+	int idy = threadIdx.y + blockIdx.y * blockDim.y;
+	int id = idy * gridDim.x * blockDim.x + idx;
+	int index_psf=id%numberPSF;
+	int xy=id/numberPSF;
+	int x=xy/heightPSF;
+	int y=xy%heightPSF;
+	if (id < n)
+    {
+			int x_start=parameters[index_x_parameter*numberPSF+index_psf];
+			int y_start=parameters[index_y_parameter*numberPSF+index_psf];
+			int X=(x_start+x);
+			int Y=y_start+y;
+			//printf("%d  %d  / X%d   Y%d     x %d     y %d      xs%d     ys %d   xy %d     index_psf %d\n",id,(xy+index_psf*widthPSF*heightPSF),X,Y,x,y,x_start,y_start,xy,index_psf);
+			if ((X>=0)&&(Y>=0)&&(X<widthImage)&&(Y<heightImage)){
+			    result[xy+index_psf*widthPSF*heightPSF]=image[X*heightImage+Y];
+		    }
+		    else{
+		        result[xy+index_psf*widthPSF*heightPSF]=0;
+		    }
+			
+
+    }
+
+
+
+}
+
+
+
+
+
+//does the reverse of vec_computeModelAndLikelihood: put image in PSF stack
+extern "C"         
+__global__ void vec_shiftParameter(int n,int indexParameter,float h,float *parameters)
+{
+
+	int idx = threadIdx.x + blockIdx.x * blockDim.x;
+	int idy = threadIdx.y + blockIdx.y * blockDim.y;
+	int id = idy * gridDim.x * blockDim.x + idx;
+	if (id < n)
+    {
+			parameters[indexParameter*n+id]+=h;
+    }
+
+
+
+}
+
+
+
+
+
+
+extern "C"         
+__global__ void vec_updateParameter(int n,int indexParameter,float h,double *lik1,double *lik2,double *lik3,float *parameters,float *parameterSave,float *gamma_weight,float minJump,float maxJump)
+{
+	int idx = threadIdx.x + blockIdx.x * blockDim.x;
+	int idy = threadIdx.y + blockIdx.y * blockDim.y;
+	int id = idy * gridDim.x * blockDim.x + idx;
+	if (id < n)
+    {
+        if (gamma_weight[indexParameter*n+id]>0){
+			double hh=(double)h;
+            double grad;
+            if (abs((lik3[id]+lik1[id]-2.*lik2[id])/(hh*hh))==0){
+                grad=((lik3[id]-lik1[id])*(2.*hh));
+            }
+            else{
+                grad=((lik3[id]-lik1[id])/(2.*hh))/abs((lik3[id]+lik1[id]-2.*lik2[id])/(hh*hh));
+            }
+            if (grad>0){
+                grad=min(abs((double)maxJump),grad);
+                grad=max(abs((double)minJump),grad);
+            }
+            else{
+                grad=max(-abs((double)maxJump),grad);
+                grad=min(-abs((double)minJump),grad);
+            }
+            //if ((indexParameter==2)&&(id==0))
+            //    printf("grad   %d     %d    %f     lik  %f    %f    %f   %f\n",indexParameter,id,grad,lik1[id],lik2[id],lik3[id],gamma_weight[indexParameter*n+id]);
+            parameterSave[id]=parameters[indexParameter*n+id];
+            parameters[indexParameter*n+id]-=(float)grad*gamma_weight[indexParameter*n+id];
+        }
+            
+    }
+
+
+
+}
+
+
+
+
+extern "C"         
+__global__ void vec_checkLikelihood(int n,int indexParameter,double *likold,double *liknew,float *parameters,float * parameterSave,float *gamma_weight)
+{
+
+	int idx = threadIdx.x + blockIdx.x * blockDim.x;
+	int idy = threadIdx.y + blockIdx.y * blockDim.y;
+	int id = idy * gridDim.x * blockDim.x + idx;
+	if (id < n)
+    {
+			if (liknew[id]>likold[id]){//if new likelihood not better: change weight and put back weight
+                parameters[indexParameter*n+id]=parameterSave[id];
+                gamma_weight[indexParameter*n+id]/=10.;
+            }
+            else{//if new likelihood better: no change anymore
+                likold[id]=liknew[id];
+                gamma_weight[indexParameter*n+id]=0;
+                parameterSave[id]=parameters[indexParameter*n+id];
+            }
+    }
+
+
+
+}
+
+
+
+
+
 extern "C"         
 __global__ void vec_computePSF_phaseNMany_f (int n,int sizePart,int sizeTot, float  *kx, float  *ky, float  *kz, float  *pupil, float  *phase,float* position, int *sparseIndexEvenDisk, int *sparseIndexOddDisk, float *fft,int many)
 {
@@ -1506,6 +2040,235 @@ __global__ void vec_computePSF_phaseNManywithOil_f (int n,int sizePart,int sizeT
 
 
 }
+
+
+
+extern "C"
+__global__ void vec_addFloat(int n, float *result, float  *a, float *b)
+{
+
+    int idx = threadIdx.x + blockIdx.x * blockDim.x;
+	int idy = threadIdx.y + blockIdx.y * blockDim.y;
+	int id = idy * gridDim.x * blockDim.x + idx;
+    if (id < n)
+    {
+        result[id] = a[id] + b[id];
+    }
+}
+
+
+
+extern "C"
+__global__ void vec_addanddivide(int n, float *result, float  *num, float *div, float *added2div)
+{//perform num/(div+added2div)
+
+    int idx = threadIdx.x + blockIdx.x * blockDim.x;
+	int idy = threadIdx.y + blockIdx.y * blockDim.y;
+	int id = idy * gridDim.x * blockDim.x + idx;
+    if (id < n)
+    {
+        div[id]+=added2div[id];
+        result[id] = num[id] / (div[id]);
+    }
+}
+
+
+
+
+
+
+
+
+extern "C"
+__global__ void vec_computeLikelihoodDeconvolution(int n, float *result, float  *I, float *M)
+{//perform num/(div+added2div)
+
+    int idx = threadIdx.x + blockIdx.x * blockDim.x;
+	int idy = threadIdx.y + blockIdx.y * blockDim.y;
+	int id = idy * gridDim.x * blockDim.x + idx;
+    if (id < n)
+    {
+        result[id] = M[id]-I[id]*log(M[id]);
+    }
+}
+
+
+
+
+
+
+
+__device__ double bessiRatio( int n, double x)
+/*------------------------------------------------------------*/
+/* PURPOSE: Evaluate modified Bessel function In-1(x)/In(x) for n >= 0*/
+/*------------------------------------------------------------*/
+{
+    n=abs(n);
+    double Y=(x/2)*(x/2);
+    double B_up=1;
+    double BB_up=1;
+    double B_down=1;
+    double BB_down=1;
+    double k=0;
+    double n_up=n-1;
+    double n_down=n;
+    double ratio=1;
+    double iter=sqrt(ACC*n_down);
+    int nbIter=0;
+    iter=5;
+    for (k=1;k<iter;k++){
+        B_up*=Y/(k*(k+n_up));
+        BB_up+=B_up;
+        B_down*=Y/(k*(k+n_down));
+        BB_down+=B_down;
+        if (B_up>1e+300){
+            //break;
+        }
+        ratio=BB_up/BB_down;
+        nbIter++;
+    }
+    //printf("BB %f  %f   /   %f  %f  / Y %f   ratio : %f  it:%d\n",n_up,n_down,B_up,B_down,Y,ratio,nbIter);
+    printf("BB %f  %f   /   %f         bu:%f bd:%f r:%f \n",n_down,x,(n_down*2/x)*ratio,BB_up,BB_down,ratio);
+    return (n_down*2/x)*ratio;
+
+}
+
+
+
+
+
+//See: On the Computation of Modified Bessel Function Ratios, Mathematics of Computation, September 1978
+__device__ double R( double * n, double * x,double k,double * K){
+    
+    if (k>=*K){
+        return 0.;
+    }
+    else{
+        return 1./( (2./ *x)*(*n+k) + R(n,x,k+1,K));
+    }
+    
+}
+
+__device__ double myBessiRatio( double n, double x)
+/*------------------------------------------------------------*/
+/* PURPOSE: Evaluate modified Bessel function In-1(x)/In(x) for n >= 0*/
+/*------------------------------------------------------------*/
+{
+    n=abs(n);
+    
+    double iterNumber=20;
+    
+    return 1./R(&n,&x,0,&iterNumber);
+
+}
+
+
+__device__ double myBessiRatioNonRecusrsive( double n, double x)
+/*------------------------------------------------------------*/
+/* PURPOSE: Evaluate modified Bessel function In-1(x)/In(x) for n >= 0*/
+/*------------------------------------------------------------*/
+{
+    
+    
+    double som=0;
+    for (double k=50;k>=0;k--){
+        som+=((2./x)*(n+k));
+        som=1./som;
+    }
+    return 1./som;
+}
+
+
+//Even if it is float, we assume I is photon count here --> we cast it to integer
+//Perform Ib-Ia skellam
+// n should be full size
+// minReplacement = 1 by default: When I<<M --> b1==inf  --> inf value So we replace "inf" values by "minReplacement" in result
+// maxReplacement = 1 by default: When I>>M --> b1==0  --> division Nan So we replace "Nan" values by "maxReplacement" in result
+extern "C"
+__global__ void vec_skellam_order1(long n, long imageSize,float *result, float  *I, float *M)
+{//perform num/(div+added2div)
+
+    long idx = threadIdx.x + blockIdx.x * blockDim.x;
+	long idy = threadIdx.y + blockIdx.y * blockDim.y;
+	long id = idy * gridDim.x * blockDim.x + idx;
+	int indexFrame=id/imageSize;
+	long indexImage=id%imageSize;
+	float sqrtMaMb,tmp,Itmp,tt;
+	//float Mb,Ma;
+	//float Ib,Ia;
+	//double b0,b1;
+	
+    if (id < n)
+    {
+    
+        if (id<imageSize){
+            result[id+n*2]=0;
+            /*Itmp=I[indexImage+imageSize]-I[indexImage];
+            result[id+n*2]=Itmp/(2*M[indexImage+imageSize]);*/
+        }
+        if (id>=(n-imageSize)){
+            result[id+n]=0;
+            /*Itmp=I[indexImage+imageSize]-I[indexImage];
+            result[id+n]=-Itmp/(2*M[indexImage]);*/
+        }
+        //Ma=M[indexImage];
+        //Mb=M[indexImage+imageSize];
+        //Ia=I[indexImage];
+        //Ib=I[indexImage+imageSize];
+        int index0=indexImage+imageSize*(indexFrame);//current frame
+        int index1=indexImage+imageSize*(indexFrame+1);//next frame
+        if (id<(n-imageSize)){// because we do it nbFrame-1 times
+            Itmp=I[index1]-I[index0];
+            sqrtMaMb=(float)sqrt(M[index0]*M[index1]);
+            tt=sqrtMaMb*2;
+            //printf("test %f   %f   \n",Itmp,tt);
+            
+            tmp= myBessiRatioNonRecusrsive((double)abs(Itmp),(double)tt)    ;
+            
+            /*//here, we compute skellam :
+            b1=bessi( (int)Itmp, (double)tmp);
+            b0=bessi( (int)(Itmp-1), (double)tmp);
+            //printf("b0 %f   b1 %f   tmp %f Itmp %f     sqrtMaMb %f     %f   bool: %d\n",b0,b1,tmp,Itmp,sqrtMaMb,1e+30,(b1>1e+30));
+            if (b1<1e-307){//10E-30
+                //result[offset+id+n*2]=maxReplacement;
+                //result[offset+id+n*3]=maxReplacement;
+                result[id+n]=maxReplacement;
+                result[id+n*2+imageSize]=maxReplacement;
+            }
+            else if (b0>1e+307){//10E+36
+                //result[offset+id+n*2]=minReplacement;
+                //result[offset+id+n*3]=minReplacement;
+                result[id+n]=minReplacement;
+                result[id+n*2+imageSize]=minReplacement;
+            }
+            else{
+                tmp=(double)((double)1./(double)sqrtMaMb)*( b0  -  ( (double)(Itmp/tmp) * b1 ) )/b1;*/
+                
+                //result[offset+id+n*2]=(float)(M[indexImage+imageSize]*tmp);
+                //result[offset+id+n*3]=(float)(M[indexImage]*tmp);
+                result[id+n]=(float)(M[index1]*( tmp- (double)(abs(Itmp)/tt) ))/(double)sqrtMaMb;
+                result[id+n*2+imageSize]=(float)(M[index0]*( tmp- (double)(abs(Itmp)/tt) )/(double)sqrtMaMb);
+            //}
+            
+            //result[offset+id]=-Itmp/(2*M[indexImage]);//  (Ia-Ib)/2Ma
+            //result[offset+id+n]=Itmp/(2*M[indexImage+imageSize]);//  (Ib-Ia)/2Mb
+            result[id+n]+=-Itmp/(2*M[index0]);//  (Ia-Ib)/2Ma
+            result[id+n*2+imageSize]+=Itmp/(2*M[index1]);//  (Ib-Ia)/2Mb
+            
+            if (index0/imageSize!=0){//first image
+                result[id+n]/=2;
+                
+            }
+            if (index1/imageSize!=((n/imageSize)-1)){
+                result[id+n*2+imageSize]/=2;
+            }
+            
+        }
+    }
+}
+
+
+
 
 
 
@@ -2086,6 +2849,10 @@ __global__ void vec_computeGaussianLikelihood (int n, double *result, double *im
 
 
 
+
+
+
+
 //reshuffle: 
 //exemple 4 PSF to merge in 2 model
 //->>> PSF=1,2,3 merged with PSF=4,5,6
@@ -2208,6 +2975,28 @@ __global__ void vec_addPhotonsAndBackgroundMany_f (int n, int sizeSubImage,float
 
 
 
+extern "C"         
+__global__ void vec_shrink (int n,float  *output, float  *input, float  threshold)
+{
+    
+	int idx = threadIdx.x + blockIdx.x * blockDim.x;
+	int idy = threadIdx.y + blockIdx.y * blockDim.y;
+	int id = idy * gridDim.x * blockDim.x + idx;
+	if (id < n)
+    {
+			if (input[id]<threshold){
+			    output[id]=0;
+			}
+			else{
+			    output[id]=input[id];
+			}
+    }
+
+
+
+}
+
+
 
 
 
@@ -2275,6 +3064,193 @@ __global__ void vec_complexeConjugateKernel (int n,  int sizeInput, float *outpu
 }
 
 
+
+extern "C"
+__global__ void vec_complexeConjugateKernelSubtract (int n,  int sizeInput, float *output, float *input, float *inputKernel)
+{
+	//n size 
+	//int id = 2*(threadIdx.x + blockIdx.x * blockDim.x);
+	int idx = threadIdx.x + blockIdx.x * blockDim.x;
+	int idy = threadIdx.y + blockIdx.y * blockDim.y;
+	int id = 2*(idy * gridDim.x * blockDim.x + idx);
+	int id2=id%(sizeInput*2);
+	float real;
+	float imag;
+	float tmp;
+	if (id < n*2)
+    {
+		real=input[id2]/sqrt((float)sizeInput);
+		imag=input[id2+1]/sqrt((float)sizeInput);
+		//id : real
+		//id+1 : imaginary
+		tmp=imag*inputKernel[id+1]+real*inputKernel[id];
+		output[id+1]=imag*inputKernel[id]-real*inputKernel[id+1];
+		output[id]=tmp;
+		
+
+    }
+
+}
+
+
+
+
+
+//multi kernel complexe conjugate
+//*2 because real and imag parts
+//n is total size (complex) of kernel divided by 2
+//sizeInput is total size (complex) of image divided by 2
+extern "C"
+__global__ void vec_complexeMulKernel (int n,  int sizeInput, float *output, float *input, float *inputKernel)
+{
+	//n size 
+	//int id = 2*(threadIdx.x + blockIdx.x * blockDim.x);
+	int idx = threadIdx.x + blockIdx.x * blockDim.x;
+	int idy = threadIdx.y + blockIdx.y * blockDim.y;
+	int id = 2*(idy * gridDim.x * blockDim.x + idx);
+	int id2=id%(n*2);//strange...id2 might be = to id
+	float real;
+	float imag;
+	float tmp;
+	if (id < n*2)
+    {
+		real=input[id2]/sqrt((float)sizeInput);
+		imag=input[id2+1]/sqrt((float)sizeInput);
+		//id : real
+		//id+1 : imaginary
+		tmp=real*inputKernel[id]-imag*inputKernel[id+1];
+		output[id+1]=imag*inputKernel[id]+real*inputKernel[id+1];
+		output[id]=tmp;
+		
+
+    }
+
+}
+
+
+
+
+
+//multi kernel complexe conjugate
+//*2 because real and imag parts
+//n is total size (complex) of kernel divided by 2
+//sizeInput is total size (complex) of image divided by 2
+extern "C"
+__global__ void vec_complexeMulKernelMany (long n,  long depth,  long size, float *output, float *input, float *inputKernel)
+{
+	//n size 
+	//int id = 2*(threadIdx.x + blockIdx.x * blockDim.x);
+	long idx = threadIdx.x + blockIdx.x * blockDim.x;
+	long idy = threadIdx.y + blockIdx.y * blockDim.y;
+	long idd = 2*(idy * gridDim.x * blockDim.x + idx);
+	long id=idd%(2*size*depth);
+	
+	//int id2=id%(n*2);
+	float real;
+	float imag;
+	float tmp;
+	if (idd < n*2)
+    {
+        
+		real=input[idd]/size;
+		imag=input[idd+1]/size;
+		//id : real
+		//id+1 : imaginary
+		tmp=real*inputKernel[id]-imag*inputKernel[id+1];
+		output[idd+1]=imag*inputKernel[id]+real*inputKernel[id+1];
+		output[idd]=tmp;
+		
+
+    }
+
+}
+
+
+
+
+
+extern "C"
+__global__ void vec_copyMany(long n, long sizeInput,long depth,long nbFrame, float *output, float *input)
+{
+	//n size 
+	//int id = (threadIdx.x + blockIdx.x * blockDim.x);
+	long idx = threadIdx.x + blockIdx.x * blockDim.x;
+	long idy = threadIdx.y + blockIdx.y * blockDim.y;
+	long idd = idy * gridDim.x * blockDim.x + idx;
+	long id=idd%(sizeInput*depth);
+	long idFrame=idd/(sizeInput*depth);
+	long idPixel=(id)%(sizeInput);
+	//long idZ=(id)/(sizeInput);
+	
+	if (idd < n)
+    {
+        long posit=idPixel+idFrame*sizeInput;
+		output[idd]=input[posit];
+        
+        
+    }
+
+}
+
+
+
+
+//multi kernel correlation result
+//n is total size (complex) of kernel divided by 2
+//sizeInput is total size (complex) of image divided by 2
+extern "C"
+__global__ void vec_mycusparsemoduloSsctrMany(long n, long nbFrame,long depth,long sizeShift, long width,long height,float *output, float *input, int *sparse)
+{
+	//n size 
+	//int id = (threadIdx.x + blockIdx.x * blockDim.x);
+	long idx = threadIdx.x + blockIdx.x * blockDim.x;
+	long idy = threadIdx.y + blockIdx.y * blockDim.y;
+	long idd = idy * gridDim.x * blockDim.x + idx;
+	long sizeSparse=width*height;
+	long idFrame=idd/(depth*width*height);
+	long id=idd%(depth*width*height);
+	long id2=(id)%(sizeSparse);
+	long id3=(id)/(sizeSparse);
+	if (idd < n)
+    {
+        
+		output[(long)sparse[id2]+sizeShift*id3+idFrame*sizeShift*depth]=input[idd];
+
+    }
+
+}
+
+
+
+
+
+//multi kernel correlation result
+//n is total size (complex) of kernel divided by 2
+//sizeInput is total size (complex) of image divided by 2
+//process many images at the same times
+extern "C"
+__global__ void vec_mycusparsemoduloSsctr(int n, int sizeShift, int sizeSparse,float *output, float *input, int *sparse)
+{
+	//n size 
+	//int id = (threadIdx.x + blockIdx.x * blockDim.x);
+	int idx = threadIdx.x + blockIdx.x * blockDim.x;
+	int idy = threadIdx.y + blockIdx.y * blockDim.y;
+	int id = idy * gridDim.x * blockDim.x + idx;
+	int id2=(id)%(sizeSparse);
+	int id3=(id)/(sizeSparse);
+	if (id < n)
+    {
+    
+		output[sparse[id2]+sizeShift*id3]=input[id];
+
+    }
+
+}
+
+
+
+
+
 //multi kernel correlation result
 //n is total size (complex) of kernel divided by 2
 //sizeInput is total size (complex) of image divided by 2
@@ -2290,6 +3266,7 @@ __global__ void vec_makeResultCorrelation(int n, int sizeInput, int sizeFullPadd
 	int id3=(id)/(sizeInput);
 	if (id < n)
     {
+        
 		output[id]=input[sparse[id2]+sizeFullPadded*id3]/sqrt((float)sizeFullPadded/2.);
 
     }
@@ -2297,6 +3274,209 @@ __global__ void vec_makeResultCorrelation(int n, int sizeInput, int sizeFullPadd
 }
 
 
+//multi kernel correlation result
+//n is total size (complex) of kernel divided by 2
+//sizeInput is total size (complex) of image divided by 2
+extern "C"
+__global__ void vec_normalizeCorrelation(long n, long nbFrame, long depth, long sizeInput,float *output, float *input, float *divide)
+{
+	//n size 
+	//int id = (threadIdx.x + blockIdx.x * blockDim.x);
+	long idx = threadIdx.x + blockIdx.x * blockDim.x;
+	long idy = threadIdx.y + blockIdx.y * blockDim.y;
+	long idd = idy * gridDim.x * blockDim.x + idx;
+	long id=idd%(sizeInput*depth);
+	//long idFrame=idd/(sizeInput*depth);
+	//long id2=(id)%(sizeInput);
+	//long id3=(id)/(sizeInput);
+	if (idd < n)
+    {
+        
+		output[idd]=input[idd]/divide[id];
+
+    }
+
+}
+
+
+
+
+//multi kernel correlation result
+//n is total size (complex) of kernel divided by 2
+//sizeInput is total size (complex) of image divided by 2
+extern "C"
+__global__ void vec_makeResultCorrelationMany(long n, long nbFrame, long depth, long sizeInput, long sizeFullPadded,float *output, float *input, int *sparse)
+{
+	//n size 
+	//int id = (threadIdx.x + blockIdx.x * blockDim.x);
+	long idx = threadIdx.x + blockIdx.x * blockDim.x;
+	long idy = threadIdx.y + blockIdx.y * blockDim.y;
+	long idd = idy * gridDim.x * blockDim.x + idx;
+	long id=idd%(sizeInput*depth);
+	long idFrame=idd/(sizeInput*depth);
+	long id2=(id)%(sizeInput);
+	long id3=(id)/(sizeInput);
+	if (idd < n)
+    {
+        
+		output[idd]=input[sparse[id2]+sizeFullPadded*id3+idFrame*sizeFullPadded*depth];
+
+    }
+
+}
+
+
+
+
+//multi kernel correlation result
+//n is total size (complex) of kernel divided by 2
+//sizeInput is total size (complex) of image divided by 2
+extern "C"
+__global__ void vec_turnMatrixMany(long n, long nbFrame, long depth, long sizeInput,float *output, float *input)
+{
+	//n size 
+	//int id = (threadIdx.x + blockIdx.x * blockDim.x);
+	long idx = threadIdx.x + blockIdx.x * blockDim.x;
+	long idy = threadIdx.y + blockIdx.y * blockDim.y;
+	long idd = idy * gridDim.x * blockDim.x + idx;
+	long id=idd%(sizeInput*depth);
+	long idFrame=idd/(sizeInput*depth);
+	long idPixel=(id)%(sizeInput);
+	long idZ=(id)/(sizeInput);
+	
+	if (idd < n)
+    {
+        long posit=idPixel+idFrame*sizeInput+idZ*sizeInput*nbFrame;
+		output[posit]=input[idd];
+        
+        
+    }
+
+}
+
+
+extern "C"
+__global__ void vec_makeResultCorrelationNormalized(int n, int sizeInput, int sizeFullPadded,float *output, float *input, int *sparse,float divide,float* device_divide,float minValue)
+{
+	//n size 
+	//int id = (threadIdx.x + blockIdx.x * blockDim.x);
+	int idx = threadIdx.x + blockIdx.x * blockDim.x;
+	int idy = threadIdx.y + blockIdx.y * blockDim.y;
+	int id = idy * gridDim.x * blockDim.x + idx;
+	int id2=(id)%(sizeInput);
+	int id3=(id)/(sizeInput);
+	if (id < n)
+    {
+        float tmp=(input[sparse[id2]+sizeFullPadded*id3]/(divide*sqrt((float)sizeFullPadded/2.)))-device_divide[id2];
+        if (tmp>0){
+		    output[id]=minValue;//tmp;
+	    }
+	    else{
+	        output[id]=minValue;
+	    }
+
+    }
+
+}
+
+
+
+extern "C"
+__global__ void vec_initializeDeconvolution(int n,int nbpsf ,float *o, float *op, float *m,float value)
+{
+	//n size 
+	//int id = (threadIdx.x + blockIdx.x * blockDim.x);
+	int idx = threadIdx.x + blockIdx.x * blockDim.x;
+	int idy = threadIdx.y + blockIdx.y * blockDim.y;
+	int id = idy * gridDim.x * blockDim.x + idx;
+	if (id < n)
+    {
+        o[id]=value;
+        op[id]=value;
+        if (id<n/nbpsf){
+            m[id]=value*(float)nbpsf;
+        }
+
+    }
+
+}
+
+
+
+
+extern "C"
+__global__ void vec_initializeVectorToValue(int n ,float *v, float value)
+{
+	//n size 
+	//int id = (threadIdx.x + blockIdx.x * blockDim.x);
+	int idx = threadIdx.x + blockIdx.x * blockDim.x;
+	int idy = threadIdx.y + blockIdx.y * blockDim.y;
+	int id = idy * gridDim.x * blockDim.x + idx;
+	if (id < n)
+    {
+        v[id]=value;
+        
+
+    }
+
+}
+
+extern "C"
+__global__ void vec_chiScore (int n, float *result, float  *image, float  *model)
+{
+    int idx = threadIdx.x + blockIdx.x * blockDim.x;
+	int idy = threadIdx.y + blockIdx.y * blockDim.y;
+	int id = idy * gridDim.x * blockDim.x + idx;
+    if (id < n)
+    {
+        result[id] = (image[id] - model[id])*(image[id] - model[id])/model[id];
+    }
+}
+
+
+
+extern "C"
+__global__ void vec_max(int n ,float *v, float value)
+{
+	//n size 
+	//int id = (threadIdx.x + blockIdx.x * blockDim.x);
+	int idx = threadIdx.x + blockIdx.x * blockDim.x;
+	int idy = threadIdx.y + blockIdx.y * blockDim.y;
+	int id = idy * gridDim.x * blockDim.x + idx;
+	if (id < n)
+    {
+        v[id]=max(v[id],value);
+        
+
+    }
+
+}
+
+
+
+
+extern "C"
+__global__ void vec_subtractMeanWithSumAsInputWithPositiveConstraint(int n, float *output, float *input, float *sum,float minValue)
+{
+	//n size 
+	//int id = (threadIdx.x + blockIdx.x * blockDim.x);
+	int idx = threadIdx.x + blockIdx.x * blockDim.x;
+	int idy = threadIdx.y + blockIdx.y * blockDim.y;
+	int id = idy * gridDim.x * blockDim.x + idx;
+	
+	if (id < n)
+    {
+        float tmp=input[id]-(sum[0]/(float)n);
+        if (tmp>0){
+		    output[id]=tmp;
+	    }
+	    else{
+	        output[id]=minValue;
+	    }
+
+    }
+
+}
 
 
 
@@ -2311,6 +3491,28 @@ __global__ void vec_divScalarFloat ( int n, float *result, float  *x, float  y)
     if (offset < n)
     {
         result[offset] = x[offset] / y;
+    }
+}
+
+
+
+
+
+
+
+extern "C"
+__global__ void vec_updateMandOP ( int n, float *m,float *op, float  *x, float  div)
+{
+    int idx = threadIdx.x + blockIdx.x * blockDim.x;
+	int idy = threadIdx.y + blockIdx.y * blockDim.y;
+	int offset = idy * gridDim.x * blockDim.x + idx;
+    float tmp;
+	//int offset = threadIdx.x + blockIdx.x * blockDim.x;
+    if (offset < n)
+    {
+        tmp  = m[offset] -  op[offset];
+        op[offset] = (x[offset] / div);
+        m[offset] = tmp + op[offset];
     }
 }
 
@@ -2358,6 +3560,36 @@ __global__ void vec_computeCRLB (int n,int sizeMatrix,double *output, double *in
 
 
 
+//n should be size(input)/2
+/*extern "C"
+__global__ void vec_sortRows(int n,float * value,int *index) {
+	
+	
+	int idx = threadIdx.x + blockIdx.x * blockDim.x;
+	int idy = threadIdx.y + blockIdx.y * blockDim.y;
+	int id = 2*(idy * gridDim.x * blockDim.x + idx);
+	float valtmp;
+	int indtmp;
+	int i;
+	if (id <n*2)
+    {
+        
+        for (i=0;i<1+(n/2);i++){//TO DO
+		    if (value[id]>value[id+1]){//if yes -> change 
+		        valtmp=value[id];
+		        indtmp=index[id];
+		        value[id]=value[id+1];
+		        index[id]=index[id+1];
+		        value[id+1]=valtmp;
+		        index[id+1]=indtmp;
+		    }
+	    }
+
+	}
+}*/
+
+
+
 
 extern "C"
 __global__ void vec_divCorrelation (int n, float  *x,int sizeImage, float  *varImage,float  *varPSF)
@@ -2384,17 +3616,490 @@ __global__ void vec_divCorrelation (int n, float  *x,int sizeImage, float  *varI
 
 
 
-/*
-#include <stdio.h>
-
-int main() {
-
-	//vec_initFFT<<<1,1>>>(16);
-
-  printf("toto%f\n",5.);  
 
 
-}*/
+
+//perform M=\sum_z(o_z*psf_z)+bckg, where * corresponds to convolution operator
+extern "C"
+__global__ void vec_manualFilteringTest (long n, int sizeImageX, int sizeImageY, int sizePSF,int nbPSF,float *m, float *o,  float *psf, float  *bckg,float *tmp)
+{
+	long idx = threadIdx.x + blockIdx.x * blockDim.x;
+	long idy = threadIdx.y + blockIdx.y * blockDim.y;
+	long id = idy * (long)gridDim.x * (long)blockDim.x + idx;
+	
+	long p_psf=(long)(id%(long)(sizePSF*sizePSF));//reste
+	//long x_psf=p_psf/sizePSF;
+	//long y_psf=p_psf%sizePSF;
+	
+	long p_image=(long)(id/(long)(sizePSF*sizePSF));//position
+	long x_image=p_image/sizeImageY;
+	long y_image=p_image%sizeImageY;
+	
+	
+	if (id < n)
+    {
+        //initialize m to 0
+		if (p_psf==0){
+		    m[p_image]=0;
+		}
+		
+        int t=0;//loop t among nb_psf
+        
+		
+		
+		//compute convolution for one single image
+		tmp[id]=o[p_image+t*sizeImageX*sizeImageY]*psf[p_psf];
+		//printf("0\n");
+		
+		////////////////////////////////////////////IMPOSSIBLE: __syncthreads does not synchronise blocks/grids
+		__syncthreads();
+		
+		
+		//printf("1\n");
+		//p_image == x_image*sizeImage+y_image
+		if (p_image!=x_image*sizeImageY+y_image){
+		printf("ZUT %d  %d  %d\n",p_image,x_image,y_image,sizeImageY);
+		}
+		if (p_psf==0){
+		    for (long i=0;i<sizePSF;i++){
+		        for (long ii=0;ii<sizePSF;ii++){
+		            //p_image==((x_image)*sizeImageY+y_image);
+		            long nextY=(1+sizePSF*sizePSF)*ii+sizePSF*i;
+		            long nextX=sizeImageY*sizePSF*sizePSF*i;
+		            long index=p_image*sizePSF*sizePSF + nextY + nextX;
+		            if (((x_image+i)<sizeImageX)&&((y_image+ii)<sizeImageY)){
+		                if (index<n){
+		                    if (p_image==0){
+		                        //printf("%d  %d  %d  %d      x_  %d  %d   size: %d  %d  \n",i,ii,index,p_image,x_image,y_image,sizeImageY,sizePSF);
+	                        }
+	                        
+	                        m[p_image]+=tmp[index];
+                        }
+                        else{
+                             //printf("ZUT %d  %d  %d %d  %d\n",p_image,x_image,y_image,sizeImageY,index,n);
+                        }
+                    }
+                    else{m[p_image]=-.1;}
+                    
+                }
+	        }
+		}
+		__syncthreads();
+		//for (int i=0;i<sizePSF;i++){
+		/*for (int i=0;i<1;i++){
+		    int power=1;
+
+		    for (int ii=0;ii<i;ii++){
+
+		        power*=2;
+
+		    }
+
+		    if ((id)%(2*power)==0){//if middle of convol kernel is even
+		        int pp=power;
+		        if (power
+
+		        int index=id+power*sizePSF*sizePSF+power;
+
+		        if (index<n){
+
+		            //tmp[id]+=tmp[index];
+		            tmp[id]=(float)index;
+
+	            }
+
+	        }
+
+		}*/
+			
+    }
+
+
+
+}
+
+
+
+
+//convolution: apply local min
+extern "C"
+__global__ void vec_localMinimum(int n, int sizeImageX, int sizeImageY, int sizePSF,float *result, float *image)
+{
+	int idx = threadIdx.x + blockIdx.x * blockDim.x;
+	int idy = threadIdx.y + blockIdx.y * blockDim.y;
+	int id = idy * gridDim.x * blockDim.x + idx;
+	
+	
+	
+	int x_image=id/sizeImageY;
+	int y_image=id%sizeImageY;
+	
+	int px;
+	int py;
+	int i;
+	int ii;
+	int dist;
+	if (id < n)
+    {
+        //initialize m to 0
+        result[id]=image[id];
+	    
+		
+		
+		//search min
+	    for (i=0,px=x_image-sizePSF/2;i<sizePSF;i++,px++){
+	        for (ii=0,py=y_image-sizePSF/2;ii<sizePSF;ii++,py++){
+	            
+	            if ((px<sizeImageX)&&(py<sizeImageY)&&(px>=0)&&(py>=0)){
+	                
+                    dist=sqrt((float)(((sizePSF/2)-i)*((sizePSF/2)-i)+((sizePSF/2)-ii)*((sizePSF/2)-ii)));
+	                if (dist<=sizePSF/2){
+                        result[id]=fmin(image[px*sizeImageY+py],result[id]);
+                    }
+                    
+                }
+            }
+        }
+        
+        
+        
+    }
+
+
+
+}
+
+
+
+
+
+
+//convolution: apply local max
+extern "C"
+__global__ void vec_localMaximum(int n, int sizeImageX, int sizeImageY, int sizePSF,float *result, float *image)
+{
+	int idx = threadIdx.x + blockIdx.x * blockDim.x;
+	int idy = threadIdx.y + blockIdx.y * blockDim.y;
+	int id = idy * gridDim.x * blockDim.x + idx;
+	
+	
+	
+	int x_image=id/sizeImageY;
+	int y_image=id%sizeImageY;
+	
+	int px;
+	int py;
+	int i;
+	int ii;
+	int dist;
+	
+	if (id < n)
+    {
+        //initialize m to 0
+        result[id]=image[id];
+	    
+		
+		
+		//search max
+	    for (i=0,px=x_image-sizePSF/2;i<sizePSF;i++,px++){
+	        for (ii=0,py=y_image-sizePSF/2;ii<sizePSF;ii++,py++){
+	            
+	            if ((px<sizeImageX)&&(py<sizeImageY)&&(px>=0)&&(py>=0)){
+	                dist=sqrt((float)(((sizePSF/2)-i)*((sizePSF/2)-i)+((sizePSF/2)-ii)*((sizePSF/2)-ii)));
+	                if (dist<sizePSF/2){
+                        result[id]=fmax(image[px*sizeImageY+py],result[id]);
+                    }
+                    
+                }
+            }
+        }
+        
+        
+        
+    }
+
+
+
+}
+
+
+
+
+//convolution: apply local mean
+extern "C"
+__global__ void vec_localMean(int n, int sizeImageX, int sizeImageY, int sizePSF,float *result, float *image)
+{
+	int idx = threadIdx.x + blockIdx.x * blockDim.x;
+	int idy = threadIdx.y + blockIdx.y * blockDim.y;
+	int id = idy * gridDim.x * blockDim.x + idx;
+	
+	
+	
+	int x_image=id/sizeImageY;
+	int y_image=id%sizeImageY;
+	
+	int px;
+	int py;
+	int i;
+	int ii;
+	int dist;
+	float mean;
+	float count;
+	if (id < n)
+    {
+        //initialize m to 0
+        mean=0;
+	    count=0;
+		
+		
+		//search max
+	    for (i=0,px=x_image-sizePSF/2;i<sizePSF;i++,px++){
+	        for (ii=0,py=y_image-sizePSF/2;ii<sizePSF;ii++,py++){
+	            
+	            if ((px<sizeImageX)&&(py<sizeImageY)&&(px>=0)&&(py>=0)){
+	                dist=sqrt((float)(((sizePSF/2)-i)*((sizePSF/2)-i)+((sizePSF/2)-ii)*((sizePSF/2)-ii)));
+	                if (dist<=sizePSF/2){
+                        mean+=image[px*sizeImageY+py];
+                        count++;
+                    }
+                    
+                }
+            }
+        }
+        result[id]=mean/count;
+        
+        
+    }
+
+
+
+}
+
+
+
+
+//convolution: fast if psfsize roughly < 6x6
+extern "C"
+__global__ void vec_manualFiltering (int n, int sizeImageX, int sizeImageY, int sizePSF,float *m, float *o,  float *psf)
+{
+	int idx = threadIdx.x + blockIdx.x * blockDim.x;
+	int idy = threadIdx.y + blockIdx.y * blockDim.y;
+	int id = idy * gridDim.x * blockDim.x + idx;
+	
+	
+	
+	int x_image=id/sizeImageY;
+	int y_image=id%sizeImageY;
+	
+	int count;
+	int px;
+	int py;
+	int i;
+	int ii;
+	if (id < n)
+    {
+        //initialize m to 0
+	    m[id]=0;
+		
+        
+		
+		
+		//compute convolution for one single image
+		
+		
+		count=0;
+	    for (i=0,px=x_image-sizePSF/2;i<sizePSF;i++,px++){
+	        for (ii=0,py=y_image-sizePSF/2;ii<sizePSF;ii++,py++){
+	            
+	            if ((px<sizeImageX)&&(py<sizeImageY)&&(px>=0)&&(py>=0)){
+                    m[id]+=o[px*sizeImageY+py]*psf[i*sizePSF+ii];
+                    count++;
+                }
+            }
+        }
+        m[id]/=(float)count;
+    }
+
+
+
+}
+
+
+
+
+
+
+
+//perform M=\sum_z(o_z*psf_z)+bckg, where * corresponds to convolution operator
+extern "C"
+__global__ void vec_manualFilteringStacked (int n, int sizeImageX, int sizeImageY, int sizePSF,int nbPSF,float *res, float *o,  float *psf)
+{
+	int idx = threadIdx.x + blockIdx.x * blockDim.x;
+	int idy = threadIdx.y + blockIdx.y * blockDim.y;
+	int ids = idy * gridDim.x * blockDim.x + idx;
+	
+	int s=ids%nbPSF;
+	int id=ids/nbPSF;
+	int x_image=id/sizeImageY;
+	int y_image=id%sizeImageY;
+	
+	int count;
+	int px;
+	int py;
+	int i;
+	int ii;
+	int shift=s*sizeImageY*sizeImageX;
+    
+	if (id < n)
+    {
+        
+        //initialize m to 0
+        
+	    res[ids]=0;
+		
+		//compute convolution for one single image
+		
+		count=0;
+	    for (i=0,px=x_image-sizePSF/2;i<sizePSF;i++,px++){
+	        for (ii=0,py=y_image-sizePSF/2;ii<sizePSF;ii++,py++){
+	            
+	            if ((px<sizeImageX)&&(py<sizeImageY)&&(px>=0)&&(py>=0)){
+                    res[ids]+=o[shift+px*sizeImageY+py]*psf[i*sizePSF+ii];
+                    count++;
+                }
+            }
+        }
+        res[ids]/=(float)count;
+    }
+}
+
+
+
+
+
+
+
+
+
+
+//convolution
+extern "C"
+__global__ void vec_manualFilteringFast (long n, long sizeImageX, long sizeImageY, long sizePSF,float *m, float *o,  float *psf)
+{
+	long idx = threadIdx.x + blockIdx.x * blockDim.x;
+	long idy = threadIdx.y + blockIdx.y * blockDim.y;
+	long id = idy * gridDim.x * blockDim.x + idx;
+	
+	
+	
+	long p_psf=(long)(id%(long)(sizePSF*sizePSF));//reste
+	//long x_psf=p_psf/sizePSF;
+	//long y_psf=p_psf%sizePSF;
+	
+	long p_image=(long)(id/(long)(sizePSF*sizePSF));//position
+	long x_image=p_image/sizeImageY;
+	long y_image=p_image%sizeImageY;
+	
+	
+	//long p_image=id/(sizePSF*sizePSF);
+	//long p_psf=id%(sizePSF*sizePSF);
+	
+	
+	//int x_image=p_image/sizeImageY;
+	//int y_image=p_image%sizeImageY;
+	int x_psf=(int)p_psf/sizePSF;
+	int y_psf=(int)p_psf%sizePSF;
+	
+	
+	
+	if (id < n)
+    {   
+        
+        int xx_im=x_image+x_psf-sizePSF/2;
+        int yy_im=y_image+y_psf-sizePSF/2;
+        long o_posit=(xx_im)*sizeImageY+(yy_im);
+        //long m_posit=(p_image)*sizePSF*sizePSF+p_psf   ==   id ;
+        
+        if ((xx_im<sizeImageX)&&(yy_im<sizeImageY)&&(xx_im>=0)&&(yy_im>=0)){
+            
+            printf("m_posit:%ld   p_im:%ld   p_psf:%ld  x_psf:%d    y_psf:%d        o_posit:%ld      n:%ld    v_im:%f   v_psf:%f\n",id,p_image,p_psf,x_psf,y_psf,o_posit,n,o[o_posit],psf[p_psf]);
+            
+            //initialize m to 0
+	        m[id]=o[o_posit]*psf[sizePSF*sizePSF - (int)p_psf - 1];
+	    }
+		
+    }
+
+
+
+}
+
+
+
+
+
+
+
+//convolution
+extern "C"
+__global__ void vec_manualFilteringStackedFast (long n, long sizeImageX, long sizeImageY, long sizePSF, long nbPSF,float *m, float *o,  float *psf)
+{
+	long idx = threadIdx.x + blockIdx.x * blockDim.x;
+	long idy = threadIdx.y + blockIdx.y * blockDim.y;
+	long ids = idy * gridDim.x * blockDim.x + idx;
+	
+	long id = ids/nbPSF;
+	long s = ids%nbPSF;
+	
+	long p_psf=(long)(id%(long)(sizePSF*sizePSF));//reste
+	//long x_psf=p_psf/sizePSF;
+	//long y_psf=p_psf%sizePSF;
+	
+	long p_image=(long)(id/(long)(sizePSF*sizePSF));//position
+	long x_image=p_image/sizeImageY;
+	long y_image=p_image%sizeImageY;
+	
+	
+	//long p_image=id/(sizePSF*sizePSF);
+	//long p_psf=id%(sizePSF*sizePSF);
+	
+	
+	//int x_image=p_image/sizeImageY;
+	//int y_image=p_image%sizeImageY;
+	int x_psf=(int)p_psf/sizePSF;
+	int y_psf=(int)p_psf%sizePSF;
+	
+	
+	
+	if (id < n)
+    {   
+        
+        int xx_im=x_image+x_psf-sizePSF/2;
+        int yy_im=y_image+y_psf-sizePSF/2;
+        long o_posit=s*sizeImageX*sizeImageY + (xx_im)*sizeImageY+(yy_im);
+        //long m_posit=(p_image)*sizePSF*sizePSF+p_psf   ==   id ;
+        
+        if ((xx_im<sizeImageX)&&(yy_im<sizeImageY)&&(xx_im>=0)&&(yy_im>=0)){
+            
+            //printf("m_posit:%ld   p_im:%ld   p_psf:%ld  x_psf:%d    y_psf:%d        o_posit:%ld      n:%ld    v_im:%f   v_psf:%f\n",id,p_image,p_psf,x_psf,y_psf,o_posit,n,o[o_posit],psf[p_psf]);
+            
+            //initialize m to 0
+	        m[ids]=o[o_posit]*psf[sizePSF*sizePSF - (int)p_psf - 1];
+	    }
+		
+    }
+
+
+
+}
+
+
+
+
+
+
+
+
 
 
 

@@ -355,11 +355,11 @@ public class DataPhase {
             if (lin[0].startsWith("sigma")){
                 double sigmaGaussianKernel=Double.parseDouble(lin[1]);
                 
-                param = new PhaseParameters(sizeFFT,sizeFFT,order,xystep,zstep,wavelength,noil,na,1,sigmaGaussianKernel,false);
+                param = new PhaseParameters(path,sizeFFT,sizeFFT,order,xystep,zstep,wavelength,noil,na,1,sigmaGaussianKernel,false);
                 ligne=br.readLine();
             }
             else{
-                param = new PhaseParameters(sizeFFT,sizeFFT,order,xystep,zstep,wavelength,noil,na,1,1,false);
+                param = new PhaseParameters(path,sizeFFT,sizeFFT,order,xystep,zstep,wavelength,noil,na,1,1,false);
             }
             param.pathcalib=path+".csv";
             //IJ.log("sigGauss "+param.sigmaGaussianKernel);
@@ -728,12 +728,18 @@ public class DataPhase {
             if (param.zernikedPSF){
                 //JSONArray zernikelist = new JSONArray();
                 double [] zer = new double[phaseZer.numCoef];
+                int [] zer_n = new int[phaseZer.numCoef];
+                int [] zer_m = new int[phaseZer.numCoef];
                 for (int i=0;i<phaseZer.numCoef;i++){
                     //zernikelist.add(phaseZer.getA(i));
                     zer[i]=phaseZer.getA(i);
+                    zer_m[i]=phaseZer.zernike_m[i];
+                    zer_n[i]=phaseZer.zernike_n[i];
                     //IJ.log("save "+i+"  "+phaseZer.getA(i));
 
                 }
+                obj.put("azimuthal", zer_m);
+                obj.put("radial", zer_n);
                 obj.put("zernike", zer);
             }
             else{

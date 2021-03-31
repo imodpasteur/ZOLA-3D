@@ -24,12 +24,16 @@ import java.util.concurrent.locks.ReentrantLock;
 public class DualCamLocalizationPipeline_ {
     
     
+    int [][] statut_local;
+    
     ArrayList<String> otherVariableName = new ArrayList<String>();
     
     StackLocalization stackloc;
     boolean saveOnTheFly=false;
     
     ReentrantLock lock = new ReentrantLock();
+    
+    
     
     int iterMaxLocalization=20;
             
@@ -45,6 +49,8 @@ public class DualCamLocalizationPipeline_ {
     
     int nbStream;
     int nbThread;
+    
+    static int processingFrame=0;//frame index that is computed (shared variable by LocalizationThread stream/thread)
     
     int numberFrameAfterMerging=0;
     
@@ -64,6 +70,9 @@ public class DualCamLocalizationPipeline_ {
     
     StackLocalization sl1fuse;
     StackLocalization sl2fuse;
+    
+    StackLocalization sl1unfuse;
+    StackLocalization sl2unfuse;
     
     PolynomialFit pf;//registration parameter
     
@@ -101,12 +110,12 @@ public class DualCamLocalizationPipeline_ {
     double rescale_slope2;
     double rescale_intercept2;
             
-    public DualCamLocalizationPipeline_(String imageCam1,StackLocalization sl1,DataPhase_ dp1,String imageCam2,StackLocalization sl2,DataPhase_ dp2,String pathResFusion,double maxDistanceMergingXY,int nbStream, int nbThread,double adu, double gain1,double offset,double gain2){
+    public DualCamLocalizationPipeline_(String imageCam1,StackLocalization sl1,DataPhase_ dp1,String imageCam2,StackLocalization sl2,DataPhase_ dp2,String pathResFusion,double maxDistanceMergingXY,int nbStream, int nbThread,double adu1, double gain1,double offset1,double adu2, double gain2,double offset2){
         
-        this.rescale_slope1=adu/gain1;
-        this.rescale_intercept1=-offset*adu/gain1;
-        this.rescale_slope2=adu/gain2;
-        this.rescale_intercept2=-offset*adu/gain2;
+        this.rescale_slope1=adu1/gain1;
+        this.rescale_intercept1=-offset1*adu1/gain1;
+        this.rescale_slope2=adu2/gain2;
+        this.rescale_intercept2=-offset2*adu2/gain2;
         
         
         this.path_localization=pathResFusion;
@@ -190,8 +199,6 @@ public class DualCamLocalizationPipeline_ {
         dp2.param.ZfocusCenter=spc2.getPosition();
             
         
-        
-        
         this.dp=new DataPhase_[nbStream][2];
         for (int u=0;u<nbStream;u++){
             dp[u][0]=new DataPhase_(dp1,u*2);
@@ -240,9 +247,9 @@ public class DualCamLocalizationPipeline_ {
                 }
             }
 
-
+            IJ.log("THREADS "+nbStream+"  "+nbThread);
             LocalizationThread [][] lt = new LocalizationThread[nbStream][nbThread];
-
+            statut_local=new int[nbStream][nbThread];
 
             for (int ip=0;ip<lt.length;ip++){
                 for (int i=0;i<lt[0].length;i++){
@@ -258,7 +265,8 @@ public class DualCamLocalizationPipeline_ {
                     lt[ip][i].start();
                 }
             }
-
+            Printer printer = new Printer(15000);
+            printer.start();
 
 
 
@@ -269,7 +277,12 @@ public class DualCamLocalizationPipeline_ {
                     }catch(Exception eeee){System.out.println("join lt impossible");}
                 }
             }
-
+            
+            //try{
+            //    Thread.sleep(500000);
+            //}catch(Exception zdgvzrevkizev){}
+            
+            
             for (int up=0;up<nbStream;up++){
                 for (int u=0;u<nbThread;u++){
                     loc[up][u].kill();
@@ -289,20 +302,23 @@ public class DualCamLocalizationPipeline_ {
 
             IJ.log("elapsed time = "+((double)(timeEnd-timeBegin))/60000.+" min");
             
+            dp1.free();
+            dp2.free();
             for (int u=0;u<nbStream;u++){
                 dp[u][0].free();
                 dp[u][1].free();
             }
-        
+            
             IJ.showStatus("localization finished");
             return stackloc;
         }
         else{
+            dp1.free();
+            dp2.free();
             for (int u=0;u<nbStream;u++){
                 dp[u][0].free();
                 dp[u][1].free();
-                dp1.free();
-                dp2.free();
+                
             }
             return null;
         }
@@ -331,10 +347,12 @@ public class DualCamLocalizationPipeline_ {
         
     
     
-    
         sl1fuse=new StackLocalization();
         sl2fuse=new StackLocalization();
         
+        
+        org.pasteur.imagej.postprocess.RegistrationCrossCorrel reg = new org.pasteur.imagej.postprocess.RegistrationCrossCorrel(sl1,sl2,(int)Math.ceil(sizePix));
+        double [] lateralShift=reg.getShift();
         
         
         int [][] idFrameCam1=new int[sl1.fl.size()][2];
@@ -413,8 +431,8 @@ public class DualCamLocalizationPipeline_ {
                     if (minY>y){
                         minY=y;
                     }
-                    if (minZ>z){
-                        minZ=z;
+                    if (minZ>z/1000.){
+                        minZ=z/1000.;
                     }
                     if (maxZ<z/1000.){
                         maxZ=z/1000.;
@@ -465,6 +483,8 @@ public class DualCamLocalizationPipeline_ {
             
             
             int shift=(int)Math.ceil(maxDistanceMergingXY/(sizePix));
+            int latshiftX=(int)Math.ceil(lateralShift[0]/sizePix);
+            int latshiftY=(int)Math.ceil(lateralShift[1]/sizePix);
             
             int posX1,posY1,posX2,posY2;
             double distance,distZ,xx,yy,zz;
@@ -474,6 +494,8 @@ public class DualCamLocalizationPipeline_ {
             if (frameFound){
                 FrameLocalization fl1fuse=new FrameLocalization(numframe1);
                 FrameLocalization fl2fuse=new FrameLocalization(numframe1);
+                FrameLocalization fl1unfuse=new FrameLocalization(numframe1);
+                FrameLocalization fl2unfuse=new FrameLocalization(numframe1);
                 
                 boolean atLeastOnePartFound=false;
                 
@@ -505,16 +527,16 @@ public class DualCamLocalizationPipeline_ {
                     int idPartFound=-1;
                     if ((sl2.fl.get(id2).loc.get(j).X>=0)&&(sl2.fl.get(id2).loc.get(j).Y>=0)){
                         //search in the matrix the closest
-                        for (int u=posX2-shift;u<=posX2+shift;u++){
-                            for (int v=posY2-shift;v<=posY2+shift;v++){
+                        for (int u=posX2-shift-latshiftX;u<=posX2+shift-latshiftX;u++){
+                            for (int v=posY2-shift-latshiftY;v<=posY2+shift-latshiftY;v++){
                                 if ((u>=0)&&(v>=0)&&(u<width)&&(v<height)){
                                     if (idLoc[u][v]!=-1){
                                         if (idPartFound==-1){
                                             //new particle
 
 
-                                            xx=((sl2.fl.get(id2).loc.get(j).X) - (sl1.fl.get(id1).loc.get(idLoc[u][v]).X));
-                                            yy=((sl2.fl.get(id2).loc.get(j).Y) - (sl1.fl.get(id1).loc.get(idLoc[u][v]).Y));
+                                            xx=((sl2.fl.get(id2).loc.get(j).X)-lateralShift[0] - (sl1.fl.get(id1).loc.get(idLoc[u][v]).X));
+                                            yy=((sl2.fl.get(id2).loc.get(j).Y)-lateralShift[1] - (sl1.fl.get(id1).loc.get(idLoc[u][v]).Y));
                                             zz=((sl2.fl.get(id2).loc.get(j).Z) - (sl1.fl.get(id1).loc.get(idLoc[u][v]).Z));
                                             distZ=Math.sqrt(zz*zz);
                                             distance=Math.sqrt(xx*xx+yy*yy);
@@ -525,11 +547,12 @@ public class DualCamLocalizationPipeline_ {
                                         }
                                         else{
                                             //not new -> compare distance
-                                            xx=((sl2.fl.get(id2).loc.get(j).X) - (sl1.fl.get(id1).loc.get(idLoc[u][v]).X));
-                                            yy=((sl2.fl.get(id2).loc.get(j).Y) - (sl1.fl.get(id1).loc.get(idLoc[u][v]).Y));
+                                            xx=((sl2.fl.get(id2).loc.get(j).X)-lateralShift[0] - (sl1.fl.get(id1).loc.get(idLoc[u][v]).X));
+                                            yy=((sl2.fl.get(id2).loc.get(j).Y)-lateralShift[1] - (sl1.fl.get(id1).loc.get(idLoc[u][v]).Y));
                                             zz=((sl2.fl.get(id2).loc.get(j).Z) - (sl1.fl.get(id1).loc.get(idLoc[u][v]).Z));
                                             distZ=Math.sqrt(zz*zz);
                                             distance=Math.sqrt(xx*xx+yy*yy);
+                                            
                                             if ((distance<maxDistanceMergingXY)&&(distance<prevDistance)){
                                                 idPartFound=idLoc[u][v];
                                                 prevDistance=distance;
@@ -676,7 +699,6 @@ public class DualCamLocalizationPipeline_ {
                 //WARNING: data1 fits data2 here. it is normal for dual localization next
                 //in fact, it will be use to shift the coordinate of cam1 to cam2
                 pf.run();
-                
                 IJ.log("size "+pf.a.length+"  "+pf.a[0].length);
                 
                 //doing the following: no registration
@@ -687,7 +709,7 @@ public class DualCamLocalizationPipeline_ {
                 pf.a[0][4]=0;
                 pf.a[0][5]=0;
                 pf.a[0][6]=0;
-                
+                IJ.log("WARNING  WARNING  WARNING  WARNING   no automatic registration");IJ.log("WARNING  WARNING  WARNING  WARNING   no automatic registration");IJ.log("WARNING  WARNING  WARNING  WARNING   no automatic registration");IJ.log("WARNING  WARNING  WARNING  WARNING   no automatic registration");IJ.log("WARNING  WARNING  WARNING  WARNING   no automatic registration");IJ.log("WARNING  WARNING  WARNING  WARNING   no automatic registration");IJ.log("WARNING  WARNING  WARNING  WARNING   no automatic registration");IJ.log("WARNING  WARNING  WARNING  WARNING   no automatic registration");IJ.log("WARNING  WARNING  WARNING  WARNING   no automatic registration");IJ.log("WARNING  WARNING  WARNING  WARNING   no automatic registration");IJ.log("WARNING  WARNING  WARNING  WARNING   no automatic registration");IJ.log("WARNING  WARNING  WARNING  WARNING   no automatic registration");IJ.log("WARNING  WARNING  WARNING  WARNING   no automatic registration");IJ.log("WARNING  WARNING  WARNING  WARNING   no automatic registration");IJ.log("WARNING  WARNING  WARNING  WARNING   no automatic registration");IJ.log("WARNING  WARNING  WARNING  WARNING   no automatic registration");IJ.log("WARNING  WARNING  WARNING  WARNING   no automatic registration");IJ.log("WARNING  WARNING  WARNING  WARNING   no automatic registration");IJ.log("WARNING  WARNING  WARNING  WARNING   no automatic registration");IJ.log("WARNING  WARNING  WARNING  WARNING   no automatic registration");IJ.log("WARNING  WARNING  WARNING  WARNING   no automatic registration");IJ.log("WARNING  WARNING  WARNING  WARNING   no automatic registration");IJ.log("WARNING  WARNING  WARNING  WARNING   no automatic registration");IJ.log("WARNING  WARNING  WARNING  WARNING   no automatic registration");IJ.log("WARNING  WARNING  WARNING  WARNING   no automatic registration");IJ.log("WARNING  WARNING  WARNING  WARNING   no automatic registration");IJ.log("WARNING  WARNING  WARNING  WARNING   no automatic registration");IJ.log("WARNING  WARNING  WARNING  WARNING   no automatic registration");IJ.log("WARNING  WARNING  WARNING  WARNING   no automatic registration");IJ.log("WARNING  WARNING  WARNING  WARNING   no automatic registration");IJ.log("WARNING  WARNING  WARNING  WARNING   no automatic registration");IJ.log("WARNING  WARNING  WARNING  WARNING   no automatic registration");IJ.log("WARNING  WARNING  WARNING  WARNING   no automatic registration");IJ.log("WARNING  WARNING  WARNING  WARNING   no automatic registration");IJ.log("WARNING  WARNING  WARNING  WARNING   no automatic registration");IJ.log("WARNING  WARNING  WARNING  WARNING   no automatic registration");IJ.log("WARNING  WARNING  WARNING  WARNING   no automatic registration");
                 pf.a[1][0]=0;
                 pf.a[1][1]=0;
                 pf.a[1][2]=0;
@@ -696,13 +718,13 @@ public class DualCamLocalizationPipeline_ {
                 pf.a[1][5]=0;
                 pf.a[1][6]=0;
                 
-                pf.a[2][0]=7.34;
+                pf.a[2][0]=.5;
                 pf.a[2][1]=0;
                 pf.a[2][2]=0;
                 pf.a[2][3]=0;
                 pf.a[2][4]=0;
                 pf.a[2][5]=0;
-                pf.a[2][6]=-1;*/
+                pf.a[2][6]=1;//-1:double objectif / +1:biplan*/
                 
                 pf.log();
                 
@@ -742,6 +764,8 @@ public class DualCamLocalizationPipeline_ {
                 pfinit.removeParameter(7);//remove X.Z component
                 
                 
+                
+                
                 pfinit.run();
                 
                 //doing the following: no registration
@@ -752,7 +776,7 @@ public class DualCamLocalizationPipeline_ {
                 pfinit.a[0][4]=0;
                 pfinit.a[0][5]=0;
                 pfinit.a[0][6]=0;
-                
+                IJ.log("WARNING  WARNING  WARNING  WARNING   no automatic registration");IJ.log("WARNING  WARNING  WARNING  WARNING   no automatic registration");IJ.log("WARNING  WARNING  WARNING  WARNING   no automatic registration");IJ.log("WARNING  WARNING  WARNING  WARNING   no automatic registration");IJ.log("WARNING  WARNING  WARNING  WARNING   no automatic registration");IJ.log("WARNING  WARNING  WARNING  WARNING   no automatic registration");IJ.log("WARNING  WARNING  WARNING  WARNING   no automatic registration");IJ.log("WARNING  WARNING  WARNING  WARNING   no automatic registration");IJ.log("WARNING  WARNING  WARNING  WARNING   no automatic registration");IJ.log("WARNING  WARNING  WARNING  WARNING   no automatic registration");IJ.log("WARNING  WARNING  WARNING  WARNING   no automatic registration");IJ.log("WARNING  WARNING  WARNING  WARNING   no automatic registration");IJ.log("WARNING  WARNING  WARNING  WARNING   no automatic registration");IJ.log("WARNING  WARNING  WARNING  WARNING   no automatic registration");IJ.log("WARNING  WARNING  WARNING  WARNING   no automatic registration");IJ.log("WARNING  WARNING  WARNING  WARNING   no automatic registration");IJ.log("WARNING  WARNING  WARNING  WARNING   no automatic registration");IJ.log("WARNING  WARNING  WARNING  WARNING   no automatic registration");IJ.log("WARNING  WARNING  WARNING  WARNING   no automatic registration");IJ.log("WARNING  WARNING  WARNING  WARNING   no automatic registration");IJ.log("WARNING  WARNING  WARNING  WARNING   no automatic registration");IJ.log("WARNING  WARNING  WARNING  WARNING   no automatic registration");IJ.log("WARNING  WARNING  WARNING  WARNING   no automatic registration");IJ.log("WARNING  WARNING  WARNING  WARNING   no automatic registration");
                 pfinit.a[1][0]=0;
                 pfinit.a[1][1]=0;
                 pfinit.a[1][2]=0;
@@ -761,13 +785,13 @@ public class DualCamLocalizationPipeline_ {
                 pfinit.a[1][5]=0;
                 pfinit.a[1][6]=0;
                 
-                pfinit.a[2][0]=7.34*1000;
+                pfinit.a[2][0]=500;
                 pfinit.a[2][1]=0;
                 pfinit.a[2][2]=0;
                 pfinit.a[2][3]=0;
                 pfinit.a[2][4]=0;
                 pfinit.a[2][5]=0;
-                pfinit.a[2][6]=-1;*/
+                pfinit.a[2][6]=1;//-1:double objectif / +1:biplan*/
                 
                 //IJ.log("poly fit...2");
 
@@ -859,7 +883,46 @@ public class DualCamLocalizationPipeline_ {
     
  
 
-
+    class Printer extends Thread{
+        int time_ms;
+        Printer(int time_ms){
+            this.time_ms=time_ms;
+        }
+        public void run(){
+            try{
+                
+                while (true){
+                    Thread.sleep(time_ms);
+                    for (int i=0;i<nbStream;i++){
+                        IJ.log("STREAM "+i+"  cam 0 modelNumber"+dp[i][0].modelMany.numberModel);
+                        IJ.log("STREAM "+i+"  cam 0 comp_number"+dp[i][0].modelMany.numberModelToCompute);
+                        IJ.log("STREAM "+i+"  cam 1 modelNumber"+dp[i][1].modelMany.numberModel);
+                        IJ.log("STREAM "+i+"  cam 1 comp_number"+dp[i][1].modelMany.numberModelToCompute);
+                        String statut0="stream("+i+") cam1  statut:";
+                        String statut1="stream("+i+") cam2  statut:";
+                        for (int k=0;k<nbThread;k++){
+                            statut0+=" "+loc[i][k].statut[0];
+                            statut1+=" "+loc[i][k].statut[1];
+                        }
+                        IJ.log(""+statut0);
+                        IJ.log(""+statut1);
+                        
+                        
+                        String statut_local0="stream("+i+") cam1  slocal:";
+                        String statut_local1="stream("+i+") cam2  slocal:";
+                        for (int k=0;k<nbThread;k++){
+                            statut_local0+=" "+statut_local[i][k];
+                            statut_local1+=" "+statut_local[i][k];
+                        }
+                        IJ.log(""+statut_local0);
+                        IJ.log(""+statut_local1);
+                    }
+                    
+                }
+                
+            }catch(Exception e){}
+        }
+    }
 
 
     
@@ -888,6 +951,8 @@ public class DualCamLocalizationPipeline_ {
     
         double [][] patch;
         int idStream, idThread;
+        
+        
 
         LocalizationThread(int idStream, int idThread){
             this.idStream=idStream;
@@ -896,12 +961,12 @@ public class DualCamLocalizationPipeline_ {
         }
 
         public void run(){
-
+            statut_local[idStream][idThread]=0;
 
             //IJ.log("id "+idStream+" / "+nbStream+"      "+idThread+" / "+nbThread);
 
 
-
+            int numberPerStream=0;
 
            int width1=ims1.getWidth();
            int height1=ims1.getHeight();
@@ -930,237 +995,257 @@ public class DualCamLocalizationPipeline_ {
 
            ImageProcessor ip1=null;
            ImageProcessor ip2=null;
+           boolean stop=false;
            
-           
-           for (int i=idStream*nbThread+idThread,t=0;i<sl1fuse.fl.size();i+=nbStream*nbThread){//Here, each stream process different images
+           looper:while (!stop && processingFrame<sl1fuse.fl.size()){//Here, each stream process different images
+               statut_local[idStream][idThread]=1;
+               int i=-1;
+               try{
+                lock.lock();
+                    i=processingFrame;
+                    processingFrame++;
+                    
+                    //IJ.log(""+idLoc);
+                }
+                finally{
+                    lock.unlock();
+                }
                
-               if (i%(nbStream*nbThread)==0){
+               statut_local[idStream][idThread]=2;
+               
+               if (i%(100)==0){
                    IJ.showProgress(((float)i)/(float)(sl1fuse.fl.size()));
                }
                int theframe=-1;
                FrameLocalization fl=null;
-               IJ.log("process image "+i);
+               //IJ.log("process image "+nbStream+"  "+i);
                //for (int j=0;j<Math.min(sl1fuse.fl.get(i).loc.size(), 2);j++){IJ.log("WARNING: DualCamLoc: 2 loc per frame only");
-                for (int j=0;j<sl1fuse.fl.get(i).loc.size();j++){
+               if (i<sl1fuse.fl.size()){
+                    for (int j=0;j<sl1fuse.fl.get(i).loc.size();j++){
 
-                   x1=sl1fuse.fl.get(i).loc.get(j).X;
-                   
-                   y1=sl1fuse.fl.get(i).loc.get(j).Y;
-                   z1=sl1fuse.fl.get(i).loc.get(j).Z;
-                   a[0][0]=sl1fuse.fl.get(i).loc.get(j).I;
-                   b[0]=sl1fuse.fl.get(i).loc.get(j).BG;
-                   dx1=sl1fuse.fl.get(i).loc.get(j).drift_X;
-                   dy1=sl1fuse.fl.get(i).loc.get(j).drift_Y;
-                   dz1=sl1fuse.fl.get(i).loc.get(j).drift_Z;
-                   
-                   theframe=sl1fuse.fl.get(i).loc.get(j).frame;
-                   
-                   if (j==0){
-                       ip1=ims1.getProcessor(theframe+1);
-                       ip2=ims2.getProcessor(theframe+1);
-                       fl=new FrameLocalization(theframe);
-                   }
+                       x1=sl1fuse.fl.get(i).loc.get(j).X;
 
-                   x2=sl2fuse.fl.get(i).loc.get(j).X;
-                   double xsave=x2;
-                   y2=sl2fuse.fl.get(i).loc.get(j).Y;
-                   z2=sl2fuse.fl.get(i).loc.get(j).Z;
-                   a[1][0]=sl2fuse.fl.get(i).loc.get(j).I;
-                   b[1]=sl2fuse.fl.get(i).loc.get(j).BG;
-                   dx2=sl2fuse.fl.get(i).loc.get(j).drift_X;
-                   dy2=sl2fuse.fl.get(i).loc.get(j).drift_Y;
-                   dz2=sl2fuse.fl.get(i).loc.get(j).drift_Z;
-                   
-                   
-                   x1=((x1+dx1)/1000.)/dp[idStream][0].param.xystep;
-                   y1=((y1+dy1)/1000.)/dp[idStream][0].param.xystep;
-                   z1=(z1+dz1)/1000.;
-                           
-                   x2=((x2+dx2)/1000.)/dp[idStream][1].param.xystep;
-                   y2=((y2+dy2)/1000.)/dp[idStream][1].param.xystep;
-                   z2=(z2+dz2)/1000.;
-                   
-                   xint1 = (int)(x1);
-                   yint1 = (int)(y1);
-
-                   xint2 = (int)(x2);
-                   yint2 = (int)(y2);
-
-                   x1-=xint1;
-                   y1-=yint1;
-
-                   x2-=xint2;
-                   y2-=yint2;
-                   
-                   x1*=dp[idStream][0].param.xystep;
-                   y1*=dp[idStream][0].param.xystep;
-
-                   x2*=dp[idStream][1].param.xystep;
-                   y2*=dp[idStream][1].param.xystep;
-
-                   xbeg1=xint1-sizePatch/2;
-                   xbeg2=xint2-sizePatch/2;
-
-                   ybeg1=yint1-sizePatch/2;
-                   ybeg2=yint2-sizePatch/2;
-                   
-                   dx1/=1000.;
-                   dy1/=1000.;
-                   dz1/=1000.;
-                   
-                   dx2/=1000.;
-                   dy2/=1000.;
-                   dz2/=1000.;
-                   
-                   
-
-                   if ((xbeg1>=0)&&(xbeg2>=0)&&(ybeg1>=0)&&(ybeg2>=0)&&(xbeg1+sizePatch<width1)&&(xbeg2+sizePatch<width2)&&(ybeg1+sizePatch<height1)&&(ybeg2+sizePatch<height2)){
-                       //IJ.log("ok "+id);
-                       
-                       for (int u=0;u<sizePatch;u++){
-                           for (int uu=0;uu<sizePatch;uu++){
-                               patch[0][u*sizePatch+uu]=ip1.getPixelValue(xbeg1+u, ybeg1+uu)*rescale_slope1+rescale_intercept1;
-                               
-                               patch[1][u*sizePatch+uu]=ip2.getPixelValue(xbeg2+u, ybeg2+uu)*rescale_slope2+rescale_intercept2;
-                               
-                               
-                           }
-                        }
+                       y1=sl1fuse.fl.get(i).loc.get(j).Y;
+                       z1=sl1fuse.fl.get(i).loc.get(j).Z;
 
 
-                        loc[idStream][idThread].setSubWindow(patch);
-                        
-                        
-                        
-                        loc[idStream][idThread].setRegistrationParameters(xint1*dp[idStream][1].param.xystep,yint1*dp[idStream][1].param.xystep,xbeg2*dp[idStream][1].param.xystep-xbeg1*dp[idStream][0].param.xystep,ybeg2*dp[idStream][1].param.xystep-ybeg1*dp[idStream][0].param.xystep,dx1,dy1,dz1,dx2,dy2,dz2,pf,xsave);
+                       a[0][0]=sl1fuse.fl.get(i).loc.get(j).I;
+                       b[0]=sl1fuse.fl.get(i).loc.get(j).BG;
+                       dx1=sl1fuse.fl.get(i).loc.get(j).drift_X;
+                       dy1=sl1fuse.fl.get(i).loc.get(j).drift_Y;
+                       dz1=sl1fuse.fl.get(i).loc.get(j).drift_Z;
 
-                        loc[idStream][idThread].init(a, b, -x1, -y1, z1);
-                        
-                        loc[idStream][idThread].setTmpCam2(-x2, -y2, z2);
-                        
-                        
-                        boolean locate=loc[idStream][idThread].localize();       
-                        
-                        
-                        
-                        if (locate){
-                            
-                            
-                            
-                            if ((Math.abs(loc[idStream][idThread].getX())<5*dp[idStream][0].param.xystep)&&(Math.abs(loc[idStream][idThread].getY())<5*dp[idStream][0].param.xystep)){
-                                int px_pix=(int)(xint1-(loc[idStream][idThread].getX()/dp[idStream][0].param.xystep));
-                                int py_pix=(int)(yint1-(loc[idStream][idThread].getY()/dp[idStream][0].param.xystep));
+                       theframe=sl1fuse.fl.get(i).loc.get(j).frame;
 
-
-                                if ((px_pix>=0)&&(px_pix<width1)&&(py_pix>=0)&&(py_pix<height1)){
+                       if (j==0){
+                           ip1=ims1.getProcessor(theframe+1);
+                           ip2=ims2.getProcessor(theframe+1);
+                           fl=new FrameLocalization(theframe);
+                       }
+                       statut_local[idStream][idThread]=3;
+                       x2=sl2fuse.fl.get(i).loc.get(j).X;
+                       double xsave=x2;
+                       y2=sl2fuse.fl.get(i).loc.get(j).Y;
+                       z2=sl2fuse.fl.get(i).loc.get(j).Z;
+                       a[1][0]=sl2fuse.fl.get(i).loc.get(j).I;
+                       b[1]=sl2fuse.fl.get(i).loc.get(j).BG;
+                       dx2=sl2fuse.fl.get(i).loc.get(j).drift_X;
+                       dy2=sl2fuse.fl.get(i).loc.get(j).drift_Y;
+                       dz2=sl2fuse.fl.get(i).loc.get(j).drift_Z;
 
 
-                                    if ((loc[idStream][idThread].getZ()>minZ)&&(loc[idStream][idThread].getZ()<maxZ)){
-                                        
-                                        double [] modelA=loc[idStream][idThread].getPSF(0);
-                                        double [] modelB=loc[idStream][idThread].getPSF(1);
-                                        
-                                        
-                                        
-                                        
-                                        double my_x=1000*(xint1*dp[idStream][0].param.xystep-loc[idStream][idThread].getX());
-                                        double my_y=1000*(yint1*dp[idStream][0].param.xystep-loc[idStream][idThread].getY());
-                                        double my_z=(1000*loc[idStream][idThread].getZ());
-                                        double my_A=loc[idStream][idThread].getA()[0][0];
-                                        double my_A2=loc[idStream][idThread].getA()[1][0];
-                                        double my_B=loc[idStream][idThread].getB()[0];
-                                        double my_B2=loc[idStream][idThread].getB()[1];
-                                        double my_Score=scoreCompute(patch[0],modelA,patch[1],modelB);
-                                        double my_crlbx=(1000*loc[idStream][idThread].getCRLBX());
-                                        double my_crlby=(1000*loc[idStream][idThread].getCRLBY());
-                                        double my_crlbz=(1000*loc[idStream][idThread].getCRLBZ());
-                                        
-                                        //IJ.log("crlb "+(sl1fuse.fl.get(i).loc.get(j).crlb_X)+"  "+(sl2fuse.fl.get(i).loc.get(j).crlb_X)+"  "+(1000*loc[idStream][idThread].getCRLBX()));
-                                        
-                                        //IJ.log("position:   X:"+my_x+"    Y:"+my_y+"    Z:"+my_z+"    A:"+my_A+"    B:"+my_B);
-                                        
-                                        PLocalization p = new PLocalization(idLoc,theframe,my_x,my_y,my_z,my_A,my_B,my_Score,my_crlbx,my_crlby,my_crlbz);
-                                        p.addListOfVariables(otherVariableName);
-                                        p.setValueOtherVariable(0, my_A2);
-                                        p.setValueOtherVariable(1, my_B2);
-                                        p.setDrift_X(dx1*1000);
-                                        p.setDrift_Y(dy1*1000);
-                                        p.setDrift_Z(dz1*1000);
-                                        
-                                        if (fl!=null){//not necessary to test
-                                            fl.loc.add(p); 
-                                        }
+                       x1=((x1+dx1)/1000.)/dp[idStream][0].param.xystep;
+                       y1=((y1+dy1)/1000.)/dp[idStream][0].param.xystep;
+                       z1=(z1+dz1)/1000.;
+
+                       x2=((x2+dx2)/1000.)/dp[idStream][1].param.xystep;
+                       y2=((y2+dy2)/1000.)/dp[idStream][1].param.xystep;
+                       z2=(z2+dz2)/1000.;
+
+                       xint1 = (int)(x1);
+                       yint1 = (int)(y1);
+
+                       xint2 = (int)(x2);
+                       yint2 = (int)(y2);
+
+                       x1-=xint1;
+                       y1-=yint1;
+
+                       x2-=xint2;
+                       y2-=yint2;
+
+                       x1*=dp[idStream][0].param.xystep;
+                       y1*=dp[idStream][0].param.xystep;
+
+                       x2*=dp[idStream][1].param.xystep;
+                       y2*=dp[idStream][1].param.xystep;
+
+                       xbeg1=xint1-sizePatch/2;
+                       xbeg2=xint2-sizePatch/2;
+
+                       ybeg1=yint1-sizePatch/2;
+                       ybeg2=yint2-sizePatch/2;
+
+                       dx1/=1000.;
+                       dy1/=1000.;
+                       dz1/=1000.;
+
+                       dx2/=1000.;
+                       dy2/=1000.;
+                       dz2/=1000.;
+
+                       statut_local[idStream][idThread]=4;
+
+                       if ((xbeg1>=0)&&(xbeg2>=0)&&(ybeg1>=0)&&(ybeg2>=0)&&(xbeg1+sizePatch<width1)&&(xbeg2+sizePatch<width2)&&(ybeg1+sizePatch<height1)&&(ybeg2+sizePatch<height2)){
+                           //IJ.log("ok "+id);
+
+                           for (int u=0;u<sizePatch;u++){
+                               for (int uu=0;uu<sizePatch;uu++){
+                                   patch[0][u*sizePatch+uu]=ip1.getPixelValue(xbeg1+u, ybeg1+uu)*rescale_slope1+rescale_intercept1;
+
+                                   patch[1][u*sizePatch+uu]=ip2.getPixelValue(xbeg2+u, ybeg2+uu)*rescale_slope2+rescale_intercept2;
 
 
-
-                                        //replacement in mask of the region corresponting to 20% of max PSF
-                                        try{
-                                        lock.lock();
-                                            idLoc++;
-                                        }
-                                        finally{
-                                            lock.unlock();
-                                        }
-                                        
-                                        for (int ij=0,ji=-sizePatch/2;ij<sizePatch;ij++,ji++){
-                                            for (int iij=0,jji=-sizePatch/2;iij<sizePatch;iij++,jji++){
-                                                if (i<nbGlobalMask){
-                                                    try{
-                                                    if ((xint1+ji>=0)&&(xint1+ji<globalmaskA[i].length)&&(yint1+jji>=0)&&(yint1+jji<globalmaskA[i][0].length)){
-                                                        
-                                                        globalmaskA[i][xint1+ji][yint1+jji]=modelA[ij*sizePatch+iij];
-                                                        
-                                                        globalmaskA2[i][xint1+ji][yint1+jji]=patch[0][ij*sizePatch+iij];
-                                                    
-                                                        //globalmaskA[i][xint1][yint1]=loc[idStream][idThread].getZ();
-                                                        //WARNING_____________________________________________________________________WARNING... put xybeg2 to cam [1]
-                                                        //globalmaskB[i][xint1+ji][yint1+jji]=modelB[ij*sizePatch+iij];
-                                                        //globalmaskB2[i][xint1+ji][yint1+jji]=patch[1][ij*sizePatch+iij];
-                                                    }
-                                                    if ((xint2+ji>=0)&&(xint2+ji<globalmaskB[i].length)&&(yint2+jji>=0)&&(yint2+jji<globalmaskB[i][0].length)){
-                                                        globalmaskB[i][xint2+ji][yint2+jji]=modelB[ij*sizePatch+iij];
-                                                        
-                                                        globalmaskB2[i][xint2+ji][yint2+jji]=patch[1][ij*sizePatch+iij];
-                                                    }
-                                                    }
-                                                    catch(Exception ee){
-                                                        
-                                                    }
-                                                }
-                                            }
-                                        }
-                                    }
-                                    
-                                }
-                                
+                               }
                             }
-                            
-                            
-                        }
-                        
-                        
-                        
+
+                           statut_local[idStream][idThread]=5;
+                            loc[idStream][idThread].setSubWindow(patch);
+
+                            statut_local[idStream][idThread]=6;
+
+                            loc[idStream][idThread].setRegistrationParameters(xint1*dp[idStream][1].param.xystep,yint1*dp[idStream][1].param.xystep,xbeg2*dp[idStream][1].param.xystep-xbeg1*dp[idStream][0].param.xystep,ybeg2*dp[idStream][1].param.xystep-ybeg1*dp[idStream][0].param.xystep,dx1,dy1,dz1,dx2,dy2,dz2,pf,xsave);
+                            statut_local[idStream][idThread]=7;
+                            loc[idStream][idThread].init(a, b, -x1, -y1, z1);
+                            statut_local[idStream][idThread]=8;
+                            loc[idStream][idThread].setTmpCam2(-x2, -y2, z2);
+                            statut_local[idStream][idThread]=9;
+
+
+                            boolean locate=loc[idStream][idThread].localize();       
+
+                            statut_local[idStream][idThread]=10;
+
+                            if (locate){
+
+
+
+                                if (true){//((Math.abs(loc[idStream][idThread].getX())<((double)sizePatch/2.)*dp[idStream][0].param.xystep)&&(Math.abs(loc[idStream][idThread].getY())<((double)sizePatch/2.)*dp[idStream][0].param.xystep)){
+                                    int px_pix=(int)(xint1-(loc[idStream][idThread].getX()/dp[idStream][0].param.xystep));
+                                    int py_pix=(int)(yint1-(loc[idStream][idThread].getY()/dp[idStream][0].param.xystep));
+
+
+                                    if ((px_pix>=0)&&(px_pix<width1)&&(py_pix>=0)&&(py_pix<height1)){
+
+
+                                        if ((loc[idStream][idThread].getZ()>minZ-.5)&&(loc[idStream][idThread].getZ()<maxZ+.5)){
+                                            
+                                            statut_local[idStream][idThread]=11;
+                                            
+                                            double [] modelA=loc[idStream][idThread].getPSF(0);
+                                            double [] modelB=loc[idStream][idThread].getPSF(1);
+
+
+
+
+                                            double my_x=1000*(xint1*dp[idStream][0].param.xystep-loc[idStream][idThread].getX());
+                                            double my_y=1000*(yint1*dp[idStream][0].param.xystep-loc[idStream][idThread].getY());
+                                            double my_z=(1000*loc[idStream][idThread].getZ());
+                                            double my_A=loc[idStream][idThread].getA()[0][0];
+                                            double my_A2=loc[idStream][idThread].getA()[1][0];
+                                            double my_B=loc[idStream][idThread].getB()[0];
+                                            double my_B2=loc[idStream][idThread].getB()[1];
+                                            double my_Score=scoreCompute(patch[0],modelA,patch[1],modelB);
+                                            double my_crlbx=(1000*loc[idStream][idThread].getCRLBX());
+                                            double my_crlby=(1000*loc[idStream][idThread].getCRLBY());
+                                            double my_crlbz=(1000*loc[idStream][idThread].getCRLBZ());
+
+                                            //IJ.log("crlb "+(sl1fuse.fl.get(i).loc.get(j).crlb_X)+"  "+(sl2fuse.fl.get(i).loc.get(j).crlb_X)+"  "+(1000*loc[idStream][idThread].getCRLBX()));
+
+                                            //IJ.log("position:   X:"+my_x+"    Y:"+my_y+"    Z:"+my_z+"    A:"+my_A+"    B:"+my_B);
+
+                                            PLocalization p = new PLocalization(idLoc,theframe,my_x,my_y,my_z,my_A,my_B,my_Score,my_crlbx,my_crlby,my_crlbz);
+
+
+
+                                            p.addListOfVariables(otherVariableName);
+                                            p.setValueOtherVariable(0, my_A2);
+                                            p.setValueOtherVariable(1, my_B2);
+                                            p.setDrift_X(dx1*1000);
+                                            p.setDrift_Y(dy1*1000);
+                                            p.setDrift_Z(dz1*1000);
+                                            statut_local[idStream][idThread]=12;
+                                            if (fl!=null){//not necessary to test
+                                                fl.loc.add(p); 
+                                            }
+
+
+                                            numberPerStream++;
+                                            //replacement in mask of the region corresponting to 20% of max PSF
+                                            try{
+                                            lock.lock();
+                                                idLoc++;
+                                                //IJ.log(""+idLoc);
+                                            }
+                                            finally{
+                                                lock.unlock();
+                                            }
+                                            //mod(231,x/100)
+                                            if (i<nbGlobalMask){
+                                                for (int ij=0,ji=-sizePatch/2;ij<sizePatch;ij++,ji++){
+                                                    for (int iij=0,jji=-sizePatch/2;iij<sizePatch;iij++,jji++){
+
+                                                        try{
+                                                        if ((xint1+ji>=0)&&(xint1+ji<globalmaskA[i].length)&&(yint1+jji>=0)&&(yint1+jji<globalmaskA[i][0].length)){
+
+                                                            globalmaskA[i][xint1+ji][yint1+jji]=modelA[ij*sizePatch+iij];
+
+                                                            globalmaskA2[i][xint1+ji][yint1+jji]=patch[0][ij*sizePatch+iij];
+
+                                                            //globalmaskA[i][xint1][yint1]=loc[idStream][idThread].getZ();
+                                                            //WARNING_____________________________________________________________________WARNING... put xybeg2 to cam [1]
+                                                            //globalmaskB[i][xint1+ji][yint1+jji]=modelB[ij*sizePatch+iij];
+                                                            //globalmaskB2[i][xint1+ji][yint1+jji]=patch[1][ij*sizePatch+iij];
+                                                        }
+                                                        if ((xint2+ji>=0)&&(xint2+ji<globalmaskB[i].length)&&(yint2+jji>=0)&&(yint2+jji<globalmaskB[i][0].length)){
+                                                            globalmaskB[i][xint2+ji][yint2+jji]=modelB[ij*sizePatch+iij];
+
+                                                            globalmaskB2[i][xint2+ji][yint2+jji]=patch[1][ij*sizePatch+iij];
+                                                        }
+                                                        }
+                                                        catch(Exception ee){
+
+                                                        }
+
+                                                    }
+
+                                                }
+
+                                            }
+                                            statut_local[idStream][idThread]=13;
+
+                                        }
+                                        else{IJ.log("rejected E "+minZ+"  "+maxZ+"  "+loc[idStream][idThread].getZ());}
+                                    }
+                                    else{IJ.log("rejected D");}
+                                }
+                                else{IJ.log("rejected C");}
+
+                            }
+                            else{IJ.log("rejected B");}
+
+
+                       }
+                       else{IJ.log("rejected A");}
+
+
+
                    }
-
-
-
                }
-
-           
+               statut_local[idStream][idThread]=14;
                  try{
                      lock.lock();
                      stackloc.fl.add(fl);
-                     if ((sl1fuse.fl.size()-i-1)<nbStream*nbThread){
-                         //IJ.log("decrement "+idStream);
-                             dp[idStream][0].modelMany.decrementNumberPSFToCompute();
-                             dp[idStream][1].modelMany.decrementNumberPSFToCompute();
-
-                     }
-                     else{
-                         //IJ.log("non decrement "+idStream);
-                     }
-
-
                      if (i<nbGlobalMask){
                          //maybe starts lock here
                          
@@ -1177,11 +1262,28 @@ public class DualCamLocalizationPipeline_ {
                          }
                          computedGlobalMask++;
                      }
+                     statut_local[idStream][idThread]=15;
+                     if ((sl1fuse.fl.size()-i-1)<nbStream*nbThread){
+                         //IJ.log("decrement "+idStream);
+                             dp[idStream][0].modelMany.decrementNumberPSFToCompute();
+                             dp[idStream][1].modelMany.decrementNumberPSFToCompute();
+                             IJ.log("decrement: "+idStream+"   "+i+"  "+(sl1fuse.fl.size()-i-1)+"  "+nbStream*nbThread+"                        "+idStream);
+                             stop=true;
+                     }
+                     else{
+                         //IJ.log("non decrement "+idStream);
+                     }
+                     statut_local[idStream][idThread]=16;
+
+                     
                  }
+                 catch(Exception e){IJ.write("ERROR try dual cam loc function");}
                  finally{
                      lock.unlock();
                  }
+                 statut_local[idStream][idThread]=17;
            }
+           statut_local[idStream][idThread]=20;
            //ImageShow.imshow(frame,"frame");
            //ImageShow.imshow(frame2,"frame2");
 

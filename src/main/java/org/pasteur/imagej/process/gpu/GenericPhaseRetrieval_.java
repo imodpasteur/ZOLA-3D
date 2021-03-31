@@ -232,119 +232,119 @@ public class GenericPhaseRetrieval_ {
     
     
     
-    private void phase_retrieve_cross_validation(int iterations){
-        
-        IJ.log("phase retrieval cross validation");
-        
-        this.dparam.param.sigmaGaussianKernel=this.sigma;///%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
-        dparam.psf_fMany.updateSigmaGaussianKernel(dparam.param.sigmaGaussianKernel);
-        
-        
-        
-        double likelihood=initialization(iterations);
-        
-        IJ.log("calibration started");
-        
-        
-        int nbStackUse4PR=1;
-        
-        nbStackUse4PR=Math.min(nbStackUse4PR, nbstack);
-                
-        if (true){
-
-            
-            
-            loop1:for (int t=0;t<iterations;t++){
-                
-                IJ.log("remaining iterations: "+(t)+"/"+iterations);
-                //IJ.log("pass 2 ; remaining iterations: "+(iterations-t));
-                IJ.showProgress((1.-(double)(iterations-t)/iterations));
-                long tim=System.currentTimeMillis();
-
-                
-
-                this.updateRegistrationStacks(nbstack);
-                
-                
-                this.updateSigmaGaussianKernel(nbStackUse4PR);///%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
-                
-                //IJ.log("sigma "+dparam.param.sigmaGaussianKernel);
-                
-                //this.updatePhotonB_0(nbstack);
-                
-                
-                this.updatePhotonBpoly(nbstack,2);
-                
-                
-                
-                this.updatePhotonA(nbstack);
-                
-                
-                
-                
-                this.updatePhotonAeach(nbstack);
-                
-                for (int k=0;k<paramImage.A[0].length;k++){
-
-                    //IJ.log("A "+(paramImage.A[0][k]+this.fit_a[0]+this.fit_a_each[0][k]));
-                }
-                
-                
-                
-                this.updatePhaseNonZernike(nbStackUse4PR);
-                
-                
-                //this.updateDrift(nbstack);
-                
-                
-                //IJ.log("drift "+dx+"  "+dy+"  "+dz);
-                
-                //this.updateWeightZ(nbstack);
-                
-                for (int ss=0;ss<nbstack;ss++){
-                    //IJ.log("registration  x:"+this.registrationStack[0][ss]+"  y;"+this.registrationStack[1][ss]+"  z:"+this.registrationStack[2][ss]);
-                }
-                
-                //IJ.log("lik : "+this.getLikelihood(nbstack));
-                double lik=this.getLikelihood(nbstack);
-                
-                if (Math.abs(likelihood-lik)<epsilon){
-                    break loop1;
-                }
-                
-                likelihood=lik;
-                
-                
-
-                //IJ.log("sig "+dparam.param.sigmaGaussianKernel+"   wz "+dparam.param.getweightZ());
-                
-
-            }
-            
-            
-            
-            
-            
-        }
-        
-        
-        IJ.log("total number of image for training "+nbStackUse4PR);
-        IJ.log("total number of image "+nbstack);
-        
-        showPhase();
-        showImageAndModel();
-        double r=0;
-        for (int i=0;i<image.length;i++){
-            double d=computeResidual(i);
-            IJ.log("residual ("+i+") : "+d);
-            r+=d;
-        }
-        IJ.log("global residual : "+r);
-        
-        
-        IJ.showProgress(0);
-        
-    }
+//    private void phase_retrieve_cross_validation(int iterations){
+//        
+//        IJ.log("phase retrieval cross validation");
+//        
+//        this.dparam.param.sigmaGaussianKernel=this.sigma;///%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+//        dparam.psf_fMany.updateSigmaGaussianKernel(dparam.param.sigmaGaussianKernel);
+//        
+//        
+//        
+//        double likelihood=initialization(iterations);
+//        
+//        IJ.log("calibration started");
+//        
+//        
+//        int nbStackUse4PR=1;
+//        
+//        nbStackUse4PR=Math.min(nbStackUse4PR, nbstack);
+//                
+//        if (true){
+//
+//            
+//            
+//            loop1:for (int t=0;t<iterations;t++){
+//                
+//                IJ.log("remaining iterations: "+(t)+"/"+iterations);
+//                //IJ.log("pass 2 ; remaining iterations: "+(iterations-t));
+//                IJ.showProgress((1.-(double)(iterations-t)/iterations));
+//                long tim=System.currentTimeMillis();
+//
+//                
+//
+//                this.updateRegistrationStacks(nbstack);
+//                
+//                
+//                this.updateSigmaGaussianKernel(nbStackUse4PR);///%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+//                
+//                //IJ.log("sigma "+dparam.param.sigmaGaussianKernel);
+//                
+//                //this.updatePhotonB_0(nbstack);
+//                
+//                
+//                this.updatePhotonBpoly(nbstack,2);
+//                
+//                
+//                
+//                this.updatePhotonA(nbstack);
+//                
+//                
+//                
+//                
+//                this.updatePhotonAeach(nbstack);
+//                
+//                for (int k=0;k<paramImage.A[0].length;k++){
+//
+//                    //IJ.log("A "+(paramImage.A[0][k]+this.fit_a[0]+this.fit_a_each[0][k]));
+//                }
+//                
+//                
+//                
+//                this.updatePhaseNonZernike(nbStackUse4PR);
+//                
+//                
+//                //this.updateDrift(nbstack);
+//                
+//                
+//                //IJ.log("drift "+dx+"  "+dy+"  "+dz);
+//                
+//                //this.updateWeightZ(nbstack);
+//                
+//                for (int ss=0;ss<nbstack;ss++){
+//                    //IJ.log("registration  x:"+this.registrationStack[0][ss]+"  y;"+this.registrationStack[1][ss]+"  z:"+this.registrationStack[2][ss]);
+//                }
+//                
+//                //IJ.log("lik : "+this.getLikelihood(nbstack));
+//                double lik=this.getLikelihood(nbstack);
+//                
+//                if (Math.abs(likelihood-lik)<epsilon){
+//                    break loop1;
+//                }
+//                
+//                likelihood=lik;
+//                
+//                
+//
+//                //IJ.log("sig "+dparam.param.sigmaGaussianKernel+"   wz "+dparam.param.getweightZ());
+//                
+//
+//            }
+//            
+//            
+//            
+//            
+//            
+//        }
+//        
+//        
+//        IJ.log("total number of image for training "+nbStackUse4PR);
+//        IJ.log("total number of image "+nbstack);
+//        
+//        showPhase();
+//        showImageAndModel();
+//        double r=0;
+//        for (int i=0;i<image.length;i++){
+//            double d=computeResidual(i);
+//            IJ.log("residual ("+i+") : "+d);
+//            r+=d;
+//        }
+//        IJ.log("global residual : "+r);
+//        
+//        
+//        IJ.showProgress(0);
+//        
+//    }
         
     
     private void phase_retrieve(int iterations){
@@ -356,7 +356,7 @@ public class GenericPhaseRetrieval_ {
         
         
         
-        initializationGS(50);
+        initializationGS(100);
         double likelihood=Double.POSITIVE_INFINITY;
         //double likelihood=initialization2(10);
         
@@ -559,8 +559,23 @@ public class GenericPhaseRetrieval_ {
     
     
     void initializationGS(int iterations){
+        for (int z=0;z<nbstack;z++){
+            IJ.log("registration("+z+")  "+this.registrationStack[0][z]+"  "+this.registrationStack[1][z]+"  "+this.registrationStack[2][z]);
+        }
         gs.run(iterations);
+        this.updatePhotonBpoly(nbstack,2);
+        this.updatePhotonAeach(nbstack);
+        for (int z=0;z<nbstack;z++){
+            IJ.log("registration("+z+")  "+this.registrationStack[0][z]+"  "+this.registrationStack[1][z]+"  "+this.registrationStack[2][z]);
+        }
         this.updateRegistrationStacks(nbstack);
+        for (int z=0;z<nbstack;z++){
+            IJ.log("registration("+z+")  "+this.registrationStack[0][z]+"  "+this.registrationStack[1][z]+"  "+this.registrationStack[2][z]);
+        }
+        this.updatePhotonBpoly(nbstack,2);
+        this.updatePhotonAeach(nbstack);
+        this.updatePhotonBpoly(nbstack,2);
+        this.updatePhotonAeach(nbstack);
         
         double [][] phase= gs.getPhase();
         for (int i=0;i<dparam.param.disk2D.length;i++){
@@ -578,6 +593,9 @@ public class GenericPhaseRetrieval_ {
             this.updatePhotonBpoly(nbstack,2);
             this.updatePhotonAeach(nbstack);
             this.updateRegistrationStacks(nbstack);
+            for (int z=0;z<nbstack;z++){
+            IJ.log("registration("+z+")  "+this.registrationStack[0][z]+"  "+this.registrationStack[1][z]+"  "+this.registrationStack[2][z]);
+        }
         }
         showPhase("Gerchberg-Saxton initialization");
         this.showImageAndModel("Gerchberg-Saxton initialization");

@@ -69,114 +69,26 @@ public class PhaseParameters {
     public boolean zernikedPSF=true;
     public boolean withApoFactor=false;
     
-    
+    public PhaseParameters(String calibration_path,int size,int sizeoutput,int orderGaussianPupil,double xystep,double zstep,double wavelength,double noil,double na,double wz,double sigmaGaussianKernel,boolean withApoFactor){
+        this.pathcalib=calibration_path;
+        phaseParameters(size,sizeoutput,orderGaussianPupil,xystep,zstep,wavelength,noil,na,wz,sigmaGaussianKernel,withApoFactor);
+    }
+     
+        
     public PhaseParameters(int size,int sizeoutput,int orderGaussianPupil,double xystep,double zstep,double wavelength,double noil,double na,double wz,double sigmaGaussianKernel,boolean withApoFactor){
-        
-        this.sigmaGaussianKernel=sigmaGaussianKernel;
-        this.withApoFactor=withApoFactor;
-        this.orderGaussianPupil=orderGaussianPupil;
-        this.weightZ=wz;
-        this.xystep=xystep; 
-        this.zstep=zstep; 
-        this.stream=0;
-        this.wavelength=wavelength;
-        this.noil=noil;
-        
-        this.na=na;
-        if (size%2!=0){
-            size--;
-        }
-        if (size<=0){
-            IJ.log("problem size initialization at 0");
-        }
-        if (sizeoutput%2!=0){
-            sizeoutput--;
-        }
+        phaseParameters(size,sizeoutput,orderGaussianPupil,xystep,zstep,wavelength,noil,na,wz,sigmaGaussianKernel,withApoFactor);
+    }
     
-        if (sizeoutput>size){
-            sizeoutput=size;
-        }
-        
-        if (sizeoutput<=0){
-            sizeoutput=size;
-        }
-        this.size=size;
-        size_cpu=(int)Math.pow(2, (int)Math.ceil(Math.log(size)/Math.log(2)));
-        this.sizeoutput=sizeoutput;
-        
-        
-        this.centerFourierImage=(this.size/2)-.5;
-        this.centerFourierImage_cpu=(this.size_cpu/2)-.5;
-
-        ringsize=(na/wavelength)*(na/wavelength);
-        sizeRadiusRingPixel=Math.sqrt(ringsize)*(size*xystep);
-        sizeRadiusRingPixel_cpu=Math.sqrt(ringsize)*(size_cpu*xystep);
-        double center=size/2;
-        double center_cpu=size_cpu/2;
-        center=centerFourierImage;
-        center_cpu=centerFourierImage_cpu;
-        sizeDisk=0;
-        int id=0;
-        for (int i=0;i<size;i++){
-            for (int ii=0;ii<size;ii++){
-                double disk=((((i-center)/(size*xystep))*((i-center)/(size*xystep))+((ii-center)/(size*xystep))*((ii-center)/(size*xystep))));
-                if (disk<=ringsize){
-                    sizeDisk++;
-                    id++;
-                }
-            }
-        }
-        id=0;
-        sizeDisk_cpu=0;
-        for (int i=0;i<size_cpu;i++){
-            for (int ii=0;ii<size_cpu;ii++){
-                double disk=((((i-center_cpu)/(size_cpu*xystep))*((i-center_cpu)/(size_cpu*xystep))+((ii-center_cpu)/(size_cpu*xystep))*((ii-center_cpu)/(size_cpu*xystep))));
-                if (disk<=ringsize){
-                    sizeDisk_cpu++;
-                    id++;
-                }
-            }
-        }
-        //IJ.log("sizeDisk="+sizeDisk);
-        disk2D=new int[sizeDisk][2];
-        disk2D_cpu=new int[sizeDisk_cpu][2];
-        id=0;
-        for (int i=0;i<size;i++){
-            for (int ii=0;ii<size;ii++){
-                double disk=((((i-center)/(size*xystep))*((i-center)/(size*xystep))+((ii-center)/(size*xystep))*((ii-center)/(size*xystep))));
-                
-                if (disk<=ringsize){
-                    
-                    this.disk2D[id][0]=i;
-                    this.disk2D[id][1]=ii;
-                    id++;
-                }
-            }
-        }
-        
-        
-        id=0;
-        for (int i=0;i<size_cpu;i++){
-            for (int ii=0;ii<size_cpu;ii++){
-                double disk=((((i-center_cpu)/(size_cpu*xystep))*((i-center_cpu)/(size_cpu*xystep))+((ii-center_cpu)/(size_cpu*xystep))*((ii-center_cpu)/(size_cpu*xystep))));
-                
-                if (disk<=ringsize){
-                    
-                    this.disk2D_cpu[id][0]=i;
-                    this.disk2D_cpu[id][1]=ii;
-                    id++;
-                }
-            }
-        }
-        
-        
-        
+    public PhaseParameters(PhaseParameters paramInit){
+        phaseParameters(paramInit.size, paramInit.sizeoutput,paramInit);
+    }
+    
+    public PhaseParameters(int size, int sizeoutput,PhaseParameters paramInit){
+        phaseParameters(size, sizeoutput,paramInit);
     }
     
     
-    
-    
-    public PhaseParameters(PhaseParameters paramInit){
+    /*public void phaseParameters(PhaseParameters paramInit){
         this.zernikedPSF=paramInit.zernikedPSF;
         this.pathcalib=paramInit.pathcalib;
         this.sigmaGaussianKernel=paramInit.sigmaGaussianKernel;
@@ -234,11 +146,13 @@ public class PhaseParameters {
         }
         
         
-    }
+    }*/
     
     
     
-    public PhaseParameters(int size, int sizeoutput,PhaseParameters paramInit){
+    
+    
+    public void phaseParameters(int size, int sizeoutput,PhaseParameters paramInit){
         this.zernikedPSF=paramInit.zernikedPSF;
         this.pathcalib=paramInit.pathcalib;
         this.sigmaGaussianKernel=paramInit.sigmaGaussianKernel;
@@ -345,6 +259,112 @@ public class PhaseParameters {
         
         
     }
+    
+    
+    
+    public void phaseParameters(int size,int sizeoutput,int orderGaussianPupil,double xystep,double zstep,double wavelength,double noil,double na,double wz,double sigmaGaussianKernel,boolean withApoFactor){
+        
+        this.sigmaGaussianKernel=sigmaGaussianKernel;
+        this.withApoFactor=withApoFactor;
+        this.orderGaussianPupil=orderGaussianPupil;
+        this.weightZ=wz;
+        this.xystep=xystep; 
+        this.zstep=zstep; 
+        this.stream=0;
+        this.wavelength=wavelength;
+        this.noil=noil;
+        
+        this.na=na;
+        if (size%2!=0){
+            size--;
+        }
+        if (size<=0){
+            IJ.log("problem size initialization at 0");
+        }
+        if (sizeoutput%2!=0){
+            sizeoutput--;
+        }
+    
+        if (sizeoutput>size){
+            sizeoutput=size;
+        }
+        
+        if (sizeoutput<=0){
+            sizeoutput=size;
+        }
+        this.size=size;
+        size_cpu=(int)Math.pow(2, (int)Math.ceil(Math.log(size)/Math.log(2)));
+        this.sizeoutput=sizeoutput;
+        
+        
+        this.centerFourierImage=(this.size/2)-.5;
+        this.centerFourierImage_cpu=(this.size_cpu/2)-.5;
+
+        ringsize=(na/wavelength)*(na/wavelength);
+        sizeRadiusRingPixel=Math.sqrt(ringsize)*(size*xystep);
+        sizeRadiusRingPixel_cpu=Math.sqrt(ringsize)*(size_cpu*xystep);
+        double center=size/2;
+        double center_cpu=size_cpu/2;
+        center=centerFourierImage;
+        center_cpu=centerFourierImage_cpu;
+        sizeDisk=0;
+        int id=0;
+        for (int i=0;i<size;i++){
+            for (int ii=0;ii<size;ii++){
+                double disk=((((i-center)/(size*xystep))*((i-center)/(size*xystep))+((ii-center)/(size*xystep))*((ii-center)/(size*xystep))));
+                if (disk<=ringsize){
+                    sizeDisk++;
+                    id++;
+                }
+            }
+        }
+        id=0;
+        sizeDisk_cpu=0;
+        for (int i=0;i<size_cpu;i++){
+            for (int ii=0;ii<size_cpu;ii++){
+                double disk=((((i-center_cpu)/(size_cpu*xystep))*((i-center_cpu)/(size_cpu*xystep))+((ii-center_cpu)/(size_cpu*xystep))*((ii-center_cpu)/(size_cpu*xystep))));
+                if (disk<=ringsize){
+                    sizeDisk_cpu++;
+                    id++;
+                }
+            }
+        }
+        //IJ.log("sizeDisk="+sizeDisk);
+        disk2D=new int[sizeDisk][2];
+        disk2D_cpu=new int[sizeDisk_cpu][2];
+        id=0;
+        for (int i=0;i<size;i++){
+            for (int ii=0;ii<size;ii++){
+                double disk=((((i-center)/(size*xystep))*((i-center)/(size*xystep))+((ii-center)/(size*xystep))*((ii-center)/(size*xystep))));
+                
+                if (disk<=ringsize){
+                    
+                    this.disk2D[id][0]=i;
+                    this.disk2D[id][1]=ii;
+                    id++;
+                }
+            }
+        }
+        
+        
+        id=0;
+        for (int i=0;i<size_cpu;i++){
+            for (int ii=0;ii<size_cpu;ii++){
+                double disk=((((i-center_cpu)/(size_cpu*xystep))*((i-center_cpu)/(size_cpu*xystep))+((ii-center_cpu)/(size_cpu*xystep))*((ii-center_cpu)/(size_cpu*xystep))));
+                
+                if (disk<=ringsize){
+                    
+                    this.disk2D_cpu[id][0]=i;
+                    this.disk2D_cpu[id][1]=ii;
+                    id++;
+                }
+            }
+        }
+        
+        
+        
+    }
+    
     
     
     

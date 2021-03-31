@@ -48,6 +48,10 @@ public class SearchPSFcenter {
         double maxZ=zfocus+Math.abs(zfocus)+2*axialRange;
         double position;
         
+        //no need to search center if 
+//        if (dp.param.noil==dp.param.nwat){
+//            return zfocus;
+//        }
         
         position=getMinPositionCRLB(minZ, maxZ, stepZ);
         

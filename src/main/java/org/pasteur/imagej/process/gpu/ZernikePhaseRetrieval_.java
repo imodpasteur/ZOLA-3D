@@ -212,6 +212,12 @@ public class ZernikePhaseRetrieval_ {
             
         }
         IJ.log("");
+        
+        //at last stage, it updates tip, tilt and defocus according to registration of 1st bead
+        dparam.phaseZer.setA(0, 0);//tip set to 0
+        dparam.phaseZer.setA(1, 0);//tilt Y
+        dparam.phaseZer.setA(2, 0);//tilt X
+        
         if (path_calibration.length()>2){
             dparam.save(path_calibration);
             

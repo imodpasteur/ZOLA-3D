@@ -191,12 +191,21 @@ public class CRLB_ {
                     
                 }
                 if (nb>1){
+                    
+                    double [][] tmp= new double [xCRLB.length][4];
+                    
                     for (int i=0;i<xCRLB.length;i++){
+                        
                         xCRLB[i]*=1000;
                         yCRLB[i]*=1000;
                         zCRLB[i]*=1000;
+                        tmp[i][0]=x_abs[i];
+                        tmp[i][1]=xCRLB[i];
+                        tmp[i][2]=yCRLB[i];
+                        tmp[i][3]=zCRLB[i];
                         
                     }
+                    //FileVectorLoader.saveTableInFile("/home/benoit/tmp/TET_photon="+this.photonNumber+"_bckg="+this.background+".csv", tmp, ",");
                     this.plot(x_abs, xCRLB,"CRLB(X)","Z (µm)","sigma X (nm)");
                     this.plot(x_abs, yCRLB,"CRLB(Y)","Z (µm)","sigma Y (nm)");
                     this.plot(x_abs, zCRLB,"CRLB(Z)","Z (µm)","sigma Z (nm)");
@@ -280,6 +289,7 @@ public class CRLB_ {
                     this.plot(x_abs, xCRLB,"CRLB(X)","Z (µm)","sigma X (nm)");
                     this.plot(x_abs, yCRLB,"CRLB(Y)","Z (µm)","sigma Y (nm)");
                     this.plot(x_abs, zCRLB,"CRLB(Z)","Z (µm)","sigma Z (nm)");
+                    
                 }
 
             }
@@ -291,10 +301,6 @@ public class CRLB_ {
         IJ.showProgress(0);
     }
             
-    
-    
-    
-    
     
     
           
@@ -399,8 +405,17 @@ public class CRLB_ {
 //            }
 //        }
 //        IJ.log("WARNING: Covariance modified");
+        for (int p=0;p<nbParam;p++){
+            String s="";
+            for (int pp=0;pp<nbParam;pp++){
+                s+=I[p][pp]+" ";
+                    
+                
+            }
+            IJ.log("I  "+s);
+        }
         //////////////////////////////////////////////////////
-        
+        IJ.log("");
         
         Matrixe mat = new Matrixe(I);
         try{
@@ -410,6 +425,247 @@ public class CRLB_ {
             double [] std =new double[nbParam];
             //dont take into account covar if non inversible
             IJ.log("fisher matrix non inversible at z="+z);
+            for (int i=0;i<nbParam;i++){
+                if (I[i][i]!=0){
+                    std[i]=Math.sqrt(1/I[i][i]);
+                }
+                else{
+                    std[i]=Double.MAX_VALUE;
+                }
+            }
+
+            return std;
+        }
+        
+        
+        
+        
+        
+        double [] std =new double[nbParam];
+        
+        for (int i=0;i<nbParam;i++){
+            std[i]=Math.sqrt(I[i][i]);
+        }
+        
+        
+        
+        
+        
+        
+        return std;
+    }
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    //perform 3D localization precision (in case of 3D localization: stack of images)
+    public void run3D(String path){
+        
+        
+        
+        dp.psf.resetKz();
+        
+        SearchPSFcenter_ spsfc= new SearchPSFcenter_(dp,axialRange);
+        double position=spsfc.getPosition();
+        
+        //IJ.log("position "+position);
+        
+        boolean computeSTD=false;
+
+
+        int nb=(int)((axialRange)/stepZ)+1;
+        if (nb>0){
+            double [] x_abs=new double[nb];
+            xCRLB=new double[nb];
+            yCRLB=new double[nb];
+            zCRLB=new double[nb];
+            double [][] crlb=new double[nb][5];
+            int k=0;
+            double [][][] im = new double [nb][][];
+
+            double [] std_PSFX = null;
+            double [] std_PSFY = null;
+            double [] std_PSFAVG = null;
+            if (computeSTD==true){
+                std_PSFX = new double [nb];
+                std_PSFY = new double [nb];
+                std_PSFAVG = new double [nb];
+            }
+
+            double [][][] im2=null;
+
+            double meanCRLBX=0;
+            double meanCRLBY=0;
+            double meanCRLBZ=0;
+            double count=0;
+            
+            double start_obj=-axialRange/2+position;
+            double end_obj=axialRange/2+position;
+            
+            double [] res=this.computeFisher3D(0., 0., position,start_obj,end_obj,stepZ, .0005);
+            
+            for (double u=start_obj;u<=end_obj;u+=stepZ,k++){
+                dp.psf.computePSF(0, 0,u,this.dp.param.Zfocus);
+                im[k]=dp.psf.getPSF();
+
+            }
+            
+
+            //IJ.write(""+(axialRange)+" "+(stepZ)+" "+dp.phaseZer.numCoef+" "+this.photonNumber+" "+this.background+" "+meanCRLBX+" "+meanCRLBY+" "+meanCRLBZ);
+
+            ImageShow.imshow(this.dp.psf.getPhase(),"Phase");
+            ImageShow.imshow(this.dp.psf.getPupil(),"Pupil");
+            ImageShow.imshow(im,"PSF model");
+            
+            IJ.write("CRLB X: "+res[0]+"   CRLB Y: "+res[1]+"   CRLB Z: "+res[2]);
+            
+
+        
+
+            
+        }
+        
+    }
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    //simulate 3D stack of images and estimate CRLB for 1 molecule using all images
+    double [] computeFisher3D(double x, double y, double fix_z,double start_z_obj,double end_z_obj,double z_step_obj,double hdec){
+        
+        
+        int nbParam=5;
+        
+        double [][] I=new double [nbParam][nbParam];
+        for (double z_obj=start_z_obj;z_obj<=end_z_obj;z_obj+=z_step_obj){
+        
+
+            {
+                dp.psf.computePSF(x, y, z_obj,fix_z);
+                double [][] f1 =dp.psf.getPSF();
+
+                for (int i=0;i<f1.length;i++){
+                    for (int ii=0;ii<f1[0].length;ii++){
+                        f1[i][ii]=f1[i][ii]*this.photonNumber+this.background;
+                    }
+                }
+
+
+                double [][][] f0=new double [nbParam][f1.length][f1[0].length];
+                double [][][] f2=new double [nbParam][f1.length][f1[0].length];
+
+                dp.psf.computePSF(x+hdec, y, z_obj,fix_z);
+                double [][] x2 =dp.psf.getPSF();
+
+                dp.psf.computePSF(x-hdec, y, z_obj,fix_z);
+                double [][] x0 =dp.psf.getPSF();
+                for (int i=0;i<x0.length;i++){
+                    for (int ii=0;ii<x0[0].length;ii++){
+                        f0[0][i][ii]=x0[i][ii]*this.photonNumber+this.background;
+                        f2[0][i][ii]=x2[i][ii]*this.photonNumber+this.background;
+                    }
+                }
+                dp.psf.computePSF(x, y+hdec, z_obj,fix_z);
+                double [][] y2 =dp.psf.getPSF();
+                dp.psf.computePSF(x, y-hdec, z_obj,fix_z);
+                double [][] y0 =dp.psf.getPSF();
+                for (int i=0;i<y0.length;i++){
+                    for (int ii=0;ii<y0[0].length;ii++){
+                        f0[1][i][ii]=y0[i][ii]*this.photonNumber+this.background;
+                        f2[1][i][ii]=y2[i][ii]*this.photonNumber+this.background;
+                    }
+                }
+
+                dp.psf.computePSF(x, y, z_obj,fix_z+hdec);
+                double [][] z2 =dp.psf.getPSF();
+                dp.psf.computePSF(x, y, z_obj,fix_z-hdec);
+                double [][] z0 =dp.psf.getPSF();
+                for (int i=0;i<z0.length;i++){
+                    for (int ii=0;ii<z0[0].length;ii++){
+                        f0[2][i][ii]=z0[i][ii]*this.photonNumber+this.background;
+                        f2[2][i][ii]=z2[i][ii]*this.photonNumber+this.background;
+                    }
+                }
+
+                double  [][] a2 =new double[f1.length][f1[0].length];
+                double  [][] a0 =new double[f1.length][f1[0].length];
+                for (int i=0;i<f1.length;i++){
+                    for (int ii=0;ii<f1[0].length;ii++){
+                        f0[3][i][ii]=f1[i][ii]*(this.photonNumber-hdec)+this.background;
+                        f2[3][i][ii]=f1[i][ii]*(this.photonNumber+hdec)+this.background;
+                    }
+                }
+
+                double  [][] b2 =new double[f1.length][f1[0].length];
+                double  [][] b0 =new double[f1.length][f1[0].length];
+                for (int i=0;i<f1.length;i++){
+                    for (int ii=0;ii<f1[0].length;ii++){
+                        f0[4][i][ii]=f1[i][ii]*this.photonNumber+(this.background-hdec);
+                        f2[4][i][ii]=f1[i][ii]*this.photonNumber+(this.background+hdec);
+                    }
+                }
+
+                //compute fisher
+                double d1,d2;
+                for (int p=0;p<nbParam;p++){
+                    for (int pp=0;pp<nbParam;pp++){
+                        
+                        for (int i=0;i<f1.length;i++){
+                            for (int ii=0;ii<f1[0].length;ii++){
+                                d1=(f2[p][i][ii]-f0[p][i][ii])/(2*Math.abs(hdec));
+                                d2=(f2[pp][i][ii]-f0[pp][i][ii])/(2*Math.abs(hdec));
+                                I[p][pp]+=(1/f1[i][ii])*d1*d2;
+                            }
+                        }
+                    }
+                }
+            }
+
+        }
+        
+        //////////////////////////////////////////////////////
+//        for (int p=0;p<nbParam;p++){
+//            for (int pp=0;pp<nbParam;pp++){
+//                if (p!=pp){
+//                    I[p][pp]=0;
+//                }
+//            }
+//        }
+//        IJ.log("WARNING: Covariance modified");
+        for (int p=0;p<nbParam;p++){
+            String s="";
+            for (int pp=0;pp<nbParam;pp++){
+                s+=I[p][pp]+" ";
+                    
+                
+            }
+            IJ.log("I  "+s);
+        }
+        //////////////////////////////////////////////////////
+        IJ.log("");
+        
+        Matrixe mat = new Matrixe(I);
+        try{
+            mat=Matrixe.inverse(mat);
+            I=mat.getMatrixe();
+        }catch(Exception ee){
+            double [] std =new double[nbParam];
+            //dont take into account covar if non inversible
+            IJ.log("fisher matrix non inversible at z="+fix_z);
             for (int i=0;i<nbParam;i++){
                 if (I[i][i]!=0){
                     std[i]=Math.sqrt(1/I[i][i]);

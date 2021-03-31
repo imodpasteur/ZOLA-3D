@@ -201,6 +201,11 @@ public class MyVecDouble
     {
         call2DGrid("sub", idStream, n, n, result, x, y);
     }
+    
+    public static void subFloat(CUstream idStream,long n, Pointer result, Pointer x, Pointer y)
+    {
+        call2DGrid("subFloat", idStream, n, n, result, x, y);
+    }
 
     /**
      * Multiply the given vectors.
@@ -227,6 +232,11 @@ public class MyVecDouble
     public static void mul_fl(CUstream idStream,long n, Pointer result, Pointer x, Pointer y)
     {
         call2DGrid("mul_fl", idStream, n, n, result, x, y);
+    }
+    
+    public static void mul_fl_pow(CUstream idStream,long n, Pointer result, Pointer x, Pointer y,float power)
+    {
+        call2DGrid("mul_fl_pow", idStream, n, n, result, x, y,power);
     }
 
     /**
@@ -268,6 +278,12 @@ public class MyVecDouble
     {
         call2DGrid("addScalar", idStream, n, n, result, x, y);
     }
+    
+    
+    public static void addScalarFloat(CUstream idStream,long n, Pointer result, Pointer x, float y)
+    {
+        call2DGrid("addScalarFloat", idStream, n, n, result, x, y);
+    }
 
     /**
      * Subtract the given scalar from the given vector.
@@ -294,6 +310,44 @@ public class MyVecDouble
     {
         call2DGrid("mulScalar", idStream, n, n, result, x, y);
     }
+    
+    public static void mulScalarFloat(CUstream idStream,long n, Pointer result, Pointer x, float y)
+    {
+        call2DGrid("mulScalarFloat", idStream, n, n, result, x, y);
+    }
+    
+    
+    public static void initializeDeconvolution(CUstream idStream,long n, int nbPSF,Pointer o, Pointer op,Pointer m, float y)
+    {
+        call2DGrid("initializeDeconvolution", idStream, n, n, nbPSF, o, op,m,y);
+    }
+    
+    public static void initializeVectorToValue(CUstream idStream,long n,Pointer o, float y)
+    {
+        call2DGrid("initializeVectorToValue", idStream, n, n,  o,y);
+    }
+    
+    public static void max(CUstream idStream,long n,Pointer o, float y)
+    {
+        call2DGrid("max", idStream, n, n,  o,y);
+    }
+    
+    
+    
+
+    public static void localMaximum(CUstream idStream,long n, int sizeFullImageX,int sizeFullImageY ,int sizePSF, Pointer result, Pointer image)
+    {
+        call2DGrid("localMaximum", idStream, n, n, sizeFullImageX,sizeFullImageY ,sizePSF, result, image);
+    }
+    public static void localMinimum(CUstream idStream,long n, int sizeFullImageX,int sizeFullImageY ,int sizePSF, Pointer result, Pointer image)
+    {
+        call2DGrid("localMinimum", idStream, n, n, sizeFullImageX,sizeFullImageY ,sizePSF, result, image);
+    }
+    public static void localMean(CUstream idStream,long n, int sizeFullImageX,int sizeFullImageY ,int sizePSF, Pointer result, Pointer image)
+    {
+        call2DGrid("localMean", idStream, n, n, sizeFullImageX,sizeFullImageY ,sizePSF, result, image);
+    }
+    
 
     /**
      * Divide the given vector by the given scalar.
@@ -320,6 +374,16 @@ public class MyVecDouble
     public static void divScalarFloat(CUstream idStream,long n,Pointer result, Pointer x, float y)
     {
         call2DGrid("divScalarFloat", idStream, n, n,result, x, y);
+    }
+    
+    public static void chiScore(CUstream idStream,long n, Pointer result, Pointer image, Pointer model)
+    {
+        call2DGrid("chiScore", idStream, n, n, result, image, model);
+    }
+    
+    public static void updateMandOP(CUstream idStream,long n,Pointer m, Pointer op, Pointer x, float y)
+    {
+        call2DGrid("updateMandOP", idStream, n, n,m, op, x,y);
     }
     
     /**
@@ -1396,6 +1460,41 @@ public class MyVecDouble
     
     
     
+    public static void addanddivide(CUstream idStream,long n, Pointer result, Pointer numerator_, Pointer divider_,Pointer addedToDivide_)
+    {
+        call2DGrid("addanddivide", idStream, n, n, result, numerator_, divider_,addedToDivide_);
+    }
+    
+    
+    
+    public static void computeLikelihoodDeconvolution(CUstream idStream,long n, Pointer result, Pointer I, Pointer M)
+    {
+        call2DGrid("computeLikelihoodDeconvolution", idStream, n, n, result, I, M);
+    }
+    
+    
+    
+    public static void addFloat(CUstream idStream,long n, Pointer result, Pointer a, Pointer b)
+    {
+        call2DGrid("addFloat", idStream, n, n, result, a, b);
+    }
+    
+    
+    
+    public static void skellam_order1(CUstream idStream,long n, int imageSize,Pointer result, Pointer I, Pointer M)
+    {
+        call2DGrid("skellam_order1", idStream, n, n, imageSize,result,I,M);
+    }
+    
+    
+    
+    public static void copyMany(CUstream idStream,long n, long size,long depth,long nbFrame, Pointer result, Pointer input)
+    {
+        call2DGrid("copyMany", idStream, n, n, size,depth,nbFrame,result, input);
+    }
+    
+    
+    
     /**
      * specific function likelihood. result=M-I*log(M)
      * 
@@ -1518,11 +1617,6 @@ public class MyVecDouble
     
     
     
-//    public static void sum(CUstream idStream,long n, Pointer input,Pointer sum)
-//    {
-//        callWithSharedMemory("sum", idStream, n, n,input, sum);
-//    }
-    
     /**
      * Multiply the given vectors.
      * 
@@ -1635,10 +1729,172 @@ public class MyVecDouble
         call2DGrid("complexeConjugateKernel", idStream, n, n, sizeInput, output, input, inputKernel);
     }
     
+    
+                
+                
+    
+    public static void manualFiltering(CUstream idStream,long n, int sizeImageX, int sizeImageY, int sizePSF, Pointer m, Pointer o, Pointer psf)
+    {
+        call2DGrid("manualFiltering", idStream, n, n, sizeImageX, sizeImageY,sizePSF, m, o, psf);
+    } 
+    
+    public static void manualFilteringFast(CUstream idStream,long n, int sizeImageX, int sizeImageY, int sizePSF, Pointer m, Pointer o, Pointer psf)
+    {
+        call2DGrid("manualFilteringFast", idStream, n, n, sizeImageX, sizeImageY,sizePSF, m, o, psf);
+    } 
+    
+    public static void manualFilteringStackedFast(CUstream idStream,long n, int sizeImageX, int sizeImageY, int sizePSF, int nbPSF, Pointer m, Pointer o, Pointer psf)
+    {
+        call2DGrid("manualFilteringStackedFast", idStream, n, n, sizeImageX, sizeImageY,sizePSF,nbPSF, m, o, psf);
+    } 
+    
+    public static void manualFilteringStacked(CUstream idStream,long n, int sizeImageX, int sizeImageY, int sizePSF, int nbPSF, Pointer res, Pointer o, Pointer psf)
+    {
+        call2DGrid("manualFilteringStacked", idStream, n, n, sizeImageX, sizeImageY,sizePSF,nbPSF, res, o, psf);
+    }  
+    
+    public static void mycusparsemoduloSsctr(CUstream idStream,long n, int sizeShift, int sizeSparse, Pointer output, Pointer input, Pointer sparse)
+    {
+        call2DGrid("mycusparsemoduloSsctr", idStream, n, n, sizeShift,sizeSparse, output, input, sparse);
+    }
+    
+    public static void mycusparsemoduloSsctrMany(CUstream idStream,long n, int nbFrame,int depth,int sizeShift, int width,int height, Pointer output, Pointer input, Pointer sparse)
+    {
+        call2DGrid("mycusparsemoduloSsctrMany", idStream, n, n, nbFrame,depth,sizeShift,width,height, output, input, sparse);
+    }
+    
+    
+    public static void shrink(CUstream idStream,long n, Pointer output, Pointer input, float threshold)
+    {
+        call2DGrid("shrink", idStream, n, n, output, input, threshold);
+    }
+    
+    //this function use FLOAT pointers
+    public static void complexeMulKernel(CUstream idStream,long n, int sizeInput, Pointer output, Pointer input, Pointer inputKernel)
+    {
+        call2DGrid("complexeMulKernel", idStream, n, n, sizeInput,output, input, inputKernel);
+    }
+    
+    //this function use FLOAT pointers
+    public static void complexeMulKernelMany(CUstream idStream,long n, int depth,int sizeInput, Pointer output, Pointer input, Pointer inputKernel)
+    {
+        call2DGrid("complexeMulKernelMany", idStream, n, n, depth,sizeInput,output, input, inputKernel);
+    }
+    
     //this function use FLOAT pointers
     public static void makeResultCorrelation(CUstream idStream,long n, int sizeInput,int sizeFullPadded, Pointer output, Pointer input, Pointer sparse)
     {
         call2DGrid("makeResultCorrelation", idStream, n, n, sizeInput,sizeFullPadded, output, input, sparse);
+    }
+    //this function use FLOAT pointers
+    public static void turnMatrixMany(CUstream idStream,long n,long nbFrame,long depth ,long sizeInput, Pointer output, Pointer input)
+    {
+        call2DGrid("turnMatrixMany", idStream, n, n, nbFrame,depth,sizeInput, output, input);
+    }
+    
+    
+    public static void cropFromImage(CUstream idStream,long n,int widthPSF,int heightPSF,int numberPSF,Pointer result,int widthImage,int heightImage,Pointer image,Pointer parameters,int indexXparameter,int indexYparameter)
+    {
+        call2DGrid("cropFromImage", idStream, n, n,widthPSF,heightPSF,numberPSF, result,widthImage,heightImage,image,parameters,indexXparameter,indexYparameter);
+    }
+    
+    public static void cropFromImageFloat(CUstream idStream,long n,int widthPSF,int heightPSF,int numberPSF,Pointer result,int widthImage,int heightImage,Pointer image,Pointer parameters,int indexXparameter,int indexYparameter)
+    {
+        call2DGrid("cropFromImageFloat", idStream, n, n,widthPSF,heightPSF,numberPSF, result,widthImage,heightImage,image,parameters,indexXparameter,indexYparameter);
+    }
+    
+    
+    
+    public static void computeModelwithPhotonNumber(CUstream idStream,long n,int numberPSF,Pointer model,Pointer psf,Pointer parameters,int indexparameter)
+    {
+        call2DGrid("computeModelwithPhotonNumber", idStream, n, n,numberPSF,model,psf,parameters,indexparameter);
+    }
+    
+    public static void computeLikelihoodAndModelwithPhotonNumberAndBackground(CUstream idStream,long n,int numberPSF,Pointer likelihood,Pointer image,Pointer model,Pointer psf,Pointer parameters,int indexparameter,Pointer bckg)
+    {
+        call2DGrid("computeLikelihoodAndModelwithPhotonNumberAndBackground", idStream, n, n,numberPSF,likelihood,image,model,psf,parameters,indexparameter,bckg);
+    }
+    
+    
+    public static void chi2(CUstream idStream,long n,int numPixelsPSF,Pointer result,Pointer model,Pointer image)
+    {
+        call2DGrid("chi2", idStream, n, n,numPixelsPSF,result,model,image);
+    }
+    
+    
+    //performs (a-b)/2h
+    public static void partialModel(CUstream idStream,long n,Pointer result,Pointer a,Pointer b,float h)
+    {
+        call2DGrid("partialModel", idStream, n, n,result,a,b,h);
+    }
+    
+    
+    public static void subtractModelwithPhotonNumber(CUstream idStream,long n,int numberPSF,Pointer modelsub,Pointer model,Pointer psf,Pointer parameters,int indexparameter)
+    {
+        call2DGrid("subtractModelwithPhotonNumber", idStream, n, n,numberPSF,modelsub,model,psf,parameters,indexparameter);
+    }
+    
+            
+    public static void computeModelAndLikelihood(CUstream idStream,long n,int widthImage,int heightImage,int widthPSF,int heightPSF,int numberPSF,Pointer likelihood,Pointer model,Pointer image,Pointer psf,Pointer parameters,int indexXparameter,int indexYparameter,int indexPhotonparameter,Pointer bckg)
+    {
+        call2DGrid("computeModelAndLikelihood", idStream, n, n,widthImage,heightImage,widthPSF,heightPSF,numberPSF, likelihood,model,image,psf,parameters,indexXparameter,indexYparameter,indexPhotonparameter,bckg);
+    }
+    
+    
+    public static void shiftParameter(CUstream idStream,long n,int index,float h,Pointer parameter)
+    {
+        call2DGrid("shiftParameter", idStream, n, n,index,h,parameter);
+    }
+    
+    
+    public static void computeFisherMatrix(CUstream idStream,long n,int psfsize_square,int numberPSF,Pointer fisher,Pointer model,Pointer modelx,Pointer modely,Pointer modelz,Pointer modelphoton)
+    {
+        call2DGrid("computeFisherMatrix", idStream, n, n,psfsize_square,numberPSF,fisher,model,modelx,modely,modelz,modelphoton);
+    }
+    
+        
+    
+    public static void updateParameter(CUstream idStream,long n,int index,float h,Pointer lik1,Pointer lik2,Pointer lik3,Pointer parameter,Pointer parameterSave,Pointer gamma,float minJump,float maxJump)
+    {
+        call2DGrid("updateParameter", idStream, n, n,index,h,lik1,lik2,lik3,parameter,parameterSave,gamma,minJump,maxJump);
+    }
+                
+    public static void checkLikelihood(CUstream idStream,long n,int index,Pointer likold,Pointer liknew,Pointer parameter,Pointer parameterSave,Pointer gamma)
+    {
+        call2DGrid("checkLikelihood", idStream, n, n,index,likold,liknew,parameter,parameterSave,gamma);
+    }
+       
+            
+    
+    //this function use FLOAT pointers
+    public static void normalizeCorrelation(CUstream idStream,long n,int nbFrame,int depth ,int sizeInput, Pointer output, Pointer input, Pointer divide)
+    {
+        call2DGrid("normalizeCorrelation", idStream, n, n, nbFrame,depth,sizeInput, output, input, divide);
+    }
+    
+    
+    
+    //this function use FLOAT pointers
+    public static void makeResultCorrelationMany(CUstream idStream,long n,int nbFrame,int depth ,int sizeInput,int sizeFullPadded, Pointer output, Pointer input, Pointer sparse)
+    {
+        call2DGrid("makeResultCorrelationMany", idStream, n, n, nbFrame,depth,sizeInput,sizeFullPadded, output, input, sparse);
+    }
+    
+    public static void makeResultCorrelationNormalized(CUstream idStream,long n, int sizeInput,int sizeFullPadded, Pointer output, Pointer input, Pointer sparse,float divide,Pointer devicedivide,float minValue)
+    {
+        call2DGrid("makeResultCorrelationNormalized", idStream, n, n, sizeInput,sizeFullPadded, output, input, sparse,divide,devicedivide,minValue);
+    }
+    
+    
+    public static void subtractMeanWithSumAsInputWithPositiveConstraint(CUstream idStream,long n,  Pointer output, Pointer input, Pointer sum,float minValue)
+    {
+        call2DGrid("subtractMeanWithSumAsInputWithPositiveConstraint", idStream, n, n, output, input, sum,minValue);
+    }
+    
+    //this function use FLOAT pointers
+    public static void makeResultCorrelation4deconv(CUstream idStream,long n, int sizeInput,int sizeFullPadded, Pointer output, Pointer input, Pointer sparse, Pointer image)
+    {
+        call2DGrid("makeResultCorrelation4deconv", idStream, n, n, sizeInput,sizeFullPadded, output, input, sparse,image);
     }
     
     
