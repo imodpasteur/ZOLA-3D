@@ -173,7 +173,6 @@ public class ZernikePhaseRetrieval {
             //init background fixed value
             int [] ind=pbg[z].getIndexOfOrder(0);
             pbg[z].a[ind[0]]=paramImage.B[z];
-            
             computeBackground2D(z);
             
             
@@ -402,7 +401,11 @@ public class ZernikePhaseRetrieval {
         for (int ii=0;ii<image[image_id].length;ii++){
             for (int iii=0;iii<image[image_id][ii].length;iii++){
                 for (int iiii=0;iiii<image[image_id][ii][iii].length;iiii++){
-                    som+=(image[image_id][ii][iii][iiii]-mod[ii][iii][iiii])*(image[image_id][ii][iii][iiii]-mod[ii][iii][iiii])/mod[ii][iii][iiii];
+                    double denom=Math.abs(mod[ii][iii][iiii]);
+                    if (denom==0){
+                        denom=0.00001;
+                    }
+                    som+=(image[image_id][ii][iii][iiii]-mod[ii][iii][iiii])*(image[image_id][ii][iii][iiii]-mod[ii][iii][iiii])/denom;
                     nbData++;
                 }
             }
@@ -1515,16 +1518,17 @@ public class ZernikePhaseRetrieval {
     void computeBackground2D(int idZ){
         
         for (int i=0;i<background[idZ].length;i++){
-            for (int ii=0;ii<background[idZ][0].length;ii++){
-
+            for (int ii=0;ii<background[idZ][0].length;ii++){   
+                    
                     double [] v = new double [2];
                     v[0]=i;
                     v[1]=ii;
                     background[idZ][i][ii]=pbg[idZ].transform(v);
-
                     
             }
         }
+        
+        //ImageShow.imshow(background);
         
     }
     
@@ -1617,6 +1621,7 @@ public class ZernikePhaseRetrieval {
     //                        prod*=X[ii];
     //                    }
     //                    else{
+                            
                             prod*=Math.pow(X[ii], indiceLigne[ii]);
     //                    }
                         //IJ.log("* "+X[ii]+" ^ "+indiceLigne[ii]);
@@ -1856,6 +1861,9 @@ public class ZernikePhaseRetrieval {
                     }
                     else{
                         mod[i][ii]=psf[i][ii]*(paramImage.A[idStack][idSlice]+fit_a[idStack]+fit_a_each[idStack][idSlice])+background[idStack][i][ii];
+                    }
+                    if (mod[i][ii]<=0){
+                        mod[i][ii]=0.00000001;
                     }
                     likelihood+=mod[i][ii]-image[idStack][idSlice][i][ii]*Math.log(mod[i][ii]);
                     

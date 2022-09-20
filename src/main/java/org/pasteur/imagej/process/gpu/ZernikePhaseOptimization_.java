@@ -146,6 +146,67 @@ public class ZernikePhaseOptimization_ {
         
     }
     
+    
+    private double [] fermat(){
+        
+        
+        
+        //compute phase:
+        int nbDataPerImage=dparam.param.sizeDisk;
+
+        double a=dparam.param.sizeRadiusRingPixel;
+
+        double center=dparam.param.centerFourierImage;
+        double dist;
+        
+        double [] phase = new double [nbDataPerImage];
+        double order=1;
+        for (int i=0;i<nbDataPerImage;i++){
+            int x=dparam.param.disk2D[i][0];
+            int y=dparam.param.disk2D[i][1];
+            double xx=((double)x-center);
+            double yy=((double)y-center);
+            double angle=Math.atan2(yy, xx);
+            double r=xx*xx+yy*yy;
+            
+            
+            
+            // fermat
+            double dn=Double.POSITIVE_INFINITY;
+            double dp=Double.POSITIVE_INFINITY;
+            
+            for (double o=order%(int)order;o<=order;o++){
+                
+                double fp=a*a*(angle);
+                double fn=a*a*(angle+Math.PI);
+                if (Double.isNaN(fp)){
+                    IJ.log(""+angle);
+                }
+                if (r<fp){
+                    dp=fp-r;
+                }
+
+                if (r<fn){
+                    dn=fn-r;
+
+                }
+                //IJ.log("fn fp "+fn+"  "+fp);
+                if (dn<dp){
+                    phase[i]=0;//-Math.PI*Math.sqrt(r)/a;
+                }
+                else{
+                    phase[i]=Math.PI;
+                }
+                
+                
+            
+            }
+            //phase[i]=angle;
+            
+        }
+        return phase;
+    }
+    
     private void phase_optim_zernike(int iterations,boolean init){
         
         

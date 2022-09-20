@@ -145,10 +145,11 @@ public  class Model_generator_ {
     
     
     
-    
-    
-    
     public void computePSFfromTable(StackLocalization sl,String path_result,boolean startAt0){
+        computePSFfromTable(sl,path_result,startAt0,-1);
+    }
+    
+    public void computePSFfromTable(StackLocalization sl,String path_result,boolean startAt0,int fixedimagesize){
         
         
         
@@ -186,10 +187,14 @@ public  class Model_generator_ {
             minX=0;
             minY=0;
         }
-        
-        width=(int)Math.ceil(((maxX-minX)/1000)/dp.param.xystep)+dp.param.sizeoutput;
-        height=(int)Math.ceil(((maxY-minY)/1000)/dp.param.xystep)+dp.param.sizeoutput;
-        
+        if (fixedimagesize==-1){
+            width=(int)Math.ceil(((maxX-minX)/1000)/dp.param.xystep)+dp.param.sizeoutput;
+            height=(int)Math.ceil(((maxY-minY)/1000)/dp.param.xystep)+dp.param.sizeoutput;
+        }
+        else{
+            width=fixedimagesize;
+            height=fixedimagesize;
+        }
         
         IJ.log("min max "+minX+"  "+maxX+"  "+Math.ceil(((maxX-minX)/1000)/dp.param.xystep)+"  "+dp.param.xystep);
         IJ.log("wh "+width+"  "+height+"  "+dp.param.sizeoutput);
@@ -235,6 +240,13 @@ public  class Model_generator_ {
         int [] frame = new int [model_number];
         double [] photon = new double [model_number];
         
+        if (fixedimagesize>=0){
+            if (dp.param.sizeoutput>fixedimagesize){
+
+                IJ.log("WARNING: image size extended to psf output size");
+
+            }
+        }
         
         
         if (dp.param.sizeoutput>width){
@@ -299,7 +311,7 @@ public  class Model_generator_ {
         
         //path_result
         
-        org.pasteur.imagej.utils.ImageShow.imshow(res,"PSF generated");
+        //org.pasteur.imagej.utils.ImageShow.imshow(res,"PSF generated");
          
         
         ImageStack ims = new ImageStack(res[0].length,res[0][0].length);

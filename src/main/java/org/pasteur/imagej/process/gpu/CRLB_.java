@@ -85,7 +85,7 @@ public class CRLB_ {
         SearchPSFcenter_ spsfc= new SearchPSFcenter_(dp,axialRange);
         double position=spsfc.getPosition();
         
-        //IJ.log("position "+position);
+        IJ.log("position "+position);
         
         boolean computeSTD=false;
         
@@ -454,6 +454,9 @@ public class CRLB_ {
         
         return std;
     }
+    
+    
+    
     
     
     

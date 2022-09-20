@@ -1035,7 +1035,9 @@ public class ZRendering {
         
         
         if (printLUT){
-            addLUT(imp,minZsmart, maxZsmart,lut);
+            if (!(java.awt.GraphicsEnvironment.isHeadless() || IJ.isMacro())){
+                addLUT(imp,minZsmart, maxZsmart,lut);
+            }
         }
         
         
@@ -1500,7 +1502,7 @@ public class ZRendering {
                     xx=(int)((x-minX)/pixelsizeNM)+shift;
                     yy=(int)((y-minY)/pixelsizeNM)+shift;
                     z=sl.fl.get(i).loc.get(j).Z;
-                    if ((z>minZ)&&(z<maxZ)){
+                    if ((z>=minZ)&&(z<maxZ)){
                         //IJ.log("z "+z);
                         if ((xx-shift>=0)&&(yy-shift>=0)&&(xx+shift<width)&&(yy+shift<height)){
                             for (int a=-shift,aa=0;a<=shift;a++,aa++){
@@ -1642,13 +1644,17 @@ public class ZRendering {
                     xx=(int)x;
                     yy=(int)y;
                     z=sl.fl.get(i).loc.get(j).Z;
+                    
                     sx=sl.fl.get(i).loc.get(j).crlb_X;
                     sy=sl.fl.get(i).loc.get(j).crlb_Y;
+                    if (Math.random()<.001){
+                        IJ.log("z"+z+"  "+sx+"  "+sy);
+                    }
                     if (sx<=0){
-                        sx=.1;
+                        sx=pixelsizeNM;
                     }
                     if (sy<=0){
-                        sy=.1;
+                        sy=pixelsizeNM;
                     }
                     double leftGauss=cste/(sx*sy);
                     decx=(x-xx)*pixelsizeNM;
@@ -1656,7 +1662,7 @@ public class ZRendering {
                     
                     shiftA=(int)Math.ceil(2*sx/pixelsizeNM);
                     shiftAA=(int)Math.ceil(2*sy/pixelsizeNM);
-                    if ((z>minZ)&&(z<maxZ)){
+                    if ((z>=minZ)&&(z<maxZ)){
                         //IJ.log("z "+z);
                         for (int a=-shiftA;a<=shiftA;a++){
                             for (int aa=-shiftAA;aa<=shiftAA;aa++){
@@ -2001,19 +2007,21 @@ public class ZRendering {
                     sz=sl.fl.get(i).loc.get(j).crlb_Z;
                     
                     if (sx<=0){
-                        sx=.1;
+                        sx=pixelsizeXYNM;
                     }
                     if (sy<=0){
-                        sy=.1;
+                        sy=pixelsizeXYNM;
                     }
                     if (sz<=0){
-                        sz=.1;
+                        sz=pixelsizeZNM;
                     }
                     double leftGauss=cste/(sx*sy*sz);
                     decx=(x-xx)*pixelsizeXYNM;
                     decy=(y-yy)*pixelsizeXYNM;
                     decz=(z-zz)*pixelsizeZNM;
-                    //IJ.log("z "+z);
+                    //if (Math.random()<.01){
+                        //IJ.log("z "+z+"  "+x+"  "+y+"  "+sx+"  "+sy+"  "+sz);
+                    //}
                     shiftA=(int)Math.ceil(2*sx/pixelsizeXYNM);
                     shiftAA=(int)Math.ceil(2*sy/pixelsizeXYNM);
                     shiftAAA=(int)Math.ceil(2*sz/pixelsizeZNM);

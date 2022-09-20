@@ -245,14 +245,19 @@ public class PSF_double_ {
                     
                     if (param.withApoFactor){
                         if (left_oil>right){
+                            
+                            
                             pupil[id]=(double)(1/Math.pow(1-(right/left_oil),.25));//with apodization factor
                         }
                         else{
                             pupil[id]=0;
+                            
+                            
                         }
                     }
                     else{
                         pupil[id]=1/(double)Math.sqrt(param.sizeDisk);//like that -> final sum=1 (unuseful actually because we normalize at the end)
+                        //pupil[id]=(double)-(i-center)/(0.5*(Math.sqrt(param.ringsize)*(param.size*param.xystep)))+.5;IJ.log("WARNING: apod remov for testing polarization");
                     }
                     
                     
@@ -973,6 +978,7 @@ public class PSF_double_ {
 
         for (int i=0;i<param.sizeDisk;i++){
             mat[param.disk2D[i][0]][param.disk2D[i][1]]=phase[i];
+            //IJ.write(""+i+","+param.disk2D[i][0]+","+param.disk2D[i][1]);
         }
             
         return mat;

@@ -1153,7 +1153,7 @@ public class LocalizationAutoFocusPipeline_ {
                                                             double my_crlbz=(1000*loc[partNumber][threadNumber].getCRLBZ());
                                                             
                                                             
-                                                            if (my_Score<4&&(my_crlbx<25)&&(my_crlby<25)&&(my_crlbz<50)){
+                                                            if ((my_crlbx<50)&&(my_crlby<50)&&(my_crlbz<100)){
                                                                 if (my_z>0){
                                                                     focus_likelihood_list[foc].add(my_Score);
                                                                 }

@@ -86,7 +86,7 @@ public class InitBackgroundAndPhotonNumber {
             for (int i=0;i<width;i++){
                 for (int ii=0;ii<height;ii++){
                     
-                    image[z][i][ii]=((image[z][i][ii]-scmoscam.scmosoffset[i][ii])/scmoscam.scmosgain[i][ii]);
+                    image[z][i][ii]=((image[z][i][ii]-scmoscam.scmosoffset[i][ii])/scmoscam.scmosgain[i][ii]);// here we avoid var/gain2 term that simplify computation
                     
                     if (image[z][i][ii]<0){
                         image[z][i][ii]=0;
@@ -677,8 +677,9 @@ public class InitBackgroundAndPhotonNumber {
             }
         }
         
-        
-        mean/=countMean0;
+        if (countMean0>0){
+            mean/=countMean0;
+        }
         for (i=0;i<image.length;i++){
             for (ii=0;ii<image[0].length;ii++){
                 for (iii=0;iii<image[0][0].length;iii++){
@@ -688,8 +689,11 @@ public class InitBackgroundAndPhotonNumber {
                 }
             }
         }
-        std/=countMean0;
-        std=Math.sqrt(std);
+        if (countMean0>0){
+            std/=countMean0;
+            std=Math.sqrt(std);
+        }
+        
         
         
         for (i=0;i<image.length;i++){
@@ -751,7 +755,9 @@ public class InitBackgroundAndPhotonNumber {
                     count++;
                 }
             }
-            filtMean[i]/=count;
+            if (count!=0){
+                filtMean[i]/=count;
+            }
             if (filtMean[i]<filtMean[miniposition]){
                 miniposition=i;
             }
@@ -844,8 +850,9 @@ public class InitBackgroundAndPhotonNumber {
                         }
                     }
                     //Arrays.sort(vect);
-                    
-                    meantmp/=count;
+                    if (count!=0){
+                        meantmp/=count;
+                    }
                     double [] data=new double [3];
                     data[0]=ii;
                     data[1]=iii;

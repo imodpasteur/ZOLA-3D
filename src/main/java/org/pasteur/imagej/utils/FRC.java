@@ -6,6 +6,7 @@
 package org.pasteur.imagej.utils;
 
 import ij.IJ;
+import ij.ImagePlus;
 import ij.gui.Plot;
 import java.awt.Color;
 import java.util.Arrays;
@@ -101,10 +102,26 @@ public class FRC {
         
     }
     
+    private double [][] smooth(double [][] x){
+        double [][] y = new double [x.length][x[0].length];
+        for (int i=0;i<x.length;i++){
+            for (int ii=0;ii<x[0].length;ii++){
+                for (int a=-1;a<=1;a++){
+                    for (int aa=-1;aa<=1;aa++){
+                        if ((i+a>=0)&&(i+a<x.length)&&(ii+aa>=0)&&(ii+aa<x[0].length)){
+                            y[i][ii]+=x[i+a][ii+aa];
+                        }
+                    }
+                }
+            }
+        }
+        return y;
+    }
+    
     
     public void run(){
         
-        int size=1024;
+        int size=512;
         IJ.log("SIZE "+size);
         double [][] weight = new double [w][h];
         double xtmp,ytmp;
@@ -125,7 +142,7 @@ public class FRC {
                     ytmp=1;
                 }
                 
-                weight[i][ii]=1;//xtmp*ytmp*ztmp;
+                weight[i][ii]=xtmp*ytmp;
                 
             }
         }
@@ -142,6 +159,7 @@ public class FRC {
         double [][] F = new double [size][size];
         double [][] G = new double [size][size];
         double [][] H = new double [size][size];
+        double [][] numeratorI = new double [size][size];
         double [][] tmpointer;
         FastFourierTransform fft1 = new FastFourierTransform(size,size);
         FastFourierTransform fft2 = new FastFourierTransform(size,size);
@@ -160,6 +178,8 @@ public class FRC {
                         
                     }
                 }
+                C = new double [size][size];
+                D = new double [size][size];
 
                 fft1.setReal(A);
                 fft1.setImag(C);
@@ -173,12 +193,12 @@ public class FRC {
 
                 tmpointer=fft1.getPointerRealOut2D();
                 addMatriceTo(E,tmpointer);
-                tmpointer=fft1.getPointerRealOut2D();
+                tmpointer=fft1.getPointerImagOut2D();
                 addMatriceTo(F,tmpointer);
 
                 tmpointer=fft2.getPointerRealOut2D();
                 addMatriceTo(G,tmpointer);
-                tmpointer=fft2.getPointerRealOut2D();
+                tmpointer=fft2.getPointerImagOut2D();
                 addMatriceTo(H,tmpointer);
                     
                 
@@ -186,14 +206,16 @@ public class FRC {
         }
         
         
-        
+        //ImageShow.imshow(A,"inA");
+        //ImageShow.imshow(B,"inB");
         
         IJ.log("FFT OK");
         
         
         shift2D(A,E);
         shift2D(B,F);
-        
+//        ImageShow.imshow(A,"A");
+//        ImageShow.imshow(B,"B");
         IJ.log("SHIFT image 1 OK");
         
         shift2D(C,G);
@@ -207,19 +229,30 @@ public class FRC {
 
         for (int i=0;i<size;i++){
             for (int ii=0;ii<size;ii++){
-                for (int iii=0;iii<size;iii++){
-                    E[i][ii]=(A[i][ii]*A[i][ii]+B[i][ii]*B[i][ii]);
-                    F[i][ii]=(C[i][ii]*C[i][ii]+D[i][ii]*D[i][ii]);
-                    G[i][ii]=(A[i][ii]*C[i][ii]+B[i][ii]*D[i][ii]);
-                    H[i][ii]=(B[i][ii]*C[i][ii]-A[i][ii]*D[i][ii]);
-                }
+                
+                E[i][ii]=(A[i][ii]*A[i][ii]+B[i][ii]*B[i][ii]);
+                F[i][ii]=(C[i][ii]*C[i][ii]+D[i][ii]*D[i][ii]);
+                G[i][ii]=(A[i][ii]*C[i][ii]+B[i][ii]*D[i][ii]);
+                H[i][ii]=(B[i][ii]*C[i][ii]-A[i][ii]*D[i][ii]);
+                numeratorI[i][ii]=(G[i][ii]*G[i][ii])+(H[i][ii]*H[i][ii]);
+                    
+                
             }
         }
+        
+        /*ImagePlus imptmp = new ImagePlus("/home/benoit/atlas/gaia/Mickael/Dual_Objective/20191128_NUP96SNAP_65ms_200_400/3D_FoV__1/analysis1/FSC_benoit/test/numerator.tif");
+        
+        double [][] imptmpp = new double [imptmp.getWidth()][imptmp.getHeight()];
+        for (int i=0;i<imptmp.getWidth();i++){
+            for (int ii=0;ii<imptmp.getHeight();ii++){
+                imptmpp[i][ii]=imptmp.getProcessor().getPixelValue(i, ii);
+            }
+        }*/
         
         IJ.showProgress(.99);
         
         IJ.log("NORMALIZED CORRELATION OK");
-//        ImageShow.imshow(A,"A");
+        //ImageShow.imshow(numeratorI,"numeratorI");
 //        ImageShow.imshow(B,"B");
 //        ImageShow.imshow(C,"C");
 //        ImageShow.imshow(D,"D");
@@ -234,10 +267,34 @@ public class FRC {
         //A contains distance matrix
         IJ.log("DIST MATRIX OK");
         
+        E=smooth(E);
+        F=smooth(F);
+        G=smooth(G);
+        H=smooth(H);
+        E=smooth(E);
+        F=smooth(F);
+        G=smooth(G);
+        H=smooth(H);
+        E=smooth(E);
+        F=smooth(F);
+        G=smooth(G);
+        H=smooth(H);
+        E=smooth(E);
+        F=smooth(F);
+        G=smooth(G);
+        H=smooth(H);
+        E=smooth(E);
+        F=smooth(F);
+        G=smooth(G);
+        H=smooth(H);
         
+        ImageShow.imshow(E,"E");
         
-        double step=1;//pixel step to convert in vector
+        double step=1;//pixel step to convert in vector//
         int sizeVect=(int)Math.ceil(size*Math.sqrt(2)/(2*step));//sqrt(2) because 2D
+        
+        double [] numerator = new double[sizeVect];
+        
         double [] vectE = new double[sizeVect];
         double [] vectF = new double[sizeVect];
         double [] vectG = new double[sizeVect];
@@ -247,6 +304,8 @@ public class FRC {
         
         //sum over distances to convert 2D images to vectors
         for (int i=0;i<v.length;i++){
+            
+            
             int bin=(int)(v[i][0]/step);
             
             
@@ -256,18 +315,27 @@ public class FRC {
             vectH[bin]+=H[(int)v[i][1]][(int)v[i][2]];
             vectN[bin]++;
             
+            numerator[bin]+=G[(int)v[i][1]][(int)v[i][2]]*G[(int)v[i][1]][(int)v[i][2]]+H[(int)v[i][1]][(int)v[i][2]]*H[(int)v[i][1]][(int)v[i][2]];
+            
         }
         
-        
-        
-        
+        plot(numerator,"numerator");
+        plot(vectE,"vectE");
+        plot(vectF,"vectF");
         
         double [] vectFinal = new double[sizeVect];
         double [] xaxisXY = new double[sizeVect];
-        for (int i=0;i<sizeVect;i++){
-            vectFinal[i]=(vectG[i]/Math.sqrt(vectE[i]*vectF[i]));// - 2/Math.sqrt(vectN[i]/2);
-            xaxisXY[i]=i*step/(size*this.pixSizeXY);
+        for (int i=1;i<sizeVect;i++){
+            vectFinal[i]=(Math.sqrt(numerator[i])/Math.sqrt(vectE[i]*vectF[i]));// - 2/Math.sqrt(vectN[i]/2);
+            xaxisXY[i]=i*step/(size);//*this.pixSizeXY);
+            IJ.log("xax "+xaxisXY[i]+"  "+size+"  "+pixSizeXY);
         }
+        
+        vectFinal[0]=1;
+        xaxisXY[0]=0;
+        
+        IJ.log("PIXSIZ="+pixSizeXY+"  "+xaxisXY[sizeVect-1]);
+        
         
         double [] vectFinalSmooth = new double[sizeVect];
         
@@ -275,7 +343,7 @@ public class FRC {
         for (int i=0;i<sizeVect;i++){
             m=0;
             c=0;
-            for (int u=-5;u<=5;u++){
+            for (int u=-10;u<=10;u++){
                 if ((u+i>=0)&&(u+i<sizeVect)){
                     m+=vectFinal[i+u];
                     c++;
@@ -287,12 +355,18 @@ public class FRC {
         double threshold=1./7.;
         
         int xresol=0;
-        while (vectFinalSmooth[xresol]>threshold){
+        looper:while (vectFinalSmooth[xresol]>threshold){
             xresol++;
+            if (xresol>=vectFinalSmooth.length-1){
+                break looper;
+            }
         }
-        IJ.log("r "+xaxisXY[xresol]+"  "+xresol);
+        //IJ.log("r "+xaxisXY[xresol]+"  "+xresol);
         double resolutionXY=xaxisXY[xresol];
         
+        
+        
+        //plot(xaxisXY,vectN,vectFinalSmooth,xaxisXY[xresol],threshold,"N","1/nm","N");
         
         plot(xaxisXY,vectFinal,vectFinalSmooth,xaxisXY[xresol],threshold,"FRC","1/nm","FRC");
         
@@ -350,6 +424,37 @@ public class FRC {
         p.drawLine(0, lineY, lineX, lineY);
         p.drawLine(lineX, 0, lineX, lineY);
         p.addPoints(x, y2,Plot.LINE);
+        p.show();
+        
+    }
+    
+    
+    
+    
+    
+    
+    public void plot(double [] y,String title){
+        
+        double yMin=y[0]; double yMax=y[0];
+        double [] x = new double [y.length];
+        for (int i=0;i<y.length;i++){
+            x[i]=i;
+            if (y[i]<yMin){
+                yMin=y[i];
+            }
+            if (y[i]>yMax){
+                yMax=y[i];
+            }
+            
+        }
+        
+        
+        Plot p = new Plot(""+title,"","");
+        p.setLimits(0, x.length, yMin-.01*(yMax-yMin), yMax+.01*(yMax-yMin));
+        p.setLineWidth(2);
+        p.setFont(0, 18);
+        
+        p.addPoints(x, y,Plot.LINE);
         p.show();
         
     }

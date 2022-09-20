@@ -1324,7 +1324,7 @@ public class Predetection_deconvolutionFastSkellamBckg_ {
                if (withL1Norm){
                 for (int i=0;i<this.nbFrame;i++){
                     //minimise localizations
-                    MyVecDouble.addScalarFloat(MyCudaStream.getCUstream(streamId), (long)wh*(long)(range.length-1), device_tmpFFT2.withByteOffset((long)wh*(long)range.length*i*Sizeof.FLOAT), device_tmpFFT2.withByteOffset((long)wh*(long)range.length*i*Sizeof.FLOAT), (float)-.01);
+                    MyVecDouble.addScalarFloat(MyCudaStream.getCUstream(streamId), (long)wh*(long)(range.length-1), device_tmpFFT2.withByteOffset((long)wh*(long)range.length*i*Sizeof.FLOAT), device_tmpFFT2.withByteOffset((long)wh*(long)range.length*i*Sizeof.FLOAT), (float)-.05);
                     //maximize background
                     //MyVecDouble.addScalarFloat(MyCudaStream.getCUstream(streamId), (long)wh, device_tmpFFT2.withByteOffset((long)wh*(long)range.length*i*Sizeof.FLOAT+wh*(depth-1)*Sizeof.FLOAT), device_tmpFFT2.withByteOffset((long)wh*(long)range.length*i*Sizeof.FLOAT+wh*(depth-1)*Sizeof.FLOAT), (float)+.05);
                 

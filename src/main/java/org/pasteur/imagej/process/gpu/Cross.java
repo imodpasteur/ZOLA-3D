@@ -542,6 +542,7 @@ public class Cross {
         
         cudaResult =cudaMemcpyAsync(this.host_resultCorrelation, device_correlImage, totalSizeUnpadded*range.length*Sizeof.FLOAT, cudaMemcpyDeviceToHost,MyCudaStream.getCudaStream_t(streamId));
         
+        //IJ.log("siz "+range.length+"  "+width+"  "+height);
         
         for (int z=0;z<range.length;z++){
             for (int i=0;i<this.width;i++){

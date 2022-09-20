@@ -375,7 +375,6 @@ public class GenericPhaseRetrieval_ {
                 IJ.showProgress((1.-(double)(iterations-t)/iterations));
                 
 
-                
 
                 this.updateRegistrationStacks(nbstack);
                 
@@ -429,8 +428,11 @@ public class GenericPhaseRetrieval_ {
                 
                 likelihood=lik;
                 
-                
-
+                if (t>0&&(t%10==0||t==iterations-1)){
+                    smoothPhase();
+                    showPhase("phase smoothed iter "+t);
+                    showImageAndModel("psf with smoothed phase iter "+t);
+                }
                 //IJ.log("sig "+dparam.param.sigmaGaussianKernel+"   wz "+dparam.param.getweightZ());
                 
 
@@ -829,7 +831,51 @@ public class GenericPhaseRetrieval_ {
     
     
     
-    
+    private void smoothPhase(){
+        double [] phase= dparam.phaseNonZer.getValuesPhase();
+        double [] phaseMean= dparam.phaseNonZer.getValuesPhase();
+        int size=dparam.param.size;
+        int [][] ph=new int[size][size];
+        for (int i=0;i<size;i++){
+            for (int ii=0;ii<size;ii++){
+                ph[i][ii]=-1;
+            }
+        }
+        for (int p=0;p<dparam.param.sizeDisk;p++){
+            ph[dparam.param.disk2D[p][0]][dparam.param.disk2D[p][1]]=p;
+        }
+        for (int i=0;i<size;i++){
+            for (int ii=0;ii<size;ii++){
+                if (ph[i][ii]>=0){
+                    phaseMean[ph[i][ii]]=0;
+                    double count=0;
+                    for (int j=-1;j<=1;j++){
+                        for (int jj=-1;jj<=1;jj++){
+                            if (((i+j)>=0)&&((i+j)<size)&&((ii+jj)>=0)&&((ii+jj)<size)){
+                                if (ph[i+j][ii+jj]>=0){
+                                    double shift=0;
+                                    double minDist1=Math.abs(phase[ph[i][ii]]-phase[ph[i+j][ii+jj]]);
+                                    double minDist2=Math.abs(phase[ph[i][ii]]-phase[ph[i+j][ii+jj]]-Math.PI*2);
+                                    double minDist3=Math.abs(phase[ph[i][ii]]-phase[ph[i+j][ii+jj]]+Math.PI*2);
+                                    if (minDist2<minDist1){
+                                        shift=Math.PI*2;
+                                    }
+                                    if (minDist3<minDist1){
+                                        shift=-Math.PI*2;
+                                    }
+                                    
+                                    phaseMean[ph[i][ii]]+=phase[ph[i+j][ii+jj]]+shift;
+                                    count++;
+                                }
+                            }
+                        }
+                    }
+                    phaseMean[ph[i][ii]]/=count;
+                }
+            }
+        }
+        dparam.phaseNonZer.setValuesPhase(phaseMean);
+    }
     
     
     
@@ -1898,7 +1944,13 @@ public class GenericPhaseRetrieval_ {
 
         boolean found=false;
         loop:for (double gamma=1;gamma>.02;gamma/=10){
-            
+            double shift=0;
+            if (gamma*grad>0){
+                shift=Math.min(gamma*grad,0.05);
+            }
+            else{
+                shift=Math.max(gamma*grad,-0.05);
+            }
             dparam.param.sigmaGaussianKernel=save-gamma*grad;
             dparam.psf_fMany.updateSigmaGaussianKernel(dparam.param.sigmaGaussianKernel);
             double lik=0;

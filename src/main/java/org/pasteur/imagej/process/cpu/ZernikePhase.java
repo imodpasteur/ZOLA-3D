@@ -53,7 +53,7 @@ public class ZernikePhase {
         this.multiTrainingWithParabola=false;
         this.param=param;
         Zernike z = new Zernike(param.size_cpu,param.sizeRadiusRingPixel_cpu,zernikePolyNumber);
-        //ImageShow.imshow(z.Z,"Z");
+        
         
         numberOfCoef=zernikePolyNumber;
         
@@ -157,7 +157,7 @@ public class ZernikePhase {
         
         this.param=param;
         Zernike z = new Zernike(param.size_cpu,param.sizeRadiusRingPixel_cpu,maxiCoef+1);
-        
+        ImageShow.imshow(z.Z,"Z");
         numberOfCoef=coef.length;
         
             

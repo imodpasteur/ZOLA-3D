@@ -329,4 +329,70 @@ public class ImageShow {
         imp.show();
     }
     
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    public static void imshow(double [] im,int width,int height){
+        imshow(im, width, height, "");
+    }
+    public static void imshow(double [] im,int width,int height,String title){
+        
+            ImageProcessor ip = new FloatProcessor(width,height);
+            for (int i=0;i<width;i++){
+                for (int ii=0;ii<height;ii++){
+                    ip.putPixelValue(i, ii, (float)im[ii*width+i]);
+                }
+            }
+        
+        ImagePlus imp=new ImagePlus(""+title,ip);
+        imp.show();
+    }
+    
+    
+    
+    public static void imshow(float [] im,int width,int height){
+        imshow(im, width, height, "");
+    }
+    public static void imshow(float [] im,int width,int height,String title){
+        
+            ImageProcessor ip = new FloatProcessor(width,height);
+            for (int i=0;i<width;i++){
+                for (int ii=0;ii<height;ii++){
+                    ip.putPixelValue(i, ii, (float)im[ii*width+i]);
+                }
+            }
+        
+        ImagePlus imp=new ImagePlus(""+title,ip);
+        imp.show();
+    }
+    
+    public static void imshow(int [] im,int width,int height){
+        imshow(im, width, height, "");
+    }
+    public static void imshow(int [] im,int width,int height,String title){
+        
+            ImageProcessor ip = new FloatProcessor(width,height);
+            for (int i=0;i<width;i++){
+                for (int ii=0;ii<height;ii++){
+                    ip.putPixelValue(i, ii, (float)im[ii*width+i]);
+                }
+            }
+        
+        ImagePlus imp=new ImagePlus(""+title,ip);
+        imp.show();
+    }
+    
+    
+    
+    
+    
+    
+    
+    
 }

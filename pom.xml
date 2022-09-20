@@ -14,7 +14,7 @@
 
 	<groupId>org.pasteur</groupId>
 	<artifactId>ZOLA_</artifactId>
-	<version>0.2.7-SNAPSHOT</version>
+	<version>0.2.8-SNAPSHOT</version>
 
 	<name>ZOLA</name>
 	<description>An ImageJ plugin for 3D localization microscopy.</description>
@@ -78,43 +78,43 @@
                 <dependency>
                     <groupId>org.jcuda</groupId>
                     <artifactId>jcuda</artifactId>
-                    <version>0.8.0</version>
+                    <version>11.1.1</version>                
                 </dependency>
                 <dependency>
                         <groupId>org.jcuda</groupId>
                         <artifactId>jcublas</artifactId>
-                        <version>0.8.0</version>
+                        <version>11.1.1</version>
                 </dependency>
                 <dependency>
                         <groupId>org.jcuda</groupId>
                         <artifactId>jcufft</artifactId>
-                        <version>0.8.0</version>
+                        <version>11.1.1</version>
                 </dependency>
                 <dependency>
                         <groupId>org.jcuda</groupId>
                         <artifactId>jcusparse</artifactId>
-                        <version>0.8.0</version>
+                        <version>11.1.1</version>
                 </dependency>
                 <dependency>
                         <groupId>org.jcuda</groupId>
                         <artifactId>jcusolver</artifactId>
-                        <version>0.8.0</version>
+                        <version>11.1.1</version>
                 </dependency>
                 <dependency>
                         <groupId>org.jcuda</groupId>
                         <artifactId>jcurand</artifactId>
-                        <version>0.8.0</version>
-                </dependency>
-                <dependency>
-                        <groupId>org.jcuda</groupId>
-                        <artifactId>jnvgraph</artifactId>
-                        <version>0.8.0</version>
+                        <version>11.1.1</version>
                 </dependency>
                 <dependency>
                         <groupId>org.jcuda</groupId>
                         <artifactId>jcudnn</artifactId>
-                        <version>0.8.0</version>
+                        <version>11.1.1</version>
                 </dependency>
+            <dependency>
+                <groupId>org.apache.commons</groupId>
+                <artifactId>commons-math3</artifactId>
+                <version>3.6.1</version>
+            </dependency>
                 <!--<dependency>
                     <groupId>org.pasteur</groupId>
                     <artifactId>SMLM_IO</artifactId>

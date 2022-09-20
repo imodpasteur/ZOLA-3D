@@ -148,7 +148,7 @@ public class InverseFiltering {
 
             FastFourierTransform fftFilter = new FastFourierTransform(w,h);
             FastFourierTransform fftImage = new FastFourierTransform(w,h);
-
+            
             fftFilter.setReal(pad(psf[pp]));
             fftFilter.setImag(a);
             fftFilter.fft2D();
@@ -163,7 +163,8 @@ public class InverseFiltering {
             
             
 
-            fftImage.setReal(addnoise(pad(image[0]),2000,10,2));
+            //fftImage.setReal(addnoise(pad(image[0]),2000,10,2));
+            fftImage.setReal(pad(image[0]));
             fftImage.setImag(imageB);
             fftImage.fft2D();
             imageA=fftImage.getPointerRealOut2D();
@@ -177,7 +178,7 @@ public class InverseFiltering {
             for (int i=0;i<w;i++){
                 for (int ii=0;ii<h;ii++){
                     double tmp=(a[i][ii]*a[i][ii]+b[i][ii]*b[i][ii]);
-                    int method=2;
+                    int method=1;
                     if (method==1){
                         if (tmp!=0){
                             if (Math.sqrt((a[i][ii]*a[i][ii]+b[i][ii]*b[i][ii])/(tmp*tmp))<gamma){;

@@ -32,7 +32,11 @@ public class ConfigFile {
     
     static String [] option = {
         
-        "Plugins>ZOLA>  Camera setup>, \"photon count estimation\", org.pasteur.imagej.ZOLA(\"zola_photonCountEstimation\")\n",
+        "Plugins>ZOLA>  Camera setup>, \"EMCCD calibration photon count\", org.pasteur.imagej.ZOLA(\"zola_photonCountEstimation\")\n"+
+        
+        "Plugins>ZOLA>  Camera setup>SCMOS calibration photon count, \"compute offset&variance maps (1/2)\", org.pasteur.imagej.ZOLA(\"zola_SCMOS_offset_variance_map\")\n"+
+        "Plugins>ZOLA>  Camera setup>SCMOS calibration photon count, \"compute gain map (2/2)\", org.pasteur.imagej.ZOLA(\"zola_SCMOS_gain_map\")\n"+
+        "Plugins>ZOLA>  Camera setup>, \"test photon count conversion\", org.pasteur.imagej.ZOLA(\"zola_convertImageToPhotonCount\")\n",
         
         "Plugins>ZOLA>additional tools, \"Best PSF model optimization\", org.pasteur.imagej.ZOLA(\"zola_phaseoptim\")\n",
         
@@ -91,6 +95,7 @@ public class ConfigFile {
 "Plugins>ZOLA>dev>, \"RemoveLocalizations\", org.pasteur.imagej.ZOLA(\"zola_removeLocalizations\")\n" +
 "Plugins>ZOLA>dev>, \"NPC detection\", org.pasteur.imagej.ZOLA(\"zola_NPCdetection\")\n" +
 "Plugins>ZOLA>dev>, \"CRLB_3D\", org.pasteur.imagej.ZOLA(\"zola_crlb_3D\")\n" +
+"Plugins>ZOLA>dev>, \"PSF_Generator\", org.pasteur.imagej.ZOLA(\"zola_PSF_Generator\")\n" +
 "Plugins>ZOLA>dev>, \"Dec\", org.pasteur.imagej.ZOLA(\"zola_deconvolution\") "};
     
     

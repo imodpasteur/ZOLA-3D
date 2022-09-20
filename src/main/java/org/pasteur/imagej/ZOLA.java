@@ -375,7 +375,7 @@ public class ZOLA implements PlugIn  {
         
         
         else if (command.startsWith("zola_frc_fsc")){
-            
+            IJ.log("sorry FRC is not working yet");
             frc_fsc();
             
         }
@@ -456,7 +456,7 @@ public class ZOLA implements PlugIn  {
         }
         else if (command.startsWith("zola_test4")){
             
-            IJ.log("no code for this function");
+            test4();
             
             
         }
@@ -609,6 +609,9 @@ public class ZOLA implements PlugIn  {
         else if (command.startsWith("zola_imageFromTable")){
             simulationFromLocTable();
         }
+        else if (command.startsWith("zola_PSF_Generator")){
+            psfGenerator();
+        }
         else if (command.startsWith("zola_getModels_GPUalloc")){
             getModels_GPUalloc();
         }
@@ -673,6 +676,17 @@ public class ZOLA implements PlugIn  {
             photonCountEstimation();
         }
         
+        else if (command.startsWith("zola_SCMOS_offset_variance_map")){
+            
+            scmosComputeOffsetAndVariance();
+        }
+        else if (command.startsWith("zola_SCMOS_gain_map")){
+            
+            scmosComputeGain();
+        }
+        else if (command.startsWith("zola_convertImageToPhotonCount")){
+            convertImageToPhotonCount();
+        }
         else if (command.startsWith("zola_crlb_FromFileDualObj")){
             
             crlbfromfileDualObj();
@@ -697,6 +711,7 @@ public class ZOLA implements PlugIn  {
             
             
         }
+        
         else if (command.startsWith("zola_photonConversion")){
             
             IJ.log("not implemented");
@@ -1100,7 +1115,7 @@ public class ZOLA implements PlugIn  {
                 
                 
                 
-                if (gain<=0||adu<=0){
+                if (!isSCMOS && (gain<=0||adu<=0)){
                     new WaitForUserDialog("Error message", "gain has to be positive (default value = 1)").show();
                 }
                 else{
@@ -1443,7 +1458,7 @@ public class ZOLA implements PlugIn  {
                 
                 
                 
-                if (gain<=0||adu<=0){
+                if (!isSCMOS && (gain<=0||adu<=0)){
                     new WaitForUserDialog("Error message", "gain has to be positive (default value = 1)").show();
                 }
                 else{
@@ -1714,7 +1729,7 @@ public class ZOLA implements PlugIn  {
                 
                 
                 
-                if (gain<=0||adu<=0){
+                if (!isSCMOS && (gain<=0||adu<=0)){
                     new WaitForUserDialog("Error message", "gain has to be positive (default value = 1)").show();
                 }
                 else{
@@ -1757,6 +1772,9 @@ public class ZOLA implements PlugIn  {
         processing=new Boolean(false);
         
     }
+    
+    
+    
     
     
     
@@ -2466,7 +2484,7 @@ public class ZOLA implements PlugIn  {
                 return;
             }
             
-            sigma=0.9;
+            sigma=1;
             
             double [][][] image =new double [nbImage][width][height];
             
@@ -2642,7 +2660,7 @@ public class ZOLA implements PlugIn  {
             
             
             
-            if (gain<=0||adu<=0){
+            if (!isSCMOS && (gain<=0||adu<=0)){
                 new WaitForUserDialog("Error message", "gain has to be positive (default value = 1)").show();
             }
             else{
@@ -2693,6 +2711,214 @@ public class ZOLA implements PlugIn  {
                         prp.run(iterationNumber);
                     }
                     
+                    
+                }
+                long t2=System.currentTimeMillis();
+                IJ.log("elapsed time "+Math.floor((double)(t2-t)/(double)(1000*60))+" min "+Math.floor(60*((((double)(t2-t)/(double)(1000*60)))-Math.floor((double)(t2-t)/(double)(1000*60))))+" sec");
+            }
+
+            
+            
+        }
+        
+        processing=new Boolean(false);
+        
+        
+        
+        
+        
+    }
+    
+    
+    
+    
+    
+    
+    
+        
+    void psfGenerator(){
+        
+        
+        
+        
+        if ((processing !=null)&&(processing.booleanValue()==true)){
+            printErrorMessage();
+            
+            return;
+        }
+        
+        processing=new Boolean(true);
+        
+        
+        
+        
+        {
+            
+            String pathdir=IJ.getDirectory("current");
+            String path=pathdir;
+            
+//            
+            path=path+"ZOLA_generated_PSF.json";
+            
+            
+            
+            
+            
+            
+            //classes.ImageShow.imshow(image,"image input");
+            //String [] fieldZernike = {"6","10","15","21","28","36","45"};
+            //String [] fieldZernike = {"pixel-based (prototype)","Zernike 15 coefs","Zernike 28 coefs","Zernike 45 coefs","Zernike 66 coefs"};
+            String [] fieldShape = {"tophat","donut"};
+            int [] correspondingFieldShape = {0,1};
+            
+            
+            GenericDialog gd = new GenericDialog("ZOLA: PSF generator");
+
+            
+            
+                
+            Font font = gd.getFont();
+            Font fontBold= gd.getFont();
+            try{
+                fontBold=new Font(font.getName(),Font.BOLD,font.getSize());
+            }catch(Exception e){}
+            
+            gd.addCheckbox("Run_on_GPU", GPU_computation);
+            
+            
+            gd.addNumericField("Pixel_size:", xystep*1000, 1,6,"(nm)");
+            
+            
+            gd.addMessage("Sample parameters",fontBold);
+            
+            gd.addNumericField("Z_step: ", zstep*1000, 1,6,"(nm)");
+            
+            gd.addNumericField("Axial_range: ", axialRange,2,6,"(µm)");
+            
+            gd.addNumericField("Numerical_aperture: ", na, 3);
+            gd.addNumericField("immersion_refractive index: ", noil, 3,6,"~1.518 for oil, ~1.33 for water");
+            
+            gd.addNumericField("Mounting_medium_refractive index: ", nwat, 3,6,"1.33 for water");
+            
+            
+            gd.addNumericField("Distance_focus_to_coverslip (µm)", zfocus, 3);
+            
+            gd.addNumericField("wavelength: ", wavelength, 3,6,"(µm)");
+            
+            
+            
+        
+        
+        
+        
+        
+        
+
+            gd.addMessage("Advanced parameters",fontBold);
+            
+            
+            gd.addNumericField("Patch_size: ", sizePatchPhaseRet, 0,6,"(pixels)");
+            //gd.addSlider("Zernike_coefficient #", 0, 2*((int)Math.sqrt(nbImage)), (int)Math.sqrt(nbImage));
+            gd.addCheckbox("Use_pupil_apodization factor", withApoFactor);
+            gd.addChoice("Zernike_coefficient number", fieldShape,  fieldShape[0]);
+            
+
+            gd.addStringField("Result_calibration_file:",path,sizeTextString); 
+            
+        int shape=0;
+        TextField textField2; 
+        // Add a mouse listener to the config file field 
+        if (!(java.awt.GraphicsEnvironment.isHeadless() || IJ.isMacro())) 
+        {
+            int t=0;
+            
+            Vector<TextField> texts = (Vector<TextField>) gd.getStringFields(); 
+            
+            
+            textField2 = texts.get(t++); 
+            MouseOptionSave mos=new MouseOptionSave(textField2,pathdir,"Export calibration file");
+            textField2.addMouseListener(mos); 
+            
+            
+        }
+            
+            gd.showDialog();
+            
+            
+            if (!gd.wasCanceled()){
+                
+                GPU_computation = (boolean)gd.getNextBoolean();
+                
+                xystep = (double)gd.getNextNumber()/1000;
+                zstep = (double)gd.getNextNumber()/1000;
+                axialRange = (double)gd.getNextNumber();
+                
+                
+                na = (double)gd.getNextNumber();
+                noil = (double)gd.getNextNumber();
+                nwat = (double)gd.getNextNumber();
+                zfocus = (double)gd.getNextNumber();
+                        
+                wavelength = (double)gd.getNextNumber();
+                
+                sizePatchPhaseRet = (int)gd.getNextNumber();
+                withApoFactor=(boolean)gd.getNextBoolean();
+                shape=gd.getNextChoiceIndex();
+                
+                //sigma = (double)gd.getNextNumber();
+                
+                
+                path_calibration = gd.getNextString(); 
+            }
+            else{
+                processing=new Boolean(false);
+                return;
+            }
+            
+            int nnn=(path_calibration.lastIndexOf("."));
+            //IJ.log("path_calibration "+path_calibration+"  "+nnn+"  "+path_calibration.length());
+            if ((nnn>=0)&&(nnn>path_calibration.length()-6)){
+                path_calibration=path_calibration.substring(0,nnn);
+            }
+            
+            path_calibration+=".json";
+            //IJ.log("path_calibration "+path_calibration);
+            if (sizePatchPhaseRet%2==1){
+                sizePatchPhaseRet++;
+            }
+            
+            int sizeFFT=180;
+            sizeFFT=Math.max(sizeFFT,sizePatchPhaseRet*2);
+            sizeFFT=Math.min(sizeFFT,maxFFT);
+            
+            
+            
+            {
+                IJ.log("ZOLA PSF generator started");
+                
+                
+                long t=System.currentTimeMillis();
+                
+                if (GPU_computation){
+                    //maybe test if image is a square
+                    //IJ.log("init...");
+                    MyCudaStream.init(1);
+                    //IJ.log("init cuda ok "+xp+"  "+yp+"  "+sizePatchPhaseRet+"  "+rescale_slope+"  "+rescale_intercept+"  "+zstep+"  "+image);
+                    IJ.log("todo");
+                    //IJ.log("param ok");
+                    
+                    org.pasteur.imagej.process.gpu.PSFgenerator_ psfgen = new org.pasteur.imagej.process.gpu.PSFgenerator_(sizeFFT,xystep,zstep,wavelength,noil,na,path_calibration,sigma,axialside,withApoFactor,axialRange,zstep);
+                    
+                    psfgen.run();
+                    
+                    psfgen.free();
+                            
+                    MyCudaStream.destroy();
+                }
+                else{
+                    
+                    
+                    IJ.log("todo");
                     
                 }
                 long t2=System.currentTimeMillis();
@@ -3025,7 +3251,7 @@ public class ZOLA implements PlugIn  {
                 
                 
                 
-                if (gain<=0||adu<=0){
+                if (!isSCMOS && (gain<=0||adu<=0)){
                     new WaitForUserDialog("Error message", "gain has to be positive (default value = 1)").show();
                 }
                 else{
@@ -5447,6 +5673,8 @@ public class ZOLA implements PlugIn  {
             
         double bckg=0;
         
+        int imagesize=-1;
+        
         gd.addStringField("Calibration_path:",path_calibration ,sizeTextString);
         
         gd.addStringField("Localization_path:",path_localization ,sizeTextString); 
@@ -5460,6 +5688,11 @@ public class ZOLA implements PlugIn  {
         gd.addNumericField("Z_focus: ", this.zfocus, 3,6," (µm)");
         
         gd.addNumericField("Background: ", bckg, 3,6,"");
+        
+        
+        gd.addNumericField("Image size: ", imagesize, 3,6,"-1 for automatic sizing");
+        
+        
         
         
         gd.addStringField("Result_image_path:",path_result ,sizeTextString); 
@@ -5495,6 +5728,7 @@ public class ZOLA implements PlugIn  {
             nwat = gd.getNextNumber();
             this.zfocus=gd.getNextNumber();
             bckg = gd.getNextNumber();
+            imagesize = (int)gd.getNextNumber();
             path_result = gd.getNextString(); 
         }
         else{
@@ -5540,7 +5774,7 @@ public class ZOLA implements PlugIn  {
         
         mg=new org.pasteur.imagej.process.gpu.Model_generator_(dp);
         mg.setBackground(bckg);
-        mg.computePSFfromTable(sl, path_result,startAt0);
+        mg.computePSFfromTable(sl, path_result,startAt0,imagesize);
         mg.free();
         
         processing=new Boolean(false);
@@ -8766,7 +9000,7 @@ public class ZOLA implements PlugIn  {
                 
                 
                 
-                if (gain<=0||adu<=0){
+                if (!isSCMOS && (gain<=0||adu<=0)){
                     new WaitForUserDialog("Error message", "gain has to be positive (default value = 1)").show();
                 }
                 else{
@@ -9566,6 +9800,719 @@ gd.addMessage("should have the same size as image to register !!");
     
     
     
+        
+                
+                
+                
+                
+    void scmosComputeGain(){
+        
+        
+        
+        
+            
+        String [] images=WindowManager.getImageTitles();
+
+
+        if ((processing !=null)&&(processing.booleanValue()==true)){
+            printErrorMessage();
+            return;
+        }
+        
+            processing=new Boolean(true);
+            
+            
+            if (images.length==0){
+                IJ.log("no image opened");
+                processing=new Boolean(false);
+            }
+            /*else if ((imp.getWidth()>180)||(imp.getHeight()>180)){
+                IJ.log("image should be < 180 pixels for the moment");
+            }*/
+            else{
+                
+                
+                
+                
+                
+                
+                
+                String pathdir=IJ.getDirectory("image");
+                if (pathdir==null){
+                    pathdir=IJ.getDirectory("current");
+                }
+                String path=pathdir;
+                
+                path=path+"ZOLA_SCMOS_gain.csv";
+                
+                
+                
+                
+                GenericDialog gd=null;
+                
+                //since NonBlockingGenericDialog incompatible with headless mode:
+                if (!(java.awt.GraphicsEnvironment.isHeadless() || IJ.isMacro())){
+                    gd = new NonBlockingGenericDialog("ZOLA: SCMOS calibration 2/2");
+                }
+                else{
+                    gd = new GenericDialog("ZOLA: SCMOS calibration 2/2");
+                }
+
+                    Font font = gd.getFont();
+                    Font fontBold= gd.getFont();
+                try{
+                    fontBold=new Font(font.getName(),Font.BOLD,font.getSize());
+                }catch(Exception e){}
+
+
+                    for (int i=0;i<images.length;i++){
+                        gd.addMessage("input image # "+i+" : "+images[i]);
+                    }
+
+
+                    gd.addMessage("Already computed maps:", fontBold);
+                    
+                    gd.addStringField("SCMOS offset map:",path_SCMOSoffset,sizeTextString); 
+                    
+                    gd.addStringField("SCMOS variance map:",path_SCMOSvariance,sizeTextString); 
+                    
+                    gd.addMessage("Remaining map to compute:", fontBold);
+                    
+                    gd.addStringField("SCMOS gain map:",path,sizeTextString); 
+
+
+
+
+                    TextField textField; 
+                    TextField textField2; 
+                    TextField textField3; 
+                    // Add a mouse listener to the config file field 
+                    if (!(java.awt.GraphicsEnvironment.isHeadless() || IJ.isMacro())) 
+                    {
+                        int t=0;
+                        //textField
+                        Vector<TextField> texts = (Vector<TextField>) gd.getStringFields(); 
+
+                        textField = texts.get(t++); 
+                        MouseOptionLoad mol=new MouseOptionLoad(textField,path_SCMOSoffset,"Import SCMOS offset map");
+                        textField.addMouseListener(mol); 
+                        
+                        textField2 = texts.get(t++); 
+                         mol=new MouseOptionLoad(textField2,path_SCMOSvariance,"Import SCMOS variance map");
+                        textField2.addMouseListener(mol); 
+
+                        textField3 = texts.get(t++); 
+                        MouseOptionSave mos=new MouseOptionSave(textField3,path,"Export localization result table");
+                        textField3.addMouseListener(mos); 
+
+
+                    }
+
+
+                    gd.showDialog();
+
+
+
+
+
+                    if (!gd.wasCanceled()){
+                        
+                        path_SCMOSoffset = gd.getNextString(); 
+                        path_SCMOSvariance = gd.getNextString(); 
+
+                        
+                        path_SCMOSgain = gd.getNextString(); 
+                    }
+                    else{
+                        processing=new Boolean(false);
+                        return;
+                    }
+                
+                
+                
+                int nnn=(path_SCMOSgain.lastIndexOf("."));
+                if ((nnn>=0)&&(nnn>path_SCMOSgain.length()-6)){
+                    path_SCMOSgain=path_SCMOSgain.substring(0,nnn);
+                }
+                path_SCMOSgain+=".tif";
+            
+                
+                ImagePlus [] imp = new ImagePlus[images.length];
+                
+                for (int i=0;i<images.length;i++){
+                    IJ.selectWindow(images[i]);
+                    imp[i]=IJ.getImage();
+                    
+                }
+                
+                
+                int width=imp[0].getWidth();
+                int height=imp[0].getHeight();
+                
+                for (int i=1;i<images.length;i++){
+                    if ((imp[i].getWidth()!=width)||(imp[i].getHeight()!=height)){
+                        IJ.log("ERROR: sizes in opened image stacks are not the same");processing=new Boolean(false);return;
+                    }
+                }
+                
+            
+                int xstart=0;
+                int ystart=0;
+                
+                
+                
+                
+                
+                
+            
+            
+                
+                
+                
+                
+                
+                
+                ImagePlus impoffset=null;
+                try{
+                    impoffset=new ImagePlus(path_SCMOSoffset);
+                }catch(Exception ee){IJ.log("impossible to load offset map "+ee);processing=new Boolean(false);return;}
+                
+                ImagePlus impvariance=null;
+                try{
+                    impvariance=new ImagePlus(path_SCMOSvariance);
+                }catch(Exception eee){IJ.log("impossible to load variance map "+eee);processing=new Boolean(false);return;}
+                
+                
+                if ((impoffset.getWidth()!=width)||(impoffset.getHeight()!=height)){
+                    IJ.log("ERROR: input offset map size is different than opened image size");processing=new Boolean(false);return;
+                }
+                if ((impvariance.getWidth()!=width)||(impvariance.getHeight()!=height)){
+                    IJ.log("ERROR: input variance map size is different than opened image size");processing=new Boolean(false);return;
+                }
+                
+                
+                
+                
+                
+                
+                
+                
+                
+                ImageProcessor ipgain= new FloatProcessor(width,height);
+                ImageProcessor ipoffset= impoffset.getProcessor();
+                ImageProcessor ipvariance= impvariance.getProcessor();
+                float [][][][] pix= new float[images.length][][][];
+                float [][][] var = new float [width][height][images.length];
+                float [][][] mean = new float [width][height][images.length];
+                
+                for (int k=0;k<images.length;k++){
+                    IJ.showProgress(0.4*(double)k/(double)(images.length));
+                    ImageProcessor ip;
+                    boolean stacked=true;
+                    int nbImage=imp[k].getNSlices();
+                    if (imp[k].getNSlices()==1){
+                        nbImage=imp[k].getNFrames();
+                        stacked=false;
+                    }
+                    ImageStack [] ims=null;
+                    if (stacked){
+                        ims = new ImageStack[1];
+                        ims[0]=imp[k].getStack();
+
+                    }
+                    ArrayList<float [][]> al = new ArrayList<float [][]>();
+                    
+                    pix[k]= new float[width][height][nbImage];
+                    //ImageStack imsres = new ImageStack(width,height);
+                    int index=0;
+                    
+                    //copy image stack in pix vector
+                    for (int i=0;i<nbImage;i++){
+                        
+                        if (stacked){
+                            ip = ims[0].getProcessor(i+1);
+                        }
+                        else{
+                            imp[k].setSlice(i+1);
+                            ip = imp[k].getProcessor();
+                        }
+
+                        //fill tmp stack at the beginning
+
+                        for (int u=0;u<width;u++){
+                            for (int uu=0;uu<height;uu++){
+                                float v=ip.getPixelValue(u+xstart, uu+ystart);
+                                pix[k][u][uu][i]=v;
+                            }
+                        }
+                    }
+                }
+                
+                for (int k=0;k<images.length;k++){
+                    IJ.showProgress(.4+0.4*(double)k/(double)(images.length));
+                    for (int i=0;i<width;i++){
+                        for (int ii=0;ii<height;ii++){
+                            for (int j=0;j<pix[k][i][ii].length;j++){
+                                mean[i][ii][k]+=pix[k][i][ii][j];
+                            }
+                            mean[i][ii][k]/=pix[k][i][ii].length;
+                            
+                            for (int j=0;j<pix[k][i][ii].length;j++){
+                                var[i][ii][k]+=(pix[k][i][ii][j]-mean[i][ii][k])*(pix[k][i][ii][j]-mean[i][ii][k]);
+                            }
+                            var[i][ii][k]/=pix[k][i][ii].length;
+                            
+                        }
+                    }  
+                }
+                
+                
+                for (int i=0;i<width;i++){
+                    IJ.showProgress(.8+0.2*(double)i/(double)(width));
+                    for (int ii=0;ii<height;ii++){
+                        float avgGain=0;
+                        for (int k=0;k<images.length;k++){
+                            avgGain+=(var[i][ii][k]-ipvariance.getPixelValue(i, ii))/(mean[i][ii][k]-ipoffset.getPixelValue(i, ii));
+                        }
+                        avgGain/=images.length;
+                        ipgain.putPixelValue(i, ii, avgGain);
+                    }
+                }
+                
+                
+                
+                ImagePlus impgain = new ImagePlus("SCMOS_gain",ipgain);
+                FileSaver fs_gain = new FileSaver(impgain);
+                fs_gain.saveAsTiff(path_SCMOSgain);
+                
+                
+                IJ.log("SCMOS calibration part 2/2 finished.");
+                IJ.showProgress(1);
+                
+                isSCMOS=true;
+            }
+        
+        processing=new Boolean(false);
+        
+        
+    }
+    
+    
+                
+    void convertImageToPhotonCount(){
+        
+        ImagePlus imp = IJ.getImage();
+        
+        if ((processing !=null)&&(processing.booleanValue()==true)){
+            printErrorMessage();
+            
+            return;
+        }
+        
+        processing=new Boolean(true);
+        
+        
+        
+        
+        if (imp==null){
+            IJ.log("no image opened");
+        }
+        else{
+            
+            
+            
+            boolean stacked=true;
+            int nbImage=imp.getNSlices();
+            if (nbImage==1){
+                nbImage=imp.getNFrames();
+                stacked=false;
+            }
+            if (nbImage==1){
+                IJ.log("WARNING, you should provide a stack with more than 1 image");
+            }
+            ImageStack ims= imp.getStack();
+            
+            int width=imp.getWidth();
+            int height=imp.getHeight();
+            
+            boolean scmosLoad=false;
+            SCMOScamera scmoscam=null;
+            if (isSCMOS){
+                scmoscam = new SCMOScamera(path_SCMOSvariance,path_SCMOSoffset,path_SCMOSgain);
+                scmosLoad=scmoscam.loadSCMOScameraFiles(width, height, null);
+            }
+                
+            
+            
+            
+            double [][][] image =new double [nbImage][width][height];
+            
+            for (int i=0;i<nbImage;i++){
+                ImageProcessor ip;
+                if (stacked){
+                    ip = ims.getProcessor(i+1);
+                }
+                else{
+                    imp.setSlice(i+1);
+                    ip = imp.getProcessor();
+                }
+                for (int ii=0,jj=0;ii<width;ii++,jj++){
+                    for (int iii=0,jjj=0;iii<height;iii++,jjj++){
+                        image[i][ii][iii]=ip.getPixelValue(jj, jjj);
+                    }
+                }
+            }
+            
+            
+            GenericDialog gd = new GenericDialog("ZOLA: Convert to photon count");
+
+            
+            
+                
+            Font font = gd.getFont();
+            Font fontBold= gd.getFont();
+            try{
+                fontBold=new Font(font.getName(),Font.BOLD,font.getSize());
+            }catch(Exception e){}
+            
+            
+            
+            
+                if (!isSCMOS){
+                    gd.addMessage("Camera is EMCCD",fontBold);
+                    gd.addMessage("ADU = "+adu);
+                    gd.addNumericField("Gain = ", gain, 1,6,"(1 if camera provides photon counts)");
+                    gd.addMessage("Offset = "+offset);
+                    
+                }
+                else{
+                    
+                    if (scmosLoad){
+                        gd.addMessage("Camera is SCMOS",fontBold);
+                    }
+                    else{
+                        gd.addMessage("Camera is SCMOS / problem with image sizes / ERROR will occur",fontBold);
+                    }
+//                    String sep=File.separator;
+//                    String [] var=this.path_SCMOSvariance.split(sep);
+//                    String [] off=this.path_SCMOSoffset.split(sep);
+//                    String [] gain=this.path_SCMOSgain.split(sep);
+//                    gd.addMessage("Offset file = "+off[var.length-1]);
+//                    gd.addMessage("Variance file = "+var[var.length-1]);
+//                    gd.addMessage("Gain file = "+gain[var.length-1]);
+                    
+                    gd.addMessage("Offset file = "+path_SCMOSoffset);
+                    gd.addMessage("Variance file = "+path_SCMOSvariance);
+                    gd.addMessage("Gain file = "+path_SCMOSgain);
+                }
+                
+            
+            
+            gd.showDialog();
+            
+            
+            if (!gd.wasCanceled()){
+                
+                if (!isSCMOS){
+                    gain = (double)gd.getNextNumber();
+                }
+                
+            }
+            else{
+                processing=new Boolean(false);
+                return;
+            }
+            
+            
+            
+            
+            
+            if (!isSCMOS && (gain<=0||adu<=0)){
+                new WaitForUserDialog("Error message", "gain has to be positive (default value = 1)").show();
+            }
+            else{
+                
+                
+                InitBackgroundAndPhotonNumber paramImage ;
+                if (isSCMOS){
+                    
+                    double [][][] imageH =new double [nbImage][width][height];
+
+                    for (int z=0;z<image.length;z++){
+                        for (int i=0;i<image[0].length;i++){
+                            for (int ii=0;ii<image[0][0].length;ii++){
+                                
+                                imageH[z][i][ii]=((image[z][i][ii]-scmoscam.scmosoffset[i][ii])/scmoscam.scmosgain[i][ii]);
+                                image[z][i][ii]=((image[z][i][ii]-scmoscam.scmosoffset[i][ii])/scmoscam.scmosgain[i][ii])+scmoscam.scmosvargain[i][ii];
+
+                                if (image[z][i][ii]<0){
+                                    image[z][i][ii]=0;
+                                }
+                            }
+                        }
+
+                    }
+                    IJ.log("homogeneous image should have homogeneous aspect but does not follow Poisson statistic (mean=var) ; the difference is var/gain^2");
+                    ImageShow.imshow(imageH,"homogeneous image");
+                    
+                }
+                else{
+        
+        
+                    width=image[0].length;
+                    height=image[0][0].length;
+
+                    double slope=adu/gain;
+                    double intercept=-offset*adu/gain;
+                    for (int z=0;z<image.length;z++){
+                        for (int i=0;i<image[0].length;i++){
+                            for (int ii=0;ii<image[0][0].length;ii++){
+
+                                image[z][i][ii]=(image[z][i][ii]*slope+intercept)+1;
+
+                                if (image[z][i][ii]<0){
+                                    image[z][i][ii]=0;
+                                }
+
+
+
+                            }
+                        }
+
+
+                    }
+
+                
+
+                }
+                ImageShow.imshow(image,"photon count image");
+            }
+        }
+        processing=new Boolean(false);
+    }
+    
+            
+    void scmosComputeOffsetAndVariance(){
+        
+        
+        
+        
+            
+        ImagePlus imp=IJ.getImage();
+
+
+        if ((processing !=null)&&(processing.booleanValue()==true)){
+            printErrorMessage();
+            return;
+        }
+        
+        processing=new Boolean(true);
+
+
+        if (imp==null){
+            IJ.log("no image opened");
+            processing=new Boolean(false);
+        }
+        /*else if ((imp.getWidth()>180)||(imp.getHeight()>180)){
+            IJ.log("image should be < 180 pixels for the moment");
+        }*/
+        else{
+
+            GenericDialog gd=null;
+
+            //since NonBlockingGenericDialog incompatible with headless mode:
+            if (!(java.awt.GraphicsEnvironment.isHeadless() || IJ.isMacro())){
+                gd = new NonBlockingGenericDialog("ZOLA: SCMOS calibration 1/2");
+            }
+            else{
+                gd = new GenericDialog("ZOLA: SCMOS calibration 1/2");
+            }
+
+            Font font = gd.getFont();
+            Font fontBold= gd.getFont();
+            try{
+                fontBold=new Font(font.getName(),Font.BOLD,font.getSize());
+            }catch(Exception e){}
+            gd.addMessage("This function convert pixels in photon count for SCMOS cameras",fontBold);
+            gd.addMessage("it estimates variance and offset for each pixel from a stack of black images",fontBold);
+            
+            
+            
+            String pathdir=IJ.getDirectory("image");
+            if (pathdir==null){
+                pathdir=IJ.getDirectory("current");
+            }
+
+            String pathoffset=pathdir+"ZOLA_SCMOS_offset.tif";
+            String pathvariance=pathdir+"ZOLA_SCMOS_variance.tif";
+            
+            
+            gd.addStringField("Offset path to save:",pathoffset,sizeTextString); 
+            
+            gd.addStringField("Variance path to save:",pathvariance,sizeTextString); 
+            
+
+            TextField textField; 
+            TextField textField2; 
+            // Add a mouse listener to the config file field 
+            if (!(java.awt.GraphicsEnvironment.isHeadless() || IJ.isMacro())) 
+            {
+                int t=0;
+                //textField
+                Vector<TextField> texts = (Vector<TextField>) gd.getStringFields(); 
+
+
+
+                textField = texts.get(t++); 
+                MouseOptionSave mos=new MouseOptionSave(textField,pathoffset,"Path offset image");
+                textField.addMouseListener(mos); 
+                
+                textField2 = texts.get(t++); 
+                mos=new MouseOptionSave(textField2,pathvariance,"Path variance image");
+                textField2.addMouseListener(mos); 
+
+
+
+                //NumericField
+                Vector<TextField> nums = (Vector<TextField>) gd.getNumericFields(); 
+
+
+
+                
+
+            }
+
+
+            gd.showDialog();
+
+
+
+
+
+            if (!gd.wasCanceled()){
+
+                path_SCMOSoffset = gd.getNextString(); 
+                path_SCMOSvariance = gd.getNextString(); 
+            }
+            
+            int nnn=(path_SCMOSoffset.lastIndexOf("."));
+            if ((nnn>=0)&&(nnn>path_SCMOSoffset.length()-6)){
+                path_SCMOSoffset=path_SCMOSoffset.substring(0,nnn);
+            }
+            path_SCMOSoffset+=".tif";
+            
+            nnn=(path_SCMOSvariance.lastIndexOf("."));
+            if ((nnn>=0)&&(nnn>path_SCMOSvariance.length()-6)){
+                path_SCMOSvariance=path_SCMOSvariance.substring(0,nnn);
+            }
+            path_SCMOSvariance+=".tif";
+                
+            int width=imp.getWidth();
+            int height=imp.getHeight();
+
+            
+                int xstart=0;
+                int ystart=0;
+                
+                
+                
+                
+                
+                boolean stacked=true;
+                int nbImage=imp.getNSlices();
+                if (imp.getNSlices()==1){
+                    nbImage=imp.getNFrames();
+                    stacked=false;
+                }
+                ImageStack [] ims=null;
+                if (stacked){
+                    ims = new ImageStack[1];
+                    ims[0]=imp.getStack();
+
+                }
+            
+            
+            
+                
+                ImageProcessor ip;
+                
+                ArrayList<float [][]> al = new ArrayList<float [][]>();
+                
+                //double[][] offset = new double[width][height];
+                //double[][] var = new double[width][height];
+                float [][][] pix= new float[width][height][nbImage];
+                //ImageStack imsres = new ImageStack(width,height);
+                int index=0;
+                
+                //copy image stack in pix vector
+                for (int i=0;i<nbImage;i++){
+                    IJ.showProgress(0.25*(double)i/(double)(nbImage));
+                    if (stacked){
+                        ip = ims[0].getProcessor(i+1);
+                    }
+                    else{
+                        imp.setSlice(i+1);
+                        ip = imp.getProcessor();
+                    }
+                    
+                    //fill tmp stack at the beginning
+                    
+                    for (int u=0;u<width;u++){
+                        for (int uu=0;uu<height;uu++){
+                            float v=ip.getPixelValue(u+xstart, uu+ystart);
+                            pix[u][uu][i]=v;
+                        }
+                    }
+                }
+                
+                ImageProcessor ipoffset= new FloatProcessor(width,height);
+                ImageProcessor ipvariance= new FloatProcessor(width,height);
+                //compute mean 
+                float offset,var;
+                for (int i=0;i<width;i++){
+                    for (int ii=0;ii<height;ii++){
+                        offset=0;
+                        for (int j=0;j<nbImage;j++){
+                            offset+=pix[i][ii][j];
+                        }
+                        offset/=nbImage;
+                        ipoffset.putPixelValue(i, ii, offset);
+                        
+                        var=0;
+                        for (int j=0;j<nbImage;j++){
+                            var+=(pix[i][ii][j]-offset)*(pix[i][ii][j]-offset);
+                        }
+                        var/=nbImage;
+                        ipvariance.putPixelValue(i, ii, var);
+                    }
+                }  
+                
+                
+                
+                ImagePlus impoffset = new ImagePlus("SCMOS_offset",ipoffset);
+                ImagePlus impvariance = new ImagePlus("SCMOS_variance",ipvariance);
+                FileSaver fs_offset = new FileSaver(impoffset);
+                fs_offset.saveAsTiff(path_SCMOSoffset);
+                FileSaver fs_variance = new FileSaver(impvariance);
+                fs_variance.saveAsTiff(path_SCMOSvariance);
+                
+                
+                
+                //ImagePlus impres = new ImagePlus("result",imsres);
+                //impres.show();
+                IJ.log("SCMOS calibration part 1/2 finished.");
+                IJ.showProgress(1);
+                
+                isSCMOS=true;
+                
+                
+            }
+        
+        processing=new Boolean(false);
+        
+        
+    }
+    
     
     
     
@@ -9896,6 +10843,9 @@ gd.addMessage("should have the same size as image to register !!");
         if (imageInput1.length==1){
             FRC frc = new FRC(imageInput1[0],imageInput2[0],sizeRendering);
             frc.run();
+            
+            FRCbiop bp = new FRCbiop();
+            bp.test(imp1.getProcessor(),imp2.getProcessor(),sizeRendering);
         }
         else{
             FSC fsc = new FSC(imageInput1,imageInput2,sizeRendering,sizeRenderingZ);
@@ -10525,20 +11475,20 @@ gd.addMessage("should have the same size as image to register !!");
                     for (int ii=0;ii<imp.getNFrames();ii++){
                         imp.setSlice(i*imp.getNFrames()+ii+1);
                         ImageProcessor p=imp.getProcessor();
-                        for (int u=startX;u<wh;u++){
-                            for (int uu=startY;uu<wh;uu++){
-                                double pixVal = p.getPixelValue(u, uu);
+                        for (int u=0;u<wh;u++){
+                            for (int uu=0;uu<wh;uu++){
+                                double pixVal = p.getPixelValue(u+startX, uu+startY);
                                 imageInput[i*imp.getNFrames()+ii][u][uu]=pixVal;
                             }
                         }
                     }
                 }
                 
-                
+                IJ.log("sizFFT "+sizeFFT+"  "+dp.param.sizeoutput);
                 
 
                 //dp.
-                dp.setSizeoutput(wh);
+                //dp.setSizeoutput(128);
                 dp.setNwat(nwat);
                 dp.param.Zfocus=zfocus;
                 
@@ -10550,6 +11500,240 @@ gd.addMessage("should have the same size as image to register !!");
                 
                 
                 invfil.run(imageInput);
+                
+                
+                dp.free();
+
+            }
+
+            MyCudaStream.destroy();
+        }
+        else{
+            IJ.log("nothing");
+
+        }
+        
+//        classes.cudaProcess.DataPhase dp2=null;
+//        if (path_calibration2.length()>3){
+//            dp2 = new classes.cudaProcess.DataPhase(sizeFFT,path_calibration2);
+//        }
+        
+
+        processing=new Boolean(false);
+        
+        
+    }
+    
+    
+    
+    
+    void test4(){
+        
+        
+        //try wiener deconvolution
+        
+        
+        if ((processing !=null)&&(processing.booleanValue()==true)){
+            printErrorMessage();
+            return;
+        }
+        
+        processing=new Boolean(true);
+            
+        ImagePlus imp=IJ.getImage();
+        
+        double minPosizionZ=-axialRange/2;
+        
+        
+        double maxValuePlot=-1;
+        
+        String pathResult="";
+        
+        
+        String [] fieldSimul = {"molecule moves","objective moves"};
+        
+        GenericDialog gd = new GenericDialog("ZOLA: test 2 PSF cross correl");
+        
+        
+        Font font = gd.getFont();
+        Font fontBold= gd.getFont();
+            try{
+                fontBold=new Font(font.getName(),Font.BOLD,font.getSize());
+            }catch(Exception e){}        
+                
+        gd.addCheckbox("Run_on_GPU", GPU_computation);
+        
+        //String path_calibration2="";
+        
+        gd.addStringField("Calibration_file:",path_calibration,sizeTextString); 
+        
+        //gd.addStringField("Calibration_file_cam2 [optional]:",path_calibration2,sizeTextString); 
+        
+        
+        
+        
+        gd.addMessage("Parameters",fontBold);
+
+        gd.addNumericField("patch_size: ", sizePatchPhaseRet,0,6,"(pixels)");
+        
+        
+        gd.addNumericField("min_Z_position: ", minPosizionZ,2,6,"(µm)");
+        
+        gd.addNumericField("Axial_range: ", axialRange,2,6,"(µm)");
+        
+        gd.addNumericField("Z_step: ", stepZloc*1000,1,6,"(nm)");
+        
+        gd.addNumericField("Mounting_medium_refractive index: ", nwat, 3,6,"1.33 for water");
+        
+        gd.addNumericField("Distance_focus_to_coverslip (µm)", zfocus, 3);
+        
+        
+        //gd.addStringField("Plot_max_value (µm) [optional]: ", "",6);
+        
+        //gd.addStringField("Result_table [optional]:",pathResult,sizeTextString); 
+        
+        TextField textField; 
+        TextField textField2; 
+        TextField textField3; 
+        // Add a mouse listener to the config file field 
+        if (!(java.awt.GraphicsEnvironment.isHeadless() || IJ.isMacro())) 
+        {
+            int t=0;
+            
+            Vector<TextField> texts = (Vector<TextField>) gd.getStringFields(); 
+            textField = texts.get(t++); 
+            MouseOptionLoad mol=new MouseOptionLoad(textField,path_calibration,"Import calibration file");
+            textField.addMouseListener(mol); 
+            
+            //textField3 = texts.get(t++); 
+            //mol=new MouseOptionLoad(textField3,path_calibration,"Import cal. file cam 2 (optional)");
+            //textField3.addMouseListener(mol); 
+//            textField2 = texts.get(t++); 
+//            textField3 = texts.get(t++); 
+//            MouseOptionSave mos=new MouseOptionSave(textField3,path_calibration,"Export CRLB result file");
+//            textField3.addMouseListener(mos); 
+            
+            
+        }
+        
+        
+        gd.showDialog();
+
+
+
+        if (!gd.wasCanceled()){
+            
+            GPU_computation = (boolean)gd.getNextBoolean();
+            
+            path_calibration = gd.getNextString(); 
+            //path_calibration2 = gd.getNextString(); 
+            
+            sizePatchPhaseRet = (int)gd.getNextNumber();
+            minPosizionZ= (double)gd.getNextNumber();
+            
+            axialRange= (double)gd.getNextNumber();
+            stepZloc=((double)gd.getNextNumber())/1000.;
+            nwat=(double)gd.getNextNumber();
+            zfocus=(double)gd.getNextNumber();
+            
+            
+//            try{
+//                String str_=gd.getNextString();
+//                if (str_.length()>0){
+//                    maxValuePlot=(double)Double.parseDouble(str_);
+//                }
+//                else{
+//                    maxValuePlot=-1;
+//                }
+//            }catch(Exception ee){maxValuePlot=-1;}
+//            pathResult = gd.getNextString(); 
+            
+
+        }
+        else{
+            processing=new Boolean(false);
+            return;
+        }
+        
+        
+        if (pathResult.equals(path_calibration)){
+            IJ.log("Process stopped: the result crlb path has to be different than calibration path");
+            processing=new Boolean(false);
+            return;
+        }
+        
+//        if (pathResult.equals(path_calibration2)){
+//            if (pathResult.length()>0){//only if path not null
+//                IJ.log("Process stopped: the result crlb path has to be different than calibration path");
+//                processing=new Boolean(false);
+//                return;
+//            }
+//        }
+        
+        
+        
+        
+        int sizeFFT=512;
+        
+        if (GPU_computation){
+            MyCudaStream.init(1);
+            org.pasteur.imagej.process.gpu.DataPhase_ dp = new org.pasteur.imagej.process.gpu.DataPhase_(sizeFFT,path_calibration);
+            if (!dp.loading){
+                IJ.log("impossible to load "+path_calibration);
+                processing=new Boolean(false);
+                return;
+            }
+
+            if (dp.param!=null){
+                
+                
+                
+                Roi r=imp.getRoi();
+                int width=imp.getWidth();
+                int height=imp.getHeight();
+                int startX=0;
+                int startY=0;
+                if (r!=null){
+                    Rectangle bound=imp.getRoi().getBounds();
+                    startX=bound.x;
+                    startY=bound.y;
+                    width=bound.width;
+                    height=bound.height;
+                }
+                
+                double [][][] imageInput = new double[imp.getNFrames()*imp.getNSlices()][sizeFFT][sizeFFT];
+                
+                for (int i=0;i<imp.getNSlices();i++){
+                    for (int ii=0;ii<imp.getNFrames();ii++){
+                        imp.setSlice(i*imp.getNFrames()+ii+1);
+                        ImageProcessor p=imp.getProcessor();
+                        for (int u=0;u<Math.min(width,sizeFFT);u++){
+                            for (int uu=0;uu<Math.min(height,sizeFFT);uu++){
+                                double pixVal = p.getPixelValue(u+startX, uu+startY);
+                                imageInput[i*imp.getNFrames()+ii][u][uu]=pixVal;
+                            }
+                        }
+                    }
+                }
+                
+                ImageShow.imshow(imageInput);
+                
+
+                IJ.log("sizFFT "+sizeFFT+"  "+dp.param.sizeoutput);
+                /*if (wh<sizeFFT){
+                    dp.setSizeoutput(wh);
+                }*/
+                dp.setNwat(nwat);
+                dp.param.Zfocus=zfocus;
+                
+                
+                org.pasteur.imagej.process.gpu.Filtering fil = new org.pasteur.imagej.process.gpu.Filtering(dp,minPosizionZ,axialRange, stepZloc);
+                
+                
+                
+                
+                
+                fil.run(imageInput);
                 
                 
                 dp.free();
@@ -10703,7 +11887,7 @@ gd.addMessage("should have the same size as image to register !!");
         
         //simulation different PSF
         //rose
-        {
+        if (false){
             int num=60;
             double x0=0;
             double y0=0;
@@ -10746,8 +11930,54 @@ gd.addMessage("should have the same size as image to register !!");
             ImageShow.imshow(image,"rose");
         }
         
+        
+        
+        //fermat
+        if (true){
+            int num=60;
+            double x0=0;
+            double y0=0;
+            double [] x1=new double[num];
+            double [] y1=new double[num];
+
+            int size=128;
+            double [][][] image = new double[num][size][size];
+
+            for (int i=0;i<num;i++){
+                double angle=0+((double)(i)/(double)(num))*Math.PI;
+                double r=16*Math.cos(angle);
+                x1[i]=r*Math.cos(angle);
+                y1[i]=r*Math.sin(angle);
+            }
+
+            double amplitude0=10000;
+            double amplitude1=10000;
+
+            double sigma=1.5;
+            double photonNumber=0;
+            for (int z=0;z<num;z++){
+                double centerX=(x0+x1[z])/2.;
+                double centerY=(y0+y1[z])/2.;
+                double cx0=x0+(double)size/2.-centerX;
+                double cy0=y0+(double)size/2.-centerY;
+                double cx1=x1[z]+(double)size/2.-centerX;
+                double cy1=y1[z]+(double)size/2.-centerY;
+                for (int i=0;i<size;i++){
+                    for (int ii=0;ii<size;ii++){
+                        double amp0=amplitude0*Math.exp(-0.5*((i-cx0)*(i-cx0)+(ii-cy0)*(ii-cy0))/(sigma*sigma));
+                        double amp1=amplitude1*Math.exp(-0.5*((i-cx1)*(i-cx1)+(ii-cy1)*(ii-cy1))/(sigma*sigma));
+                        image[z][i][ii]=amp0+amp1+1;
+                        photonNumber+=amp0+amp1;
+                    }
+                }
+            }
+
+            IJ.log("photonNumber : "+photonNumber);
+            ImageShow.imshow(image,"fermat");
+        }
+        
         //DTET
-        {
+        if (false){
             int num=100;
             double x0=0;
             double y0=0;
@@ -10813,7 +12043,7 @@ gd.addMessage("should have the same size as image to register !!");
         
         
         //SPIRAL
-        {
+        if (false){
             int num=90;
             double x0=0;
             double y0=0;
@@ -10858,7 +12088,7 @@ gd.addMessage("should have the same size as image to register !!");
         
         
         //LINE
-        {
+        if (false){
             int num=90;
             double x0=0;
             double y0=0;
@@ -10897,7 +12127,7 @@ gd.addMessage("should have the same size as image to register !!");
         }
         
         //RING
-        {
+        if (false){
             int num=60;
             double x0=0;
             double y0=0;
@@ -10938,6 +12168,48 @@ gd.addMessage("should have the same size as image to register !!");
 
             IJ.log("photonNumber : "+photonNumber);
             ImageShow.imshow(image,"RING");
+        }
+        
+        
+        
+        //SPHERE
+        {
+            int num=32;
+
+            int size=32;
+            double [][][] image = new double[num][size][size];
+
+            
+
+            double amplitude0=10000;
+            double amplitude1=10000;
+            double centerX=size/2;
+            double centerY=size/2;
+            double centerZ=num/2;
+            double diameter=8;
+            double radius=diameter/2;
+            double radius2=radius*radius;
+            double photonNumber=0;
+            IJ.log(""+centerX+"  "+centerY+"  "+centerZ);
+            
+            for (int z=0;z<num;z++){
+                
+                
+                for (int i=0;i<size;i++){
+                    for (int ii=0;ii<size;ii++){
+                        double dist=Math.sqrt((i-centerX)*(i-centerX)+(ii-centerY)*(ii-centerY)+(z-centerZ)*(z-centerZ));
+                        
+                        dist=Math.exp(-Math.pow(Math.abs(dist-radius),1));
+                        
+                        
+                        image[z][i][ii]=dist;
+                        photonNumber+=dist;
+                    }
+                }
+            }
+
+            IJ.log("photonNumber : "+photonNumber);
+            ImageShow.imshow(image,"SPHERE");
         }
     }
     
@@ -11419,7 +12691,7 @@ gd.addMessage("should have the same size as image to register !!");
                 
                 ImagePlus impTest=new ImagePlus("test",ip2);
                 
-                if (gain<=0||adu<=0){
+                if (!isSCMOS && (gain<=0||adu<=0)){
                     new WaitForUserDialog("Error message", "gain has to be positive (default value = 1)").show();
                 }
                 else{
@@ -11567,7 +12839,7 @@ gd.addMessage("should have the same size as image to register !!");
                 }
                 
                 
-                if (gain<=0||adu<=0){
+                if (!isSCMOS && (gain<=0||adu<=0)){
                     new WaitForUserDialog("Error message", "gain has to be positive (default value = 1)").show();
                 }
                 else{

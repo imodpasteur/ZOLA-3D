@@ -1344,6 +1344,30 @@ public class PSFmany_float_ {
     }
     
     
+    public void updatePhaseAndAdd(Pointer device_p,float [] adder){
+        
+        //this.imshowDouble(device_p, "phaseDouble");
+        
+        //double -> float
+        int cudaResult=JCuda.cudaStreamSynchronize(MyCudaStream.getCudaStream_t(param.stream));if (cudaResult != cudaError.cudaSuccess){IJ.log("ERROR synchro cuda gaussianKernel Set Image_0 "+cudaResult);}
+        MyVecDouble.double2float(custream,param.sizeDisk, device_phase, device_p);
+        cudaResult=JCuda.cudaStreamSynchronize(MyCudaStream.getCudaStream_t(param.stream));if (cudaResult != cudaError.cudaSuccess){IJ.log("ERROR synchro cuda gaussianKernel Set Image_1 "+cudaResult);}
+        
+        cudaMemcpyAsync(device_tmpFull, Pointer.to(adder), param.sizeDisk*Sizeof.FLOAT, cudaMemcpyHostToDevice,MyCudaStream.getCudaStream_t(param.stream));
+        
+        cudaResult=JCuda.cudaStreamSynchronize(MyCudaStream.getCudaStream_t(param.stream));if (cudaResult != cudaError.cudaSuccess){IJ.log("ERROR synchro cuda gaussianKernel Set Image_1 "+cudaResult);}
+        
+        MyVecDouble.add(custream, param.sizeDisk, device_phase, device_phase, device_tmpFull);
+        
+        cudaResult=JCuda.cudaStreamSynchronize(MyCudaStream.getCudaStream_t(param.stream));if (cudaResult != cudaError.cudaSuccess){IJ.log("ERROR synchro cuda gaussianKernel Set Image_1 "+cudaResult);}
+        
+        
+        //this.imshowFloat(device_phase, "phaseFloat");
+        
+        //this.imshowFloat(device_phase, "phaseInit");
+    }
+    
+    
 //    public void updatePupil(Pointer device_p){
 //        this.device_pupil=device_p;
 //        

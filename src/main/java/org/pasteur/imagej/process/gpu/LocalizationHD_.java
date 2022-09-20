@@ -462,7 +462,7 @@ public class LocalizationHD_ {
             JCuda.cudaStreamSynchronize(MyCudaStream.getCudaStream_t(streamId));
             int count=0;
             
-            //dp.psf.imshow(wh,height, device_model, "model ML","DOUBLE");//show first image
+            dp.psf.imshow(wh,height, device_model, "model ML","DOUBLE");//show first image
             
             for (int i=0;i<numberToCompute;i++){
                 if (true){//((Math.abs(position[i+index_x*numberToCompute])<dp.param.xystep*5)&&(Math.abs(position[i+index_y*numberToCompute])<dp.param.xystep*5)&&(position[i+index_z*numberToCompute]>minZ)&&(position[i+index_z*numberToCompute]<maxZ)){

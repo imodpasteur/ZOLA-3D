@@ -145,7 +145,7 @@ public class FSC {
                     else{
                         ztmp=1;
                     }
-                    weight[iii][i][ii]=1;//xtmp*ytmp*ztmp;
+                    weight[iii][i][ii]=xtmp*ytmp*ztmp;
                 }
             }
         }
@@ -163,6 +163,7 @@ public class FSC {
         double [][][] F = new double [size][size][size];
         double [][][] G = new double [size][size][size];
         double [][][] H = new double [size][size][size];
+        double [][][] numeratorI = new double [size][size][size];
         double [][][] tmpointer;
         FastFourierTransform fft1 = new FastFourierTransform(size,size,size);
         FastFourierTransform fft2 = new FastFourierTransform(size,size,size);
@@ -235,6 +236,7 @@ public class FSC {
                     F[iii][i][ii]=(C[iii][i][ii]*C[iii][i][ii]+D[iii][i][ii]*D[iii][i][ii]);
                     G[iii][i][ii]=(A[iii][i][ii]*C[iii][i][ii]+B[iii][i][ii]*D[iii][i][ii]);
                     H[iii][i][ii]=(B[iii][i][ii]*C[iii][i][ii]-A[iii][i][ii]*D[iii][i][ii]);
+                    numeratorI[iii][i][ii]=(G[iii][i][ii]*G[iii][i][ii]+H[iii][i][ii]*H[iii][i][ii]);
                 }
             }
         }
@@ -259,12 +261,13 @@ public class FSC {
         
         
         
-        double step=1;//pixel step to convert in vector
+        double step=2;//pixel step to convert in vector
         int sizeVect=(int)Math.ceil(size*Math.sqrt(3)/(2*step));//sqrt(3) because 3D
         double [] vectE = new double[sizeVect];
         double [] vectF = new double[sizeVect];
         double [] vectG = new double[sizeVect];
         double [] vectH = new double[sizeVect];
+        double [] numerator = new double[sizeVect];
         double [] vectN = new double[sizeVect];//number of pixels
         
         
@@ -278,7 +281,7 @@ public class FSC {
             vectG[bin]+=G[(int)v[i][1]][(int)v[i][2]][(int)v[i][3]];
             vectH[bin]+=H[(int)v[i][1]][(int)v[i][2]][(int)v[i][3]];
             vectN[bin]++;
-            
+            numerator[bin]+=G[(int)v[i][1]][(int)v[i][2]][(int)v[i][3]]*G[(int)v[i][1]][(int)v[i][2]][(int)v[i][3]]+H[(int)v[i][1]][(int)v[i][2]][(int)v[i][3]]*H[(int)v[i][1]][(int)v[i][2]][(int)v[i][3]];
         }
         
         
@@ -289,9 +292,9 @@ public class FSC {
         double [] xaxisXY = new double[sizeVect];
         double [] xaxisZ = new double[sizeVect];
         for (int i=0;i<sizeVect;i++){
-            vectFinal[i]=(vectG[i]/Math.sqrt(vectE[i]*vectF[i]));// - 2/Math.sqrt(vectN[i]/2);
-            xaxisXY[i]=i*step/(size*this.pixSizeXY);
-            xaxisZ[i]=i*step/(size*this.pixSizeZ);
+            vectFinal[i]=(Math.sqrt(numerator[i])/Math.sqrt(vectE[i]*vectF[i]));// - 2/Math.sqrt(vectN[i]/2);
+            xaxisXY[i]=i*step/((size)*this.pixSizeXY);//(size/2) because we use half of image ?
+            xaxisZ[i]=i*step/((size)*this.pixSizeZ);
             
         }
         
